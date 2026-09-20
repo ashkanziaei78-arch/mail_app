@@ -1,0 +1,253 @@
+@import "tailwindcss";
+
+/* تم تاریک با data-theme روی <html> کنترل می‌شود (نه فقط prefers-color-scheme) */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@theme {
+  --font-sans: Vazirmatn, "Segoe UI", Tahoma, system-ui, sans-serif;
+
+  --color-brand-50: #eef4ff;
+  --color-brand-100: #dbe6ff;
+  --color-brand-200: #bdd0ff;
+  --color-brand-400: #5b86e8;
+  --color-brand-600: #1d4ed8;
+  --color-brand-700: #1a40ad;
+  --color-brand-900: #0f2547;
+  --color-brand-950: #091730;
+
+  --radius-card: 0.75rem;
+}
+
+/* ---- توکن‌های معنایی: روشن / تاریک ---- */
+:root {
+  --bg: #f4f6fa;
+  --surface: #ffffff;
+  --surface-2: #f8fafc;
+  --border: #e2e8f0;
+  --text: #0f172a;
+  --muted: #4b5a70;
+  --primary: #1d4ed8;
+  --primary-text: #ffffff;
+  --success: #15803d;
+  --success-bg: #dcfce7;
+  --danger: #b91c1c;
+  --danger-bg: #fee2e2;
+  --warn: #a16207;
+  --warn-bg: #fef3c7;
+  --info: #0369a1;
+  --info-bg: #e0f2fe;
+  --ring: #1d4ed8;
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --bg: #0b1220;
+  --surface: #121b2c;
+  --surface-2: #18233a;
+  --border: #27344d;
+  --text: #e8eef9;
+  --muted: #a5b6d2;
+  --primary: #5b86e8;
+  --primary-text: #08121f;
+  --success: #4ade80;
+  --success-bg: #14361f;
+  --danger: #fca5a5;
+  --danger-bg: #401616;
+  --warn: #fcd34d;
+  --warn-bg: #3a2c0a;
+  --info: #7dd3fc;
+  --info-bg: #0b2e42;
+  --ring: #7ea6ff;
+  color-scheme: dark;
+}
+
+@layer base {
+  * { border-color: var(--border); }
+
+  html {
+    font-family: var(--font-sans);
+    /* ponytail: فونت از CDN با فالبک سیستمی؛ برای استقرار آفلاین فایل woff2 را در public/fonts بگذارید */
+    font-feature-settings: "ss02";
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4 { font-weight: 700; line-height: 1.4; }
+
+  /* اعداد جدولی: ستون‌های عددی نلرزند */
+  table, .tnum { font-variant-numeric: tabular-nums; }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  ::placeholder { color: var(--muted); opacity: .75; }
+}
+
+@layer components {
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+  }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+    min-height: 44px; padding: 0 1rem; border-radius: .6rem;
+    font-size: .9rem; font-weight: 600; cursor: pointer;
+    border: 1px solid var(--border); background: var(--surface); color: var(--text);
+    transition: background-color .18s ease, border-color .18s ease, opacity .18s ease;
+  }
+  .btn:hover:not(:disabled) { background: var(--surface-2); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  .btn-primary { background: var(--primary); color: var(--primary-text); border-color: transparent; }
+  .btn-primary:hover:not(:disabled) { background: color-mix(in srgb, var(--primary) 88%, black); }
+
+  .btn-danger { background: transparent; color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, transparent); }
+  .btn-danger:hover:not(:disabled) { background: var(--danger-bg); }
+
+  .btn-sm { min-height: 36px; padding: 0 .7rem; font-size: .8rem; }
+
+  .input, .select, .textarea {
+    width: 100%; min-height: 44px; padding: .5rem .75rem;
+    background: var(--surface); color: var(--text);
+    border: 1px solid var(--border); border-radius: .6rem;
+    font: inherit; font-size: .9rem;
+  }
+  .textarea { min-height: 96px; line-height: 1.8; }
+  .input[aria-invalid="true"], .textarea[aria-invalid="true"] { border-color: var(--danger); }
+
+  .label { display: block; font-size: .82rem; font-weight: 600; margin-bottom: .35rem; color: var(--text); }
+  .hint { font-size: .75rem; color: var(--muted); margin-top: .3rem; }
+  .error-text { font-size: .78rem; color: var(--danger); margin-top: .3rem; font-weight: 600; }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: .3rem;
+    padding: .15rem .55rem; border-radius: 999px;
+    font-size: .72rem; font-weight: 700; white-space: nowrap;
+  }
+
+  .table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+  .table th {
+    text-align: right; font-weight: 700; font-size: .78rem; color: var(--muted);
+    padding: .65rem .75rem; border-bottom: 1px solid var(--border); background: var(--surface-2);
+    position: sticky; top: 0; z-index: 1;
+  }
+  .table td { padding: .65rem .75rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .table tbody tr:hover { background: var(--surface-2); }
+
+  .nav-item {
+    display: flex; align-items: center; gap: .6rem;
+    min-height: 44px; padding: 0 .85rem; border-radius: .6rem;
+    font-size: .88rem; font-weight: 500; color: #c7d6ef;
+    transition: background-color .18s ease, color .18s ease;
+  }
+  .nav-item:hover { background: rgba(255,255,255,.08); color: #fff; }
+  .nav-item[aria-current="page"] { background: var(--color-brand-600); color: #fff; font-weight: 700; }
+
+  /* برگه نامه — همین استایل هم روی صفحه و هم در چاپ/PDF استفاده می‌شود */
+  .letter-sheet {
+    background: #fff; color: #111827;
+    width: 210mm; min-height: 297mm; margin-inline: auto;
+    padding: 0; position: relative;
+    box-shadow: 0 10px 40px rgb(15 23 42 / .15);
+  }
+  .letter-body { padding: 18mm 20mm; font-size: 12pt; line-height: 2.1; text-align: justify; }
+  .letter-body p { margin-bottom: 1em; }
+  .letter-body table { width: 100%; border-collapse: collapse; margin: 1em 0; }
+  .letter-body td, .letter-body th { border: 1px solid #cbd5e1; padding: .4em .6em; }
+  .letter-body ul, .letter-body ol { padding-inline-start: 1.5em; margin-bottom: 1em; }
+  .letter-body ul { list-style: disc; }
+  .letter-body ol { list-style: decimal; }
+  .letter-body h1, .letter-body h2, .letter-body h3 { margin: .8em 0 .4em; }
+}
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: #fff; }
+  .letter-sheet { box-shadow: none; width: auto; min-height: auto; margin: 0; }
+  @page { size: A4; margin: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+/* ---------------------------------------------------------
+   نگاشت توکن‌های shadcn/ui به توکن‌های معنایی بالا
+   تا کامپوننت‌های آماده shadcn بدون تغییر کار کنند.
+   --------------------------------------------------------- */
+@theme inline {
+  --color-background: var(--bg);
+  --color-foreground: var(--text);
+  --color-card: var(--surface);
+  --color-card-foreground: var(--text);
+  --color-popover: var(--surface);
+  --color-popover-foreground: var(--text);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-text);
+  --color-secondary: var(--surface-2);
+  --color-secondary-foreground: var(--text);
+  --color-muted: var(--surface-2);
+  --color-muted-foreground: var(--muted);
+  --color-accent: var(--surface-2);
+  --color-accent-foreground: var(--text);
+  --color-destructive: var(--danger);
+  --color-border: var(--border);
+  --color-input: var(--border);
+  --color-ring: var(--ring);
+}
+
+/* ---------------------------------------------------------
+   موشن ورود — CSS خالص. GPU-friendly (فقط transform/opacity).
+   --------------------------------------------------------- */
+@keyframes fadeSlideIn { to { opacity: 1; filter: blur(0); transform: translateY(0); } }
+@keyframes slideRightIn { to { opacity: 1; filter: blur(0); transform: translateX(0); } }
+@keyframes testimonialIn { to { opacity: 1; filter: blur(0); transform: translateY(0) scale(1); } }
+
+.animate-element {
+  opacity: 0; filter: blur(4px); transform: translateY(12px);
+  animation: fadeSlideIn .55s cubic-bezier(.22,.61,.36,1) forwards;
+}
+.animate-slide-right {
+  opacity: 0; filter: blur(6px); transform: translateX(-24px);
+  animation: slideRightIn .7s cubic-bezier(.22,.61,.36,1) forwards;
+}
+.animate-testimonial {
+  opacity: 0; filter: blur(6px); transform: translateY(16px) scale(.96);
+  animation: testimonialIn .6s cubic-bezier(.22,.61,.36,1) forwards;
+}
+
+.animate-delay-100 { animation-delay: .10s } .animate-delay-200 { animation-delay: .20s }
+.animate-delay-300 { animation-delay: .30s } .animate-delay-400 { animation-delay: .40s }
+.animate-delay-500 { animation-delay: .50s } .animate-delay-600 { animation-delay: .60s }
+.animate-delay-700 { animation-delay: .70s } .animate-delay-800 { animation-delay: .80s }
+.animate-delay-900 { animation-delay: .90s } .animate-delay-1000 { animation-delay: 1s }
+.animate-delay-1200 { animation-delay: 1.2s } .animate-delay-1400 { animation-delay: 1.4s }
+
+/* prefers-reduced-motion بالا مدت‌ها را صفر می‌کند؛ اینجا حالت پایانی را تضمین می‌کنیم */
+@media (prefers-reduced-motion: reduce) {
+  .animate-element, .animate-slide-right, .animate-testimonial {
+    opacity: 1; filter: none; transform: none;
+  }
+}
+
+.custom-checkbox {
+  appearance: none; width: 18px; height: 18px; flex: none;
+  border: 1.5px solid var(--border); border-radius: 5px; background: var(--surface);
+  cursor: pointer; transition: background-color .15s ease, border-color .15s ease;
+}
+.custom-checkbox:checked {
+  background: var(--primary); border-color: var(--primary);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='white' stroke-width='2.5'%3E%3Cpath d='M3 8.5l3.5 3.5L13 5'/%3E%3C/svg%3E");
+  background-size: 14px; background-position: center; background-repeat: no-repeat;
+}

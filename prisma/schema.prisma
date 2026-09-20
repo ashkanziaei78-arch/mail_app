@@ -1,0 +1,587 @@
+// ==========================================================
+// مدل داده سامانه میلینگ سازمانی — Prisma Schema (PostgreSQL)
+// ==========================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------
+// Enums
+// ---------------------------------------------------------
+
+enum UserRole {
+  SUPER_ADMIN // مدیر کل سامانه
+  ORG_ADMIN   // مدیر سازمان
+  DEPT_ADMIN  // مدیر واحد
+  USER        // کاربر عادی
+  APPROVER    // ناظر / تأییدکننده
+}
+
+enum EntityStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+enum Visibility {
+  PUBLIC  // دفترچه عمومی سازمان — همه کاربران سازمان می‌بینند
+  PRIVATE // دفترچه خصوصی — فقط مالک و مدیران
+}
+
+enum CampaignStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  PROCESSING
+  COMPLETED
+  CANCELLED
+  FAILED
+}
+
+enum RecipientStatus {
+  PENDING
+  DOCUMENT_GENERATED
+  SMS_QUEUED
+  SMS_SENT
+  SMS_FAILED
+  SMS_DELIVERED
+  SKIPPED
+}
+
+enum SmsStatus {
+  QUEUED
+  SENT
+  FAILED
+  DELIVERED
+  CANCELLED
+}
+
+enum GroupType {
+  MANUAL
+  SMART // فیلتر ذخیره‌شده
+}
+
+enum Confidentiality {
+  NORMAL       // نامه معمولی — لینک بدون کد
+  CONFIDENTIAL // محرمانه — لینک با کد دسترسی یک‌بارمصرف
+}
+
+// ---------------------------------------------------------
+// سازمان و ساختار سازمانی
+// ---------------------------------------------------------
+
+model Organization {
+  id          String       @id @default(uuid())
+  name        String
+  slug        String       @unique
+  description String?
+  status      EntityStatus @default(ACTIVE)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  deletedAt   DateTime?
+
+  departments          Department[]
+  users                User[]
+  contacts             Contact[]
+  contactOrgs          ContactOrganization[]
+  tags                 Tag[]
+  groups               Group[]
+  letterheads          Letterhead[]
+  letterTemplates      LetterTemplate[]
+  letters              Letter[]
+  campaigns            Campaign[]
+  smsTemplates         SmsTemplate[]
+  smsProviderConfigs   SmsProviderConfig[]
+  auditLogs            AuditLog[]
+  notificationSettings NotificationSetting[]
+
+  @@index([status])
+}
+
+model Department {
+  id             String       @id @default(uuid())
+  organizationId String
+  name           String
+  parentId       String? // ساختار سلسله‌مراتبی واحدها
+  status         EntityStatus @default(ACTIVE)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  deletedAt      DateTime?
+
+  organization Organization          @relation(fields: [organizationId], references: [id])
+  parent       Department?           @relation("DeptHierarchy", fields: [parentId], references: [id])
+  children     Department[]          @relation("DeptHierarchy")
+  users        User[]
+  contactOrgs  ContactOrganization[]
+  campaigns    Campaign[]
+  letterheads  Letterhead[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+// ---------------------------------------------------------
+// کاربران، نقش‌ها، مجوزها
+// ---------------------------------------------------------
+
+model User {
+  id             String       @id @default(uuid())
+  organizationId String
+  departmentId   String?
+  fullName       String
+  email          String       @unique
+  passwordHash   String
+  role           UserRole
+  status         EntityStatus @default(ACTIVE)
+  lastLoginAt    DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  deletedAt      DateTime?
+
+  organization     Organization     @relation(fields: [organizationId], references: [id])
+  department       Department?      @relation(fields: [departmentId], references: [id])
+  rolePermissions  UserPermission[]
+  createdContacts  Contact[]        @relation("ContactCreatedBy")
+  ownedContacts    Contact[]        @relation("ContactOwner")
+  campaignsCreated Campaign[]       @relation("CampaignCreatedBy")
+  approvals        Campaign[]       @relation("CampaignApprovedBy")
+  auditLogs        AuditLog[]
+
+  @@index([organizationId, departmentId])
+}
+
+model Role {
+  id          String       @id @default(uuid())
+  name        String       @unique
+  description String?
+  permissions Permission[]
+}
+
+model Permission {
+  id    String           @id @default(uuid())
+  code  String           @unique // مثال: contacts.create, campaigns.approve
+  label String
+  roles Role[]
+  users UserPermission[]
+}
+
+// override دقیق مجوز برای یک کاربر خاص، فراتر از نقش پیش‌فرض
+model UserPermission {
+  id           String  @id @default(uuid())
+  userId       String
+  permissionId String
+  granted      Boolean @default(true)
+
+  user       User       @relation(fields: [userId], references: [id])
+  permission Permission @relation(fields: [permissionId], references: [id])
+
+  @@unique([userId, permissionId])
+}
+
+// ---------------------------------------------------------
+// مخاطبین
+// ---------------------------------------------------------
+
+model Contact {
+  id                   String       @id @default(uuid())
+  organizationId       String
+  ownerUserId          String? // مالک اطلاعات (برای دفترچه خصوصی الزامی است)
+  createdByUserId      String
+  visibility           Visibility   @default(PUBLIC)
+  firstName            String
+  lastName             String
+  formalTitle          String? // عنوان رسمی خطاب: جناب آقای / سرکار خانم
+  mobilePhone          String?
+  landlinePhone        String?
+  email                String?
+  province             String?
+  city                 String?
+  address              String?
+  notes                String?
+  smsConsent           Boolean      @default(true)
+  status               EntityStatus @default(ACTIVE)
+  lastUsedInCampaignAt DateTime?
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+  deletedAt            DateTime? // حذف نرم
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  owner        User?        @relation("ContactOwner", fields: [ownerUserId], references: [id])
+  createdBy    User         @relation("ContactCreatedBy", fields: [createdByUserId], references: [id])
+
+  organizations      ContactOrganization[] // سمت‌های مختلف در سازمان‌های مختلف
+  phones             ContactPhone[]
+  tags               ContactTag[]
+  groupMembers       GroupMember[]
+  campaignRecipients CampaignRecipient[]
+  history            ContactHistory[]
+
+  @@unique([organizationId, visibility, ownerUserId, mobilePhone], name: "uniq_book_mobile")
+  @@index([organizationId, status])
+  @@index([organizationId, visibility, ownerUserId])
+  @@index([mobilePhone])
+  @@index([lastName, firstName])
+}
+
+// سمت/سازمان/واحد/رستهٔ شغلی یک فرد
+model ContactOrganization {
+  id               String   @id @default(uuid())
+  contactId        String
+  organizationId   String
+  departmentId     String?
+  organizationName String // نام سازمانِ طرف مقابل (ممکن است خارج از تننت باشد)
+  jobTitle         String?
+  jobCategory      String? // رسته شغلی
+  isPrimary        Boolean  @default(false)
+  createdAt        DateTime @default(now())
+
+  contact      Contact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id])
+  department   Department?  @relation(fields: [departmentId], references: [id])
+
+  @@index([contactId])
+}
+
+model ContactPhone {
+  id        String  @id @default(uuid())
+  contactId String
+  phone     String
+  label     String? // مثال: همراه دوم، داخلی دفتر
+  contact   Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@index([contactId])
+}
+
+model ContactHistory {
+  id          String   @id @default(uuid())
+  contactId   String
+  changedById String
+  changeType  String // CREATE | UPDATE | MERGE | DEACTIVATE | DELETE
+  diffJson    Json
+  createdAt   DateTime @default(now())
+
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@index([contactId])
+}
+
+// ---------------------------------------------------------
+// برچسب و گروه‌بندی
+// ---------------------------------------------------------
+
+model Tag {
+  id             String    @id @default(uuid())
+  organizationId String
+  name           String
+  color          String?
+  createdAt      DateTime  @default(now())
+  deletedAt      DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  contacts     ContactTag[]
+
+  @@unique([organizationId, name])
+}
+
+model ContactTag {
+  contactId String
+  tagId     String
+
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([contactId, tagId])
+  @@index([tagId])
+}
+
+model Group {
+  id             String    @id @default(uuid())
+  organizationId String
+  name           String
+  type           GroupType @default(MANUAL)
+  filterJson     Json? // گروه هوشمند: فیلتر ذخیره‌شده
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  organization Organization  @relation(fields: [organizationId], references: [id])
+  members      GroupMember[]
+
+  @@unique([organizationId, name])
+}
+
+model GroupMember {
+  groupId   String
+  contactId String
+  addedAt   DateTime @default(now())
+
+  group   Group   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, contactId])
+  @@index([contactId])
+}
+
+// ---------------------------------------------------------
+// سربرگ و قالب نامه
+// ---------------------------------------------------------
+
+model Letterhead {
+  id             String       @id @default(uuid())
+  organizationId String
+  departmentId   String?
+  name           String
+  fileUrl        String // مسیر تصویر سربرگ
+  footerFileUrl  String? // تصویر پاورقی (اختیاری)
+  isDefault      Boolean      @default(false)
+  status         EntityStatus @default(ACTIVE)
+  version        Int          @default(1)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organization Organization        @relation(fields: [organizationId], references: [id])
+  department   Department?         @relation(fields: [departmentId], references: [id])
+  letters      Letter[]
+  versions     LetterheadVersion[]
+
+  @@index([organizationId, isDefault])
+}
+
+model LetterheadVersion {
+  id           String   @id @default(uuid())
+  letterheadId String
+  fileUrl      String
+  version      Int
+  createdAt    DateTime @default(now())
+
+  letterhead Letterhead @relation(fields: [letterheadId], references: [id], onDelete: Cascade)
+
+  @@unique([letterheadId, version])
+}
+
+model LetterTemplate {
+  id             String       @id @default(uuid())
+  organizationId String
+  name           String
+  bodyHtml       String // متن قالب با متغیرها {{نام}} ...
+  variablesJson  Json?
+  status         EntityStatus @default(ACTIVE)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  letters      Letter[]
+}
+
+model Letter {
+  id                 String    @id @default(uuid())
+  organizationId     String
+  campaignId         String?
+  letterTemplateId   String?
+  letterheadId       String?
+  title              String
+  letterNumber       String?
+  letterDate         DateTime?
+  subject            String?
+  bodyHtml           String
+  senderName         String?
+  senderSignatureUrl String?
+  attachmentsJson    Json?
+  isDraft            Boolean   @default(true)
+  version            Int       @default(1)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  organization   Organization        @relation(fields: [organizationId], references: [id])
+  campaign       Campaign?           @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  letterTemplate LetterTemplate?     @relation(fields: [letterTemplateId], references: [id])
+  letterhead     Letterhead?         @relation(fields: [letterheadId], references: [id])
+  documents      GeneratedDocument[]
+
+  @@index([organizationId, campaignId])
+}
+
+// ---------------------------------------------------------
+// کمپین‌ها
+// ---------------------------------------------------------
+
+model Campaign {
+  id               String          @id @default(uuid())
+  organizationId   String
+  departmentId     String?
+  name             String
+  subject          String?
+  status           CampaignStatus  @default(DRAFT)
+  confidentiality  Confidentiality @default(NORMAL)
+  createdByUserId  String
+  approvedByUserId String?
+  approvedAt       DateTime?
+  rejectionReason  String?
+  clonedFromId     String?
+  smsTemplateId    String?
+  smsBodyText      String?
+  smsProvider      String?
+  scheduledAt      DateTime?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  department   Department?  @relation(fields: [departmentId], references: [id])
+  createdBy    User         @relation("CampaignCreatedBy", fields: [createdByUserId], references: [id])
+  approvedBy   User?        @relation("CampaignApprovedBy", fields: [approvedByUserId], references: [id])
+  clonedFrom   Campaign?    @relation("CampaignClone", fields: [clonedFromId], references: [id])
+  clones       Campaign[]   @relation("CampaignClone")
+  smsTemplate  SmsTemplate? @relation(fields: [smsTemplateId], references: [id])
+
+  letters    Letter[]
+  recipients CampaignRecipient[]
+
+  @@index([organizationId, status])
+}
+
+model CampaignRecipient {
+  id                   String          @id @default(uuid())
+  campaignId           String
+  contactId            String
+  letterOverrideHtml   String? // متن اختصاصی این مخاطب
+  letterheadOverrideId String?
+  status               RecipientStatus @default(PENDING)
+  errorMessage         String?
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+
+  campaign   Campaign           @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  contact    Contact            @relation(fields: [contactId], references: [id])
+  document   GeneratedDocument?
+  smsMessage SmsMessage?
+
+  @@unique([campaignId, contactId])
+  @@index([campaignId, status])
+}
+
+// ---------------------------------------------------------
+// اسناد تولیدشده و لینک کوتاه
+// ---------------------------------------------------------
+
+model GeneratedDocument {
+  id                  String   @id @default(uuid())
+  campaignRecipientId String   @unique
+  letterId            String?
+  renderedHtml        String // متن نهایی نامه پس از جایگذاری متغیرها
+  fileHash            String // جلوگیری از تولید مجدد تکراری
+  documentNumber      String   @unique
+  version             Int      @default(1)
+  createdAt           DateTime @default(now())
+
+  campaignRecipient CampaignRecipient @relation(fields: [campaignRecipientId], references: [id], onDelete: Cascade)
+  letter            Letter?           @relation(fields: [letterId], references: [id])
+  shortLink         ShortLink?
+
+  @@index([fileHash])
+}
+
+model ShortLink {
+  id           String    @id @default(uuid())
+  documentId   String    @unique
+  code         String    @unique // 10 کاراکتر تصادفی base58
+  isActive     Boolean   @default(true)
+  accessCode   String? // کد دسترسی نامه محرمانه
+  expiresAt    DateTime?
+  viewCount    Int       @default(0)
+  lastViewedAt DateTime?
+  createdAt    DateTime  @default(now())
+
+  document GeneratedDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+}
+
+// ---------------------------------------------------------
+// پیامک
+// ---------------------------------------------------------
+
+model SmsProviderConfig {
+  id              String   @id @default(uuid())
+  organizationId  String
+  providerName    String // kavenegar | console
+  apiKeyEncrypted String // رمزنگاری‌شده با AES-256-GCM
+  senderNumber    String
+  isDefault       Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+}
+
+model SmsTemplate {
+  id             String   @id @default(uuid())
+  organizationId String
+  name           String
+  bodyText       String // با متغیرهای {{نام}}, {{لینک}}
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  campaigns    Campaign[]
+}
+
+model SmsMessage {
+  id                  String    @id @default(uuid())
+  campaignRecipientId String    @unique
+  contactId           String
+  toPhone             String
+  finalText           String // متن نهایی ارسال‌شده
+  providerMessageId   String?
+  status              SmsStatus @default(QUEUED)
+  segmentsCount       Int       @default(1)
+  retryCount          Int       @default(0)
+  errorMessage        String?
+  sentAt              DateTime?
+  deliveredAt         DateTime?
+  createdAt           DateTime  @default(now())
+
+  campaignRecipient CampaignRecipient @relation(fields: [campaignRecipientId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+}
+
+// ---------------------------------------------------------
+// لاگ و تنظیمات
+// ---------------------------------------------------------
+
+model AuditLog {
+  id             String   @id @default(uuid())
+  organizationId String?
+  userId         String?
+  action         String // CONTACT_CREATE | CAMPAIGN_APPROVE | SMS_SEND ...
+  entityType     String
+  entityId       String?
+  metadataJson   Json?
+  ipAddress      String?
+  createdAt      DateTime @default(now())
+
+  organization Organization? @relation(fields: [organizationId], references: [id])
+  user         User?         @relation(fields: [userId], references: [id])
+
+  @@index([organizationId, entityType, entityId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model NotificationSetting {
+  id             String  @id @default(uuid())
+  organizationId String
+  userId         String? // خالی = تنظیم سطح سازمان
+  channel        String // EMAIL | SMS | IN_APP
+  eventType      String // CAMPAIGN_COMPLETED | APPROVAL_NEEDED | SMS_FAILED
+  isEnabled      Boolean @default(true)
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, userId, channel, eventType])
+}
