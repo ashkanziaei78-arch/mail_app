@@ -40,7 +40,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const sent = smsAgg.filter((s) => s.status === "SENT" || s.status === "DELIVERED").reduce((a, s) => a + s._count._all, 0);
   const failed = smsAgg.filter((s) => s.status === "FAILED").reduce((a, s) => a + s._count._all, 0);
   const totalSms = sent + failed;
-  const successRate = totalSms ? ((sent / totalSms) * 100).toFixed(1) : "—";
+  const successRate = totalSms ? ((sent / totalSms) * 100).toLocaleString("fa-IR", { maximumFractionDigits: 1 }) : "—";
 
   const departments = await prisma.department.findMany({ where: org });
   const deptRows = byDepartment

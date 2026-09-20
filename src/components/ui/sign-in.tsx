@@ -80,7 +80,9 @@ export const SignInPage: React.FC<SignInPageProps> = ({
             <h1 className="animate-element animate-delay-100 text-3xl font-bold leading-tight md:text-4xl">{title}</h1>
             <p className="animate-element animate-delay-200 text-muted-foreground">{description}</p>
 
-            <form className="space-y-5" onSubmit={onSignIn} noValidate>
+            {/* method="post" لازم است: اگر فرم پیش از hydration ارسال شود، پیش‌فرض GET
+                گذرواژه را در نوار آدرس و تاریخچه مرورگر می‌گذاشت. */}
+            <form className="space-y-5" method="post" onSubmit={onSignIn} noValidate>
               <div className="animate-element animate-delay-300">
                 <label htmlFor="email" className="label">ایمیل سازمانی</label>
                 <GlassInputWrapper>
@@ -183,7 +185,7 @@ export const SignInPage: React.FC<SignInPageProps> = ({
           <div className="animate-slide-right animate-delay-300 absolute inset-3 rounded-3xl bg-gradient-to-t from-black/70 via-black/20 to-transparent md:inset-4" />
 
           {heroCaption && testimonials.length === 0 && (
-            <div className="animate-element animate-delay-1000 absolute bottom-8 right-8 left-8 text-white md:bottom-12 md:right-12 md:left-12">
+            <div className="animate-element animate-delay-1000 absolute bottom-8 right-8 left-8 hidden text-white md:bottom-12 md:right-12 md:left-12 md:block">
               {heroCaption}
             </div>
           )}
