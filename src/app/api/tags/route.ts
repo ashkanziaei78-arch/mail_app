@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { handle, readBody, requireApi } from "@/lib/api";
+import { handle, readBody, requireApi, ApiError } from "@/lib/api";
 import { audit } from "@/lib/audit";
 
 const schema = z.object({
@@ -23,6 +23,12 @@ export async function POST(request: Request) {
   return handle(async () => {
     const user = await requireApi("tags.write");
     const input = await readBody(request, schema);
+
+    const duplicate = await prisma.tag.findFirst({
+      where: { organizationId: user.organizationId, name: input.name, deletedAt: null },
+    });
+    if (duplicate) throw new ApiError(409, `برچسب #${input.name} از قبل وجود دارد.`);
+
     const tag = await prisma.tag.create({
       data: { organizationId: user.organizationId, name: input.name, color: input.color || null },
     });

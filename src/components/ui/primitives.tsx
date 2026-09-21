@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { cloneElement, isValidElement, useId, type ReactElement, type ReactNode } from "react";
 
 export function PageHeader({ title, description, action }: { title: string; description?: string; action?: ReactNode }) {
   return (
@@ -50,19 +50,38 @@ export function EmptyState({ title, description, action }: { title: string; desc
   );
 }
 
+/**
+ * برچسب فرم را واقعاً به کنترل وصل می‌کند: شناسه تولید و روی فرزند ست می‌شود.
+ * (پیش‌تر label و input فقط کنار هم بودند و axe آن را «فیلد بدون برچسب» می‌دید —
+ * یعنی خواننده صفحه اسم فیلد را نمی‌خواند.)
+ */
 export function Field({ label, hint, error, required, children }: {
   label: string; hint?: string; error?: string; required?: boolean; children: ReactNode;
 }) {
+  const id = useId();
+  const hintId = `${id}-hint`;
+  const errorId = `${id}-error`;
+
+  const describedBy = [hint && !error ? hintId : null, error ? errorId : null].filter(Boolean).join(" ");
+  const control = isValidElement(children)
+    ? cloneElement(children as ReactElement<Record<string, unknown>>, {
+        id: (children.props as { id?: string }).id ?? id,
+        "aria-describedby": describedBy || undefined,
+        "aria-invalid": error ? true : undefined,
+        "aria-required": required || undefined,
+      })
+    : children;
+
   return (
     <div>
-      <label className="label">
+      <label className="label" htmlFor={isValidElement(children) ? ((children.props as { id?: string }).id ?? id) : undefined}>
         {label}
         {required && <span style={{ color: "var(--danger)" }} aria-hidden="true"> *</span>}
         {required && <span className="sr-only"> (الزامی)</span>}
       </label>
-      {children}
-      {hint && !error && <p className="hint">{hint}</p>}
-      {error && <p className="error-text" role="alert">{error}</p>}
+      {control}
+      {hint && !error && <p id={hintId} className="hint">{hint}</p>}
+      {error && <p id={errorId} className="error-text" role="alert">{error}</p>}
     </div>
   );
 }

@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { Copy, ExternalLink, Send, Trash2 } from "lucide-react";
 import Stepper from "@/components/ui/stepper";
 import { Badge, Field, PageHeader } from "@/components/ui/primitives";
+import Modal from "@/components/ui/modal";
+import { useConfirm, useToast } from "@/components/ui/toast";
 import { CAMPAIGN_STATUS, RECIPIENT_STATUS } from "@/lib/labels";
 import { applyVariables, buildContext, LETTER_VARIABLES, SMS_VARIABLES } from "@/lib/render";
 import { countSegments } from "@/lib/sms";
@@ -35,9 +37,11 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
 }) {
   const router = useRouter();
   const locked = ["PROCESSING", "COMPLETED", "CANCELLED"].includes(campaign.status);
+  const toast = useToast();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const [step, setStep] = useState(recipients.length === 0 ? 2 : locked ? 6 : 3);
-  const [message, setMessage] = useState<{ tone: "ok" | "err"; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
 
   // انتخاب مخاطبین (مرحله ۲)
   const [contactIds, setContactIds] = useState<string[]>([]);
@@ -62,28 +66,26 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
 
   async function act(payload: Record<string, unknown>, okText?: string) {
     setBusy(true);
-    setMessage(null);
     const res = await fetch(`/api/campaigns/${campaign.id}/actions`, {
       method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload),
     });
     const json = await res.json();
     setBusy(false);
-    if (!json.ok) { setMessage({ tone: "err", text: json.error }); return null; }
-    if (okText) setMessage({ tone: "ok", text: okText });
+    if (!json.ok) { toast("error", json.error); return null; }
+    if (okText) toast("success", okText);
     router.refresh();
     return json.data;
   }
 
   async function saveLetter() {
     setBusy(true);
-    setMessage(null);
     const res = await fetch(`/api/campaigns/${campaign.id}`, {
       method: "PATCH", headers: { "content-type": "application/json" },
       body: JSON.stringify({ smsBodyText: smsText, letter: { bodyHtml: body, senderName, letterheadId: letterheadId || null } }),
     });
     const json = await res.json();
     setBusy(false);
-    if (!json.ok) { setMessage({ tone: "err", text: json.error }); return false; }
+    if (!json.ok) { toast("error", json.error); return false; }
     router.refresh();
     return true;
   }
@@ -138,12 +140,6 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
           این کمپین رد شد: {campaign.rejectionReason}
         </p>
       )}
-      {message && (
-        <p role="alert" className="mb-4 rounded-xl px-4 py-3 text-sm font-semibold"
-           style={{ background: message.tone === "ok" ? "var(--success-bg)" : "var(--danger-bg)", color: message.tone === "ok" ? "var(--success)" : "var(--danger)" }}>
-          {message.text}
-        </p>
-      )}
 
       <Stepper current={step} onSelect={setStep} />
 
@@ -168,7 +164,7 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
 
               <fieldset>
                 <legend className="label">گروه‌ها</legend>
-                <div className="max-h-56 space-y-1 overflow-y-auto">
+                <div className="max-h-56 space-y-1 overflow-y-auto" tabIndex={0}>
                   {options.groups.length === 0 && <p className="hint">گروهی ساخته نشده است.</p>}
                   {options.groups.map((g) => (
                     <label key={g.id} className="flex cursor-pointer items-center gap-2 rounded-lg p-1 text-sm hover:bg-black/5">
@@ -186,7 +182,7 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
                   <option value="OR">هر کدام از برچسب‌ها (OR)</option>
                   <option value="AND">همه برچسب‌ها همزمان (AND)</option>
                 </select>
-                <div className="max-h-44 space-y-1 overflow-y-auto">
+                <div className="max-h-44 space-y-1 overflow-y-auto" tabIndex={0}>
                   {options.tags.length === 0 && <p className="hint">برچسبی ساخته نشده است.</p>}
                   {options.tags.map((t) => (
                     <label key={t.id} className="flex cursor-pointer items-center gap-2 rounded-lg p-1 text-sm hover:bg-black/5">
@@ -226,7 +222,7 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
             {recipients.length === 0 ? (
               <p className="text-sm" style={{ color: "var(--muted)" }}>هنوز مخاطبی انتخاب نشده است.</p>
             ) : (
-              <div className="max-h-[60dvh] overflow-auto">
+              <div className="max-h-[60dvh] overflow-auto" tabIndex={0} role="region" aria-label="فهرست مخاطبین کمپین">
                 <table className="table">
                   <caption className="sr-only">مخاطبین این کمپین</caption>
                   <thead><tr><th>نام</th><th>سازمان / سمت</th><th>شماره همراه</th><th>متن اختصاصی</th><th>وضعیت</th><th><span className="sr-only">حذف</span></th></tr></thead>
@@ -370,10 +366,7 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
                   )}
                   {permissions.approve && campaign.status === "PENDING_APPROVAL" && (
                     <>
-                      <button className="btn btn-danger" disabled={busy} onClick={() => {
-                        const reason = prompt("دلیل رد نامه؟");
-                        if (reason) act({ action: "reject", reason }, "کمپین رد شد.");
-                      }}>رد نامه</button>
+                      <button className="btn btn-danger" disabled={busy} onClick={() => setRejecting(true)}>رد نامه</button>
                       <button className="btn btn-primary" disabled={busy} onClick={() => act({ action: "approve" }, "کمپین تأیید شد. حالا می‌توانید ارسال کنید.")}>
                         تأیید نامه
                       </button>
@@ -381,7 +374,14 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
                   )}
                   {permissions.send && campaign.status === "APPROVED" && (
                     <button className="btn btn-primary" disabled={busy}
-                            onClick={() => confirm(`پیامک برای ${recipients.length} مخاطب ارسال شود؟ این عملیات برگشت‌پذیر نیست.`) && act({ action: "send" }, "ارسال انجام شد.")}>
+                            onClick={async () => {
+                              const ok = await confirm({
+                                title: "ارسال نهایی پیامک",
+                                body: `پیامک برای ${faNumber(recipients.length)} مخاطب ارسال می‌شود. پیامک ارسال‌شده قابل بازگشت نیست و هزینه آن محاسبه می‌گردد.`,
+                                confirmLabel: "ارسال کن",
+                              });
+                              if (ok) act({ action: "send" }, "ارسال انجام شد.");
+                            }}>
                       <Send className="h-4 w-4" />ارسال پیامک به {faNumber(recipients.length)} مخاطب
                     </button>
                   )}
@@ -407,7 +407,7 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
                   </div>
                 </div>
 
-                <div className="max-h-[50dvh] overflow-auto">
+                <div className="max-h-[50dvh] overflow-auto" tabIndex={0} role="region" aria-label="نتیجه ارسال">
                   <table className="table">
                     <caption className="sr-only">وضعیت ارسال به تفکیک مخاطب</caption>
                     <thead><tr><th>مخاطب</th><th>شماره</th><th>وضعیت</th><th>لینک نامه</th><th>کد دسترسی</th></tr></thead>
@@ -422,7 +422,7 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
                           </td>
                           <td>
                             {r.shortCode ? (
-                              <a className="inline-flex items-center gap-1 text-brand-600 hover:underline" href={`/l/${r.shortCode}`} target="_blank" rel="noopener noreferrer">
+                              <a className="link inline-flex items-center gap-1" href={`/l/${r.shortCode}`} target="_blank" rel="noopener noreferrer">
                                 <ExternalLink className="h-3.5 w-3.5" />مشاهده
                               </a>
                             ) : "—"}
@@ -438,6 +438,14 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
           </section>
         )}
       </div>
+
+      {rejecting && (
+        <RejectDialog
+          onClose={() => setRejecting(false)}
+          onSubmit={async (reason) => { setRejecting(false); await act({ action: "reject", reason }, "کمپین رد شد و به پیش‌نویس برگشت."); }}
+        />
+      )}
+      {confirmDialog}
 
       {override && (
         <OverrideDialog
@@ -456,19 +464,44 @@ function OverrideDialog({ recipient, defaultBody, onClose, onSave }: {
 }) {
   const [html, setHtml] = useState(recipient.overrideHtml ?? defaultBody);
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4" role="dialog" aria-modal="true" aria-label={`متن اختصاصی برای ${recipient.name}`}>
-      <div className="card max-h-[92dvh] w-full max-w-2xl space-y-4 overflow-y-auto p-5">
-        <h2 className="text-lg font-bold">متن اختصاصی برای {recipient.name}</h2>
-        <p className="hint">این متن فقط برای همین مخاطب استفاده می‌شود و متن اصلی کمپین را تغییر نمی‌دهد.</p>
-        <textarea className="textarea h-64 font-mono text-xs" value={html} onChange={(e) => setHtml(e.target.value)} />
-        <div className="flex justify-between gap-2">
-          <button className="btn btn-danger" onClick={() => onSave(null)}>حذف متن اختصاصی</button>
-          <span className="flex gap-2">
-            <button className="btn" onClick={onClose}>انصراف</button>
-            <button className="btn btn-primary" onClick={() => onSave(html)}>ذخیره</button>
-          </span>
-        </div>
-      </div>
-    </div>
+    <Modal
+      title={`متن اختصاصی برای ${recipient.name}`}
+      description="این متن فقط برای همین مخاطب استفاده می‌شود و متن اصلی کمپین را تغییر نمی‌دهد."
+      onClose={onClose}
+      footer={
+        <>
+          <button className="btn btn-danger me-auto" onClick={() => onSave(null)}>حذف متن اختصاصی</button>
+          <button className="btn" onClick={onClose}>انصراف</button>
+          <button className="btn btn-primary" onClick={() => onSave(html)}>ذخیره</button>
+        </>
+      }
+    >
+      <label htmlFor="override-body" className="label">متن نامه این مخاطب</label>
+      <textarea id="override-body" className="textarea h-64 font-mono text-xs" value={html} onChange={(e) => setHtml(e.target.value)} />
+    </Modal>
+  );
+}
+
+function RejectDialog({ onClose, onSubmit }: { onClose: () => void; onSubmit: (reason: string) => void }) {
+  const [reason, setReason] = useState("");
+  return (
+    <Modal
+      title="رد نامه"
+      description="دلیل رد برای سازنده کمپین نمایش داده می‌شود تا بداند چه چیزی را اصلاح کند."
+      size="sm"
+      onClose={onClose}
+      footer={
+        <>
+          <button className="btn" onClick={onClose}>انصراف</button>
+          <button className="btn btn-danger" disabled={reason.trim().length < 3} onClick={() => onSubmit(reason.trim())}>
+            رد کن و برگردان
+          </button>
+        </>
+      }
+    >
+      <Field label="دلیل رد" required hint="حداقل چند کلمه بنویسید.">
+        <textarea className="textarea" value={reason} onChange={(e) => setReason(e.target.value)} autoFocus />
+      </Field>
+    </Modal>
   );
 }

@@ -5,6 +5,9 @@ import { PERMISSIONS } from "../src/lib/rbac";
 
 const prisma = new PrismaClient();
 
+/** گذرواژه داده آزمایشی — با سیاست گذرواژه سامانه سازگار است. */
+const SEED_PASSWORD = "Mailing@1404";
+
 const PERMISSION_LABELS: Record<string, string> = {
   "contacts.read": "مشاهده مخاطبین",
   "contacts.write": "ثبت و ویرایش مخاطب",
@@ -71,7 +74,7 @@ async function main() {
     ),
   );
 
-  const password = await bcrypt.hash("Admin@12345", 10);
+  const password = await bcrypt.hash(SEED_PASSWORD, 10);
   const users = await Promise.all(
     [
       { fullName: "مدیر کل سامانه", email: "root@mailing.local", role: "SUPER_ADMIN" as const, departmentId: null },
@@ -81,8 +84,11 @@ async function main() {
     ].map((u) =>
       prisma.user.upsert({
         where: { email: u.email },
-        update: {},
-        create: { ...u, organizationId: organization.id, passwordHash: password },
+        // در محیط تولید گذرواژه حساب موجود بازنویسی نمی‌شود؛ در توسعه بازنشانی می‌گردد
+        update: process.env.NODE_ENV === "production"
+          ? {}
+          : { passwordHash: password, failedLoginCount: 0, lockedUntil: null, mustChangePassword: false, status: "ACTIVE" },
+        create: { ...u, organizationId: organization.id, passwordHash: password, mustChangePassword: false },
       }),
     ),
   );
@@ -151,7 +157,7 @@ async function main() {
 
   console.log(`✅ آماده شد — ${CONTACTS.length} مخاطب، ${tags.length} برچسب، ${departments.length} واحد.
 
-حساب‌های ورود (گذرواژه همه: Admin@12345)
+حساب‌های ورود (گذرواژه همه: ${SEED_PASSWORD})
   root@mailing.local      مدیر کل سامانه
   admin@mailing.local     مدیر سازمان
   approver@mailing.local  تأییدکننده

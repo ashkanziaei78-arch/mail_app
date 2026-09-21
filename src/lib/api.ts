@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { ZodError, type ZodSchema } from "zod";
 import { currentUser, type CurrentUser } from "./auth";
 import { can, type PermissionCode } from "./rbac";
+import { RateLimitError } from "./rate-limit";
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -32,6 +33,12 @@ export async function handle<T>(fn: () => Promise<T>): Promise<NextResponse> {
   try {
     return NextResponse.json({ ok: true, data: await fn() });
   } catch (error) {
+    if (error instanceof RateLimitError) {
+      return NextResponse.json(
+        { ok: false, error: error.message },
+        { status: 429, headers: { "retry-after": String(error.retryAfterSeconds) } },
+      );
+    }
     if (error instanceof ApiError) {
       return NextResponse.json({ ok: false, error: error.message }, { status: error.status });
     }

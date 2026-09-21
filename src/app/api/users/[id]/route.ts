@@ -3,12 +3,13 @@ import { prisma } from "@/lib/db";
 import { handle, readBody, requireApi, ApiError } from "@/lib/api";
 import { hashPassword } from "@/lib/auth";
 import { audit } from "@/lib/audit";
+import { validatePassword } from "@/lib/password";
 
 const schema = z.object({
   role: z.enum(["ORG_ADMIN", "DEPT_ADMIN", "APPROVER", "USER"]).optional(),
   status: z.enum(["ACTIVE", "INACTIVE"]).optional(),
   departmentId: z.string().uuid().nullable().optional(),
-  password: z.string().min(8, "گذرواژه باید حداقل ۸ کاراکتر باشد.").optional(),
+  password: z.string().max(200).optional(),
 });
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -19,6 +20,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
     const target = await prisma.user.findFirst({ where: { id, organizationId: admin.organizationId } });
     if (!target) throw new ApiError(404, "کاربر یافت نشد.");
+
+    if (input.password) {
+      const problem = validatePassword(input.password, { email: target.email, fullName: target.fullName });
+      if (problem) throw new ApiError(422, problem);
+    }
     if (target.id === admin.id && input.status === "INACTIVE") {
       throw new ApiError(409, "نمی‌توانید حساب خودتان را غیرفعال کنید.");
     }
@@ -33,6 +39,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         status: input.status,
         departmentId: input.departmentId,
         passwordHash: input.password ? await hashPassword(input.password) : undefined,
+        // تغییر گذرواژه: نشست‌های فعال کاربر باطل و قفل احتمالی برداشته می‌شود
+        passwordChangedAt: input.password ? new Date() : undefined,
+        mustChangePassword: input.password ? true : undefined,
+        failedLoginCount: input.password || input.status === "ACTIVE" ? 0 : undefined,
+        lockedUntil: input.password || input.status === "ACTIVE" ? null : undefined,
       },
     });
 

@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, RefreshCw, Trash2 } from "lucide-react";
 import { Badge, EmptyState, Field, PageHeader } from "@/components/ui/primitives";
+import Modal from "@/components/ui/modal";
+import { useConfirm, useToast } from "@/components/ui/toast";
 import { faNumber } from "@/lib/jalali";
 
 type Tag = { id: string; name: string; color: string | null; count: number };
@@ -16,15 +18,16 @@ export default function TagsClient({ tags, groups, contacts, canWrite }: {
   canWrite: boolean;
 }) {
   const router = useRouter();
+  const toast = useToast();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const [newTag, setNewTag] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [groupForm, setGroupForm] = useState<{ open: boolean; type: "MANUAL" | "SMART" }>({ open: false, type: "MANUAL" });
 
-  async function call(url: string, init: RequestInit, onOk: () => void) {
-    setError(null);
+  async function call(url: string, init: RequestInit, onOk: () => void, okText?: string) {
     const res = await fetch(url, init);
     const json = await res.json();
-    if (!json.ok) { setError(json.error); return; }
+    if (!json.ok) { toast("error", json.error); return; }
+    if (okText) toast("success", okText);
     onOk();
     router.refresh();
   }
@@ -32,7 +35,6 @@ export default function TagsClient({ tags, groups, contacts, canWrite }: {
   return (
     <>
       <PageHeader title="برچسب‌ها و گروه‌ها" description="با برچسب، مخاطبین را دسته‌بندی کنید و هنگام ساخت کمپین بر اساس آن‌ها فیلتر بگیرید." />
-      {error && <p role="alert" className="mb-4 rounded-xl px-4 py-3 text-sm font-semibold" style={{ background: "var(--danger-bg)", color: "var(--danger)" }}>{error}</p>}
 
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="card p-4">
@@ -48,7 +50,7 @@ export default function TagsClient({ tags, groups, contacts, canWrite }: {
                   method: "POST",
                   headers: { "content-type": "application/json" },
                   body: JSON.stringify({ name: newTag }),
-                }, () => setNewTag(""));
+                }, () => setNewTag(""), "برچسب ساخته شد.");
               }}
             >
               <label htmlFor="newTag" className="sr-only">نام برچسب جدید</label>
@@ -69,8 +71,15 @@ export default function TagsClient({ tags, groups, contacts, canWrite }: {
                     <button
                       aria-label={`حذف برچسب ${t.name}`}
                       className="rounded-full p-1 hover:bg-black/10"
-                      onClick={() => confirm(`برچسب #${t.name} حذف شود؟ مخاطبین حذف نمی‌شوند.`) &&
-                        call(`/api/tags/${t.id}`, { method: "DELETE" }, () => {})}
+                      onClick={async () => {
+                        const ok = await confirm({
+                          title: `حذف برچسب #${t.name}`,
+                          body: `این برچسب از ${t.count.toLocaleString("fa-IR")} مخاطب برداشته می‌شود. خود مخاطبین حذف نمی‌شوند.`,
+                          confirmLabel: "حذف برچسب",
+                          destructive: true,
+                        });
+                        if (ok) call(`/api/tags/${t.id}`, { method: "DELETE" }, () => {}, "برچسب حذف شد.");
+                      }}
                     >
                       <Trash2 className="h-3.5 w-3.5" style={{ color: "var(--danger)" }} />
                     </button>
@@ -107,13 +116,21 @@ export default function TagsClient({ tags, groups, contacts, canWrite }: {
                       <span className="flex gap-1">
                         {canWrite && g.type === "SMART" && (
                           <button className="btn btn-sm" aria-label={`تازه‌سازی گروه ${g.name}`}
-                                  onClick={() => call(`/api/groups/${g.id}`, { method: "POST" }, () => {})}>
+                                  onClick={() => call(`/api/groups/${g.id}`, { method: "POST" }, () => {}, "اعضای گروه تازه‌سازی شد.")}>
                             <RefreshCw className="h-4 w-4" />
                           </button>
                         )}
                         {canWrite && (
                           <button className="btn btn-sm btn-danger" aria-label={`حذف گروه ${g.name}`}
-                                  onClick={() => confirm(`گروه «${g.name}» حذف شود؟`) && call(`/api/groups/${g.id}`, { method: "DELETE" }, () => {})}>
+                                  onClick={async () => {
+                                    const ok = await confirm({
+                                      title: `حذف گروه ${g.name}`,
+                                      body: "گروه حذف می‌شود ولی مخاطبین عضو آن دست‌نخورده می‌مانند.",
+                                      confirmLabel: "حذف گروه",
+                                      destructive: true,
+                                    });
+                                    if (ok) call(`/api/groups/${g.id}`, { method: "DELETE" }, () => {}, "گروه حذف شد.");
+                                  }}>
                             <Trash2 className="h-4 w-4" />
                           </button>
                         )}
@@ -132,9 +149,10 @@ export default function TagsClient({ tags, groups, contacts, canWrite }: {
           tags={tags}
           contacts={contacts}
           onClose={() => setGroupForm({ open: false, type: "MANUAL" })}
-          onSaved={() => { setGroupForm({ open: false, type: "MANUAL" }); router.refresh(); }}
+          onSaved={() => { setGroupForm({ open: false, type: "MANUAL" }); toast("success", "گروه ساخته شد."); router.refresh(); }}
         />
       )}
+      {confirmDialog}
     </>
   );
 }
@@ -169,9 +187,8 @@ function GroupDialog({ tags, contacts, onClose, onSaved }: {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4" role="dialog" aria-modal="true" aria-label="گروه جدید">
-      <form onSubmit={submit} className="card max-h-[92dvh] w-full max-w-lg space-y-4 overflow-y-auto p-5">
-        <h2 className="text-lg font-bold">گروه جدید</h2>
+    <Modal title="گروه جدید" description="گروه دستی فهرست ثابتی است؛ گروه هوشمند هر بار از روی برچسب‌ها تازه می‌شود." onClose={onClose}>
+      <form onSubmit={submit} className="space-y-4">
 
         <Field label="نام گروه" required><input className="input" required value={name} onChange={(e) => setName(e.target.value)} /></Field>
 
@@ -212,13 +229,12 @@ function GroupDialog({ tags, contacts, onClose, onSaved }: {
           </Field>
         )}
 
-        {error && <p role="alert" className="error-text">{error}</p>}
-
+  
         <div className="flex justify-end gap-2">
           <button type="button" className="btn" onClick={onClose}>انصراف</button>
           <button type="submit" className="btn btn-primary" disabled={busy}>{busy ? "در حال ذخیره…" : "ساخت گروه"}</button>
         </div>
       </form>
-    </div>
+    </Modal>
   );
 }

@@ -1,3 +1,5 @@
+import sanitize from "sanitize-html";
+
 import { faDate } from "./jalali";
 
 /** متغیرهای مجاز در متن نامه و پیامک */
@@ -65,51 +67,59 @@ export function missingVariables(text: string, context: RenderContext): string[]
 }
 
 // ---------------------------------------------------------
-// پاک‌سازی HTML نامه (ضد XSS) — متن نامه توسط کاربر نوشته می‌شود
-// و در صفحه عمومی لینک کوتاه رندر می‌گردد.
+// پاک‌سازی HTML نامه (ضد XSS)
+//
+// متن نامه را کاربر سازمان می‌نویسد و در صفحه عمومی لینک کوتاه — بدون احراز
+// هویت و برای گیرنده‌ای بیرون سازمان — رندر می‌شود. پاک‌سازی دست‌ساز با regex
+// در برابر mutation-XSS شکننده است، پس از sanitize-html (بر پایه htmlparser2)
+// استفاده می‌کنیم که پارسر واقعی دارد.
 // ---------------------------------------------------------
-const ALLOWED_TAGS = new Set([
-  "p", "br", "hr", "strong", "b", "em", "i", "u", "s", "span", "div",
-  "h1", "h2", "h3", "h4", "h5", "h6", "blockquote", "ul", "ol", "li",
-  "table", "thead", "tbody", "tfoot", "tr", "td", "th", "a", "img", "figure", "figcaption",
-]);
-const ALLOWED_ATTRS = new Set(["href", "src", "alt", "title", "colspan", "rowspan", "dir", "style"]);
-const SAFE_STYLE = /^(text-align|font-weight|font-style|text-decoration|width|height|margin|padding|color|background-color)\s*:\s*[#\w%.,()\s-]+$/i;
 
-function sanitizeAttrs(raw: string): string {
-  const out: string[] = [];
-  const re = /([a-zA-Z-]+)\s*=\s*("([^"]*)"|'([^']*)')/g;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(raw))) {
-    const name = m[1].toLowerCase();
-    const value = (m[3] ?? m[4] ?? "").trim();
-    if (!ALLOWED_ATTRS.has(name)) continue;
-    if ((name === "href" || name === "src") && !/^(https?:\/\/|\/|mailto:|data:image\/(png|jpeg|gif|webp);base64,)/i.test(value)) continue;
-    if (name === "style") {
-      const safe = value.split(";").map((d) => d.trim()).filter((d) => d && SAFE_STYLE.test(d));
-      if (!safe.length) continue;
-      out.push(`style="${safe.join("; ")}"`);
-      continue;
-    }
-    out.push(`${name}="${value.replace(/"/g, "&quot;")}"`);
-  }
-  return out.length ? " " + out.join(" ") : "";
-}
+const SAFE_STYLE = {
+  "text-align": [/^(right|left|center|justify)$/],
+  "font-weight": [/^(normal|bold|[1-9]00)$/],
+  "font-style": [/^(normal|italic)$/],
+  "text-decoration": [/^(none|underline|line-through)$/],
+  "color": [/^#[0-9a-f]{3,8}$/i, /^rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)$/],
+  "background-color": [/^#[0-9a-f]{3,8}$/i, /^rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)$/],
+  "width": [/^\d+(\.\d+)?(px|%|em|rem)$/],
+  "height": [/^\d+(\.\d+)?(px|%|em|rem)$/],
+  "margin": [/^[\d.\s]+(px|%|em|rem)?$/],
+  "padding": [/^[\d.\s]+(px|%|em|rem)?$/],
+};
 
-/** فقط تگ‌های سفیدلیست‌شده و صفات امن باقی می‌مانند؛ بقیه escape می‌شوند. */
+const OPTIONS: sanitize.IOptions = {
+  allowedTags: [
+    "p", "br", "hr", "strong", "b", "em", "i", "u", "s", "span", "div",
+    "h1", "h2", "h3", "h4", "h5", "h6", "blockquote", "ul", "ol", "li",
+    "table", "thead", "tbody", "tfoot", "tr", "td", "th", "a", "img", "figure", "figcaption",
+  ],
+  allowedAttributes: {
+    a: ["href", "title", "dir", "style", "target", "rel"],
+    img: ["src", "alt", "title", "width", "height"],
+    td: ["colspan", "rowspan", "dir", "style"],
+    th: ["colspan", "rowspan", "dir", "style"],
+    "*": ["dir", "style"],
+  },
+  allowedSchemes: ["http", "https", "mailto"],
+  allowedSchemesByTag: { img: ["http", "https", "data"] },
+  allowProtocolRelative: false,
+  allowedStyles: { "*": SAFE_STYLE },
+  // لینک خارجی در تب جدید و بدون دسترسی به window.opener
+  transformTags: {
+    a: (tagName, attribs) => ({
+      tagName,
+      attribs: { ...attribs, target: "_blank", rel: "noopener noreferrer nofollow" },
+    }),
+  },
+  // محتوای تگ حذف‌شده هم باید برود، نه اینکه به‌صورت متن بیرون بیفتد
+  nonTextTags: ["style", "script", "textarea", "option", "noscript", "iframe", "object", "embed", "svg", "math"],
+  disallowedTagsMode: "discard",
+};
+
+/** فقط تگ‌ها، صفات و استایل‌های سفیدلیست‌شده باقی می‌مانند. */
 export function sanitizeHtml(html: string): string {
-  const withoutBlocks = html
-    .replace(/<!--[\s\S]*?-->/g, "")
-    .replace(/<(script|style|iframe|object|embed|svg|math|form)\b[\s\S]*?<\/\1\s*>/gi, "")
-    .replace(/<(script|style|iframe|object|embed|svg|math|form)\b[^>]*>/gi, "");
-
-  return withoutBlocks.replace(/<\/?([a-zA-Z0-9-]+)((?:[^<>"']|"[^"]*"|'[^']*')*)\/?>/g, (match, tagName: string, attrs: string) => {
-    const tag = tagName.toLowerCase();
-    if (!ALLOWED_TAGS.has(tag)) return match.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    if (match.startsWith("</")) return `</${tag}>`;
-    const selfClosing = tag === "br" || tag === "hr" || tag === "img";
-    return `<${tag}${sanitizeAttrs(attrs)}${selfClosing ? " /" : ""}>`;
-  });
+  return sanitize(html, OPTIONS);
 }
 
 export function htmlToPlainText(html: string): string {

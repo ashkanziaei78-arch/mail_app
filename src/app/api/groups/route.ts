@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { handle, readBody, requireApi } from "@/lib/api";
+import { handle, readBody, requireApi, ApiError } from "@/lib/api";
 import { resolveRecipients } from "@/lib/campaign";
 import { audit } from "@/lib/audit";
 
@@ -32,6 +32,11 @@ export async function POST(request: Request) {
   return handle(async () => {
     const user = await requireApi("groups.write");
     const input = await readBody(request, schema);
+
+    const duplicate = await prisma.group.findFirst({
+      where: { organizationId: user.organizationId, name: input.name, deletedAt: null },
+    });
+    if (duplicate) throw new ApiError(409, `گروهی با نام «${input.name}» از قبل وجود دارد.`);
 
     // گروه هوشمند: اعضا همین حالا از فیلتر حل می‌شوند و فیلتر هم ذخیره می‌ماند تا بعداً قابل تازه‌سازی باشد.
     const memberIds =

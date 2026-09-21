@@ -3,11 +3,12 @@ import { prisma } from "@/lib/db";
 import { handle, readBody, requireApi, ApiError } from "@/lib/api";
 import { hashPassword } from "@/lib/auth";
 import { audit } from "@/lib/audit";
+import { validatePassword } from "@/lib/password";
 
 const schema = z.object({
   fullName: z.string().trim().min(1, "نام کامل الزامی است.").max(120),
   email: z.string().trim().toLowerCase().email("ایمیل معتبر نیست."),
-  password: z.string().min(8, "گذرواژه باید حداقل ۸ کاراکتر باشد."),
+  password: z.string().max(200),
   role: z.enum(["ORG_ADMIN", "DEPT_ADMIN", "APPROVER", "USER"]),
   departmentId: z.string().uuid().optional().nullable(),
 });
@@ -16,6 +17,9 @@ export async function POST(request: Request) {
   return handle(async () => {
     const admin = await requireApi("users.manage");
     const input = await readBody(request, schema);
+
+    const problem = validatePassword(input.password, { email: input.email, fullName: input.fullName });
+    if (problem) throw new ApiError(422, problem);
 
     if (await prisma.user.findUnique({ where: { email: input.email } })) {
       throw new ApiError(409, "این ایمیل قبلاً ثبت شده است.");
@@ -33,6 +37,7 @@ export async function POST(request: Request) {
         email: input.email,
         passwordHash: await hashPassword(input.password),
         role: input.role,
+        mustChangePassword: true, // کاربر در نخستین ورود باید گذرواژه را عوض کند
       },
     });
 

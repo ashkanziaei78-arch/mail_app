@@ -6,7 +6,7 @@ import { Field } from "@/components/ui/primitives";
 
 export default function AccessCodeForm({ code, verify }: {
   code: string;
-  verify: (code: string, given: string) => Promise<boolean>;
+  verify: (code: string, given: string) => Promise<{ ok: true } | { ok: false; error: string }>;
 }) {
   const router = useRouter();
   const [value, setValue] = useState("");
@@ -17,9 +17,9 @@ export default function AccessCodeForm({ code, verify }: {
     event.preventDefault();
     setBusy(true);
     setError(null);
-    const ok = await verify(code, value);
+    const result = await verify(code, value);
     setBusy(false);
-    if (!ok) { setError("کد دسترسی نادرست است. کد شش‌رقمی ارسال‌شده در پیامک دوم را وارد کنید."); return; }
+    if (!result.ok) { setError(result.error); setValue(""); return; }
     router.refresh();
   }
 

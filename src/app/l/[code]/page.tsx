@@ -38,7 +38,7 @@ export default async function LetterPage({ params }: { params: Promise<{ code: s
 
   if (link.accessCode) {
     const token = (await cookies()).get(`ml_${code}`)?.value;
-    const unlocked = token ? verifySigned(`${code}:${link.accessCode}`, token) : false;
+    const unlocked = token ? verifySigned(`${code}:${link.accessCode}`, token, "link-hmac") : false;
     if (!unlocked) return <AccessCodeForm code={code} verify={verifyAccessCode} />;
   }
 

@@ -140,6 +140,11 @@ model User {
   role           UserRole
   status         EntityStatus @default(ACTIVE)
   lastLoginAt    DateTime?
+  // امنیت حساب
+  failedLoginCount   Int       @default(0)
+  lockedUntil        DateTime? // قفل موقت پس از تلاش‌های ناموفق پیاپی
+  passwordChangedAt  DateTime  @default(now()) // نشست‌های صادرشده پیش از این بی‌اعتبارند
+  mustChangePassword Boolean   @default(false)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   deletedAt      DateTime?
@@ -584,4 +589,19 @@ model NotificationSetting {
   organization Organization @relation(fields: [organizationId], references: [id])
 
   @@unique([organizationId, userId, channel, eventType])
+}
+
+/**
+ * شمارنده محدودیت نرخ — در پایگاه داده نگه داشته می‌شود تا با چند نمونه اپ و
+ * پس از ری‌استارت هم درست کار کند (نه در حافظه یک پروسه).
+ */
+model RateLimit {
+  id          String   @id @default(uuid())
+  bucket      String // login:ip:1.2.3.4 | login:user:<id> | access-code:<shortCode>
+  hits        Int      @default(1)
+  windowStart DateTime @default(now())
+  blockedUntil DateTime?
+
+  @@unique([bucket])
+  @@index([windowStart])
 }

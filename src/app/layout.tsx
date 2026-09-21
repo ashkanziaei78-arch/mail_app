@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import "./globals.css";
 import RegisterSW from "@/components/ui/register-sw";
 
@@ -24,17 +25,14 @@ export const viewport: Viewport = {
 /** تم را پیش از رنگ‌آمیزی اولیه اعمال می‌کند تا پرش رنگ نداشته باشیم. */
 const THEME_SCRIPT = `(function(){try{var t=localStorage.getItem("ms-theme");if(!t)t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";document.documentElement.dataset.theme=t;}catch(e){}})();`;
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
     <html lang="fa" dir="rtl" suppressHydrationWarning>
       <head>
-        <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="" />
-        {/* ponytail: فونت از CDN. برای استقرار آفلاین، فایل‌های woff2 را در public/fonts بگذارید و این لینک را جایگزین کنید. */}
-        <link
-          rel="stylesheet"
-          href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css"
-        />
-        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+        {/* فونت محلی است؛ preload تا متن فارسی بدون پرش رندر شود */}
+        <link rel="preload" href="/fonts/vazirmatn-variable.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
       <body>
         <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:right-3 focus:z-50 focus:rounded-lg focus:bg-brand-600 focus:px-4 focus:py-2 focus:text-white">

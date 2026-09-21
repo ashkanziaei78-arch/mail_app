@@ -3,7 +3,7 @@ import { handle, readBody, requireApi, ApiError } from "@/lib/api";
 import { canEditContact, contactScope } from "@/lib/scope";
 import { normalizeMobile } from "@/lib/sms";
 import { audit } from "@/lib/audit";
-import { contactInput } from "../route";
+import { contactInput } from "@/lib/validators";
 
 async function load(id: string, user: Awaited<ReturnType<typeof requireApi>>) {
   const contact = await prisma.contact.findFirst({ where: { AND: [contactScope(user), { id }] } });

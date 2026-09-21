@@ -1,29 +1,10 @@
-import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { handle, readBody, requireApi, ApiError } from "@/lib/api";
 import { contactScope } from "@/lib/scope";
 import { normalizeMobile } from "@/lib/sms";
 import { audit } from "@/lib/audit";
+import { contactInput } from "@/lib/validators";
 
-export const contactInput = z.object({
-  visibility: z.enum(["PUBLIC", "PRIVATE"]).default("PUBLIC"),
-  firstName: z.string().trim().min(1, "نام الزامی است."),
-  lastName: z.string().trim().min(1, "نام خانوادگی الزامی است."),
-  formalTitle: z.string().trim().optional().nullable(),
-  mobilePhone: z.string().trim().optional().nullable(),
-  landlinePhone: z.string().trim().optional().nullable(),
-  email: z.string().trim().email("ایمیل معتبر نیست.").optional().nullable().or(z.literal("")),
-  province: z.string().trim().optional().nullable(),
-  city: z.string().trim().optional().nullable(),
-  address: z.string().trim().optional().nullable(),
-  notes: z.string().trim().optional().nullable(),
-  smsConsent: z.boolean().default(true),
-  status: z.enum(["ACTIVE", "INACTIVE"]).default("ACTIVE"),
-  organizationName: z.string().trim().optional().nullable(),
-  jobTitle: z.string().trim().optional().nullable(),
-  jobCategory: z.string().trim().optional().nullable(),
-  tagIds: z.array(z.string().uuid()).default([]),
-});
 
 export async function GET(request: Request) {
   return handle(async () => {

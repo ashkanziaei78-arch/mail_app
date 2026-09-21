@@ -1,8 +1,15 @@
 import { cookies } from "next/headers";
 import { sign, verifySigned } from "./crypto";
 
-export const SESSION_COOKIE = "ms_session";
-const MAX_AGE = 60 * 60 * 8; // ۸ ساعت
+/**
+ * در تولید از پیشوند __Host- استفاده می‌شود: مرورگر تضمین می‌کند کوکی فقط از
+ * همین دامنه (بدون زیردامنه) و فقط روی HTTPS با Path=/ ست شده باشد؛
+ * جلوی cookie fixation از سمت زیردامنه‌ها را می‌گیرد.
+ */
+export const SESSION_COOKIE = process.env.NODE_ENV === "production" ? "__Host-ms_session" : "ms_session";
+
+const IDLE_SECONDS = 60 * 60 * 2;        // ۲ ساعت بی‌فعالیتی
+const ABSOLUTE_SECONDS = 60 * 60 * 12;   // سقف ۱۲ ساعت از لحظه ورود
 
 export type SessionPayload = {
   userId: string;
@@ -10,11 +17,12 @@ export type SessionPayload = {
   departmentId: string | null;
   role: string;
   fullName: string;
+  /** لحظه ورود — سقف مطلق عمر نشست از روی همین محاسبه می‌شود */
+  iat: number;
+  /** انقضای بی‌فعالیتی */
   exp: number;
 };
 
-// ponytail: HMAC-signed JSON cookie instead of NextAuth — no adapter, no provider config.
-// Swap for NextAuth/OIDC when SSO becomes a requirement.
 export function serialize(payload: SessionPayload): string {
   const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
   return `${body}.${sign(body)}`;
@@ -22,30 +30,46 @@ export function serialize(payload: SessionPayload): string {
 
 export function parse(token: string | undefined): SessionPayload | null {
   if (!token) return null;
-  const [body, signature] = token.split(".");
-  if (!body || !signature || !verifySigned(body, signature)) return null;
+  const parts = token.split(".");
+  if (parts.length !== 2) return null;
+  const [body, signature] = parts;
+  if (!verifySigned(body, signature)) return null;
   try {
     const payload = JSON.parse(Buffer.from(body, "base64url").toString("utf8")) as SessionPayload;
-    if (!payload.exp || payload.exp < Date.now()) return null;
+    const now = Date.now();
+    if (!payload.exp || payload.exp < now) return null;
+    if (!payload.iat || payload.iat + ABSOLUTE_SECONDS * 1000 < now) return null;
     return payload;
   } catch {
     return null;
   }
 }
 
-export async function setSession(payload: Omit<SessionPayload, "exp">) {
-  const store = await cookies();
-  store.set(SESSION_COOKIE, serialize({ ...payload, exp: Date.now() + MAX_AGE * 1000 }), {
+function cookieOptions(maxAge: number) {
+  return {
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: "strict" as const, // درخواست‌های بین‌سایتی اصلاً کوکی نمی‌گیرند
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    maxAge: MAX_AGE,
-  });
+    maxAge,
+  };
+}
+
+export async function setSession(payload: Omit<SessionPayload, "exp" | "iat">) {
+  const now = Date.now();
+  const store = await cookies();
+  store.set(SESSION_COOKIE, serialize({ ...payload, iat: now, exp: now + IDLE_SECONDS * 1000 }), cookieOptions(IDLE_SECONDS));
+}
+
+/** تمدید پنجره بی‌فعالیتی بدون تغییر سقف مطلق. */
+export async function refreshSession(payload: SessionPayload) {
+  const store = await cookies();
+  store.set(SESSION_COOKIE, serialize({ ...payload, exp: Date.now() + IDLE_SECONDS * 1000 }), cookieOptions(IDLE_SECONDS));
 }
 
 export async function clearSession() {
-  (await cookies()).delete(SESSION_COOKIE);
+  const store = await cookies();
+  store.set(SESSION_COOKIE, "", { ...cookieOptions(0), maxAge: 0 });
 }
 
 export async function getSession(): Promise<SessionPayload | null> {

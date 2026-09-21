@@ -6,22 +6,39 @@ import { randomCode } from "@/lib/crypto";
 import { audit } from "@/lib/audit";
 
 const MAX_BYTES = 4 * 1024 * 1024;
-const ALLOWED = new Map([
-  ["image/png", ".png"],
-  ["image/jpeg", ".jpg"],
-  ["image/webp", ".webp"],
-  ["image/svg+xml", ".svg"],
-]);
+
+/**
+ * نوع فایل از روی بایت‌های ابتدایی (magic number) تشخیص داده می‌شود، نه از
+ * `file.type` که کلاینت می‌فرستد و قابل جعل است.
+ *
+ * SVG عمداً پذیرفته نمی‌شود: SVG می‌تواند <script> داشته باشد و چون از همین
+ * دامنه سرو می‌شود، آپلودش برابر با XSS ذخیره‌شده روی کل سامانه بود.
+ */
+function matches(bytes: Uint8Array, offset: number, signature: number[]): boolean {
+  return signature.every((byte, i) => bytes[offset + i] === byte);
+}
+
+function sniffImage(bytes: Uint8Array): ".png" | ".jpg" | ".webp" | null {
+  if (matches(bytes, 0, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) return ".png";
+  if (matches(bytes, 0, [0xff, 0xd8, 0xff])) return ".jpg";
+  // RIFF....WEBP
+  if (matches(bytes, 0, [0x52, 0x49, 0x46, 0x46]) && matches(bytes, 8, [0x57, 0x45, 0x42, 0x50])) return ".webp";
+  return null;
+}
 
 /** ponytail: فایل روی دیسک محلی زیر public/uploads. برای چنداستقراری، همین تابع را به S3/MinIO ببرید. */
 async function store(file: File): Promise<string> {
   if (file.size > MAX_BYTES) throw new ApiError(413, "حجم تصویر بیش از ۴ مگابایت است.");
-  const extension = ALLOWED.get(file.type);
-  if (!extension) throw new ApiError(415, "فقط تصویر PNG، JPG، WEBP یا SVG پذیرفته می‌شود.");
-  const name = `${Date.now()}-${randomCode(8)}${extension}`;
+  if (file.size === 0) throw new ApiError(422, "فایل خالی است.");
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const extension = sniffImage(buffer);
+  if (!extension) throw new ApiError(415, "فقط تصویر PNG، JPG یا WEBP پذیرفته می‌شود. (SVG به دلایل امنیتی پذیرفته نمی‌شود.)");
+
+  const name = `${Date.now()}-${randomCode(16)}${extension}`;
   const dir = path.join(process.cwd(), "public", "uploads");
   await mkdir(dir, { recursive: true });
-  await writeFile(path.join(dir, name), Buffer.from(await file.arrayBuffer()));
+  await writeFile(path.join(dir, name), buffer);
   return `/uploads/${name}`;
 }
 

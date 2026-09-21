@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   LayoutDashboard, Contact, Tags, FileImage, FileText, Mail, PenLine,
-  MessageSquare, BarChart3, Users, ShieldCheck, Moon, Sun, LogOut, Menu, X,
+  MessageSquare, BarChart3, Users, ShieldCheck, Moon, Sun, LogOut, Menu, X, KeyRound, ChevronLeft,
 } from "lucide-react";
 import type { PermissionCode } from "@/lib/rbac";
 
@@ -57,6 +57,18 @@ function ThemeToggle() {
   );
 }
 
+/** مسیر جاری را به «داشبورد ‹ بخش» تبدیل می‌کند (قاعده breadcrumb-web). */
+function useBreadcrumb(pathname: string) {
+  const all = NAV.flatMap((section) => section.items);
+  const exact = all.find((item) => item.href === pathname);
+  if (exact) return exact.href === "/dashboard" ? [] : [exact.label];
+  const parent = all
+    .filter((item) => item.href !== "/dashboard" && pathname.startsWith(item.href))
+    .sort((a, b) => b.href.length - a.href.length)[0];
+  if (pathname.startsWith("/account/password")) return ["حساب کاربری", "تغییر گذرواژه"];
+  return parent ? [parent.label, "جزئیات"] : [];
+}
+
 export default function AppShell({
   user, allowed, children,
 }: {
@@ -67,6 +79,7 @@ export default function AppShell({
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const crumbs = useBreadcrumb(pathname);
 
   useEffect(() => { setOpen(false); }, [pathname]);
 
@@ -122,8 +135,12 @@ export default function AppShell({
             <span className="block truncate text-[11px] text-brand-200">{user.roleLabel} — {user.organizationName}</span>
           </span>
         </div>
+        <Link href="/account/password" className="nav-item mt-2" aria-current={pathname === "/account/password" ? "page" : undefined}>
+          <KeyRound className="h-[18px] w-[18px]" aria-hidden="true" />
+          تغییر گذرواژه
+        </Link>
         {/* خروج، عمداً از آیتم‌های ناوبری جدا شده است */}
-        <button onClick={logout} className="nav-item mt-2 w-full text-right">
+        <button onClick={logout} className="nav-item w-full text-right">
           <LogOut className="h-[18px] w-[18px]" aria-hidden="true" />
           خروج از حساب
         </button>
@@ -150,7 +167,18 @@ export default function AppShell({
           <button className="btn btn-sm md:hidden" onClick={() => setOpen(true)} aria-label="باز کردن منو" aria-expanded={open}>
             {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </button>
-          <span className="truncate text-sm font-semibold">{user.organizationName}</span>
+          <nav aria-label="مسیر صفحه" className="flex min-w-0 items-center gap-1 text-sm">
+            <Link href="/dashboard" className="shrink-0 font-semibold hover:underline">{user.organizationName}</Link>
+            {crumbs.map((crumb, index) => (
+              <span key={crumb} className="flex min-w-0 items-center gap-1">
+                <ChevronLeft className="h-3.5 w-3.5 shrink-0" aria-hidden="true" style={{ color: "var(--muted)" }} />
+                <span className={index === crumbs.length - 1 ? "truncate" : "truncate"} style={{ color: "var(--muted)" }}
+                      aria-current={index === crumbs.length - 1 ? "page" : undefined}>
+                  {crumb}
+                </span>
+              </span>
+            ))}
+          </nav>
           <div className="ms-auto flex items-center gap-2">
             <ThemeToggle />
           </div>

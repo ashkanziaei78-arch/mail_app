@@ -4,6 +4,8 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Download, Pencil, Plus, Search, Trash2, Upload } from "lucide-react";
 import { Badge, EmptyState, Field, PageHeader } from "@/components/ui/primitives";
+import Modal from "@/components/ui/modal";
+import { useConfirm, useToast } from "@/components/ui/toast";
 import { VISIBILITY } from "@/lib/labels";
 import { faDate } from "@/lib/jalali";
 
@@ -23,34 +25,48 @@ const EMPTY: ContactRow = {
 };
 
 export default function ContactsClient({
-  contacts, tags, initialFilters, canWrite, canDelete,
+  contacts, tags, initialFilters, pagination, canWrite, canDelete,
 }: {
   contacts: ContactRow[];
   tags: Array<{ id: string; name: string }>;
   initialFilters: { q: string; book: string; tag: string; status: string };
+  pagination: { page: number; pageSize: number; total: number };
   canWrite: boolean;
   canDelete: boolean;
 }) {
   const router = useRouter();
+  const toast = useToast();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const [pending, startTransition] = useTransition();
   const [filters, setFilters] = useState(initialFilters);
   const [editing, setEditing] = useState<ContactRow | null>(null);
   const [importing, setImporting] = useState(false);
-  const [message, setMessage] = useState<{ tone: "ok" | "err"; text: string } | null>(null);
 
-  function applyFilters(next: typeof filters) {
+  function applyFilters(next: typeof filters, page = 1) {
     setFilters(next);
     const params = new URLSearchParams();
     Object.entries(next).forEach(([k, v]) => v && params.set(k, v));
+    if (page > 1) params.set("page", String(page));
     startTransition(() => router.push(`/contacts?${params}`));
   }
 
+  const lastPage = Math.max(1, Math.ceil(pagination.total / pagination.pageSize));
+  const firstRow = (pagination.page - 1) * pagination.pageSize + 1;
+  const lastRow = Math.min(pagination.page * pagination.pageSize, pagination.total);
+
   async function remove(contact: ContactRow) {
-    if (!confirm(`مخاطب «${contact.firstName} ${contact.lastName}» حذف شود؟ این مخاطب از فهرست حذف می‌شود ولی سابقه کمپین‌های قبلی باقی می‌ماند.`)) return;
+    const ok = await confirm({
+      title: `حذف ${contact.firstName} ${contact.lastName}`,
+      body: "این مخاطب از فهرست برداشته می‌شود. سابقه کمپین‌های قبلی و نامه‌های ارسال‌شده دست‌نخورده می‌ماند.",
+      confirmLabel: "حذف مخاطب",
+      destructive: true,
+    });
+    if (!ok) return;
     const res = await fetch(`/api/contacts/${contact.id}`, { method: "DELETE" });
     const json = await res.json();
-    setMessage(json.ok ? { tone: "ok", text: "مخاطب حذف شد." } : { tone: "err", text: json.error });
-    if (json.ok) router.refresh();
+    if (!json.ok) { toast("error", json.error); return; }
+    toast("success", "مخاطب حذف شد.");
+    router.refresh();
   }
 
   return (
@@ -68,16 +84,6 @@ export default function ContactsClient({
           )
         }
       />
-
-      {message && (
-        <p role="alert" className="mb-4 rounded-xl px-4 py-3 text-sm font-semibold"
-           style={{
-             background: message.tone === "ok" ? "var(--success-bg)" : "var(--danger-bg)",
-             color: message.tone === "ok" ? "var(--success)" : "var(--danger)",
-           }}>
-          {message.text}
-        </p>
-      )}
 
       <div className="card mb-4 grid gap-3 p-3 md:grid-cols-4">
         <div className="md:col-span-2">
@@ -168,31 +174,42 @@ export default function ContactsClient({
         </div>
       )}
 
+      {pagination.total > 0 && (
+        <nav className="mt-4 flex flex-wrap items-center justify-between gap-3" aria-label="صفحه‌بندی مخاطبین">
+          <p className="tnum text-sm" style={{ color: "var(--muted)" }}>
+            نمایش {firstRow.toLocaleString("fa-IR")} تا {lastRow.toLocaleString("fa-IR")} از{" "}
+            {pagination.total.toLocaleString("fa-IR")} مخاطب
+          </p>
+          {lastPage > 1 && (
+            <div className="flex items-center gap-2">
+              <button className="btn btn-sm" disabled={pagination.page <= 1 || pending}
+                      onClick={() => applyFilters(filters, pagination.page - 1)}>
+                صفحه قبل
+              </button>
+              <span className="tnum text-sm">
+                صفحه {pagination.page.toLocaleString("fa-IR")} از {lastPage.toLocaleString("fa-IR")}
+              </span>
+              <button className="btn btn-sm" disabled={pagination.page >= lastPage || pending}
+                      onClick={() => applyFilters(filters, pagination.page + 1)}>
+                صفحه بعد
+              </button>
+            </div>
+          )}
+        </nav>
+      )}
+
       {editing && (
         <ContactDialog
           contact={editing}
           tags={tags}
           onClose={() => setEditing(null)}
-          onSaved={(text) => { setEditing(null); setMessage({ tone: "ok", text }); router.refresh(); }}
+          onSaved={(text) => { setEditing(null); toast("success", text); router.refresh(); }}
         />
       )}
 
-      {importing && <ImportDialog onClose={() => setImporting(false)} onDone={(text) => { setImporting(false); setMessage({ tone: "ok", text }); router.refresh(); }} />}
+      {importing && <ImportDialog onClose={() => setImporting(false)} onDone={(text) => { setImporting(false); toast("success", text); router.refresh(); }} />}
+      {confirmDialog}
     </>
-  );
-}
-
-function Dialog({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/55 p-0 sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label={title}>
-      <div className="card max-h-[92dvh] w-full max-w-2xl overflow-y-auto p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold">{title}</h2>
-          <button className="btn btn-sm" onClick={onClose}>بستن</button>
-        </div>
-        {children}
-      </div>
-    </div>
   );
 }
 
@@ -227,7 +244,7 @@ function ContactDialog({ contact, tags, onClose, onSaved }: {
   }
 
   return (
-    <Dialog title={isNew ? "مخاطب جدید" : "ویرایش مخاطب"} onClose={onClose}>
+    <Modal title={isNew ? "مخاطب جدید" : "ویرایش مخاطب"} onClose={onClose}>
       <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2">
         <Field label="عنوان خطاب"><select className="select" value={form.formalTitle ?? ""} onChange={(e) => set("formalTitle", e.target.value)}>
           <option value="">—</option><option>جناب آقای</option><option>سرکار خانم</option><option>جناب آقای دکتر</option><option>سرکار خانم دکتر</option><option>جناب آقای مهندس</option><option>سرکار خانم مهندس</option>
@@ -291,7 +308,7 @@ function ContactDialog({ contact, tags, onClose, onSaved }: {
           <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? "در حال ذخیره…" : "ذخیره مخاطب"}</button>
         </div>
       </form>
-    </Dialog>
+    </Modal>
   );
 }
 
@@ -313,7 +330,7 @@ function ImportDialog({ onClose, onDone }: { onClose: () => void; onDone: (messa
   }
 
   return (
-    <Dialog title="ورود گروهی مخاطبین از CSV" onClose={onClose}>
+    <Modal title="ورود گروهی مخاطبین از CSV" description="فایل اکسل را با فرمت «CSV UTF-8» ذخیره کنید." onClose={onClose}>
       <form onSubmit={submit} className="space-y-4">
         <p className="rounded-xl p-3 text-sm" style={{ background: "var(--info-bg)", color: "var(--info)" }}>
           ستون‌های قابل استفاده: نام، نام خانوادگی، عنوان، موبایل، تلفن ثابت، ایمیل، سازمان، سمت، رسته شغلی، استان، شهر، آدرس، توضیحات، برچسب‌ها.
@@ -344,6 +361,6 @@ function ImportDialog({ onClose, onDone }: { onClose: () => void; onDone: (messa
           <button type="submit" className="btn btn-primary" disabled={busy}>{busy ? "در حال پردازش…" : "وارد کردن"}</button>
         </div>
       </form>
-    </Dialog>
+    </Modal>
   );
 }

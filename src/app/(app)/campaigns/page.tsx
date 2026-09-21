@@ -46,7 +46,7 @@ export default async function CampaignsPage() {
             <tbody>
               {campaigns.map((c) => (
                 <tr key={c.id}>
-                  <td><Link href={`/campaigns/${c.id}`} className="font-semibold text-brand-600 hover:underline">{c.name}</Link></td>
+                  <td><Link href={`/campaigns/${c.id}`} className="link">{c.name}</Link></td>
                   <td>{c.department?.name ?? "—"}</td>
                   <td className="tnum">{faNumber(c._count.recipients)}</td>
                   <td className="tnum">{faNumber(c.recipients.length)} / {faNumber(c._count.recipients)}</td>

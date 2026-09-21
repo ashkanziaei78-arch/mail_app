@@ -1,5 +1,18 @@
 @import "tailwindcss";
 
+/*
+ * فونت وزیرمتن به‌صورت محلی سرو می‌شود، نه از CDN.
+ * دلیل: CDNهای خارجی روی بسیاری از شبکه‌های سازمانی ایران در دسترس نیستند و
+ * سامانه بدون فونت فارسی رندر می‌شد. محلی بودن هم CSP را سفت‌تر می‌کند.
+ */
+@font-face {
+  font-family: "Vazirmatn";
+  src: url("/fonts/vazirmatn-variable.woff2") format("woff2-variations");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* تم تاریک با data-theme روی <html> کنترل می‌شود (نه فقط prefers-color-scheme) */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
@@ -32,7 +45,7 @@
   --success-bg: #dcfce7;
   --danger: #b91c1c;
   --danger-bg: #fee2e2;
-  --warn: #a16207;
+  --warn: #854d0e; /* ۶٫۱۵:۱ روی warn-bg — #a16207 فقط ۴٫۴۲ بود و WCAG AA را رد می‌کرد */
   --warn-bg: #fef3c7;
   --info: #0369a1;
   --info-bg: #e0f2fe;
@@ -129,6 +142,15 @@
   .label { display: block; font-size: .82rem; font-weight: 600; margin-bottom: .35rem; color: var(--text); }
   .hint { font-size: .75rem; color: var(--muted); margin-top: .3rem; }
   .error-text { font-size: .78rem; color: var(--danger); margin-top: .3rem; font-weight: 600; }
+
+  /* لینک درون‌متنی: رنگش با تم عوض می‌شود.
+     text-brand-600 ثابت بود و در تم تاریک کنتراست ۲٫۵۷ می‌داد (رد WCAG). */
+  .link {
+    color: var(--primary);
+    font-weight: 600;
+    text-underline-offset: 3px;
+  }
+  .link:hover { text-decoration: underline; }
 
   .badge {
     display: inline-flex; align-items: center; gap: .3rem;

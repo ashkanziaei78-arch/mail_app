@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Star, Trash2 } from "lucide-react";
 import { Badge, EmptyState, Field, PageHeader } from "@/components/ui/primitives";
+import Modal from "@/components/ui/modal";
+import { useConfirm, useToast } from "@/components/ui/toast";
 import { LETTER_VARIABLES } from "@/lib/render";
 
 type Letterhead = { id: string; name: string; fileUrl: string; isDefault: boolean; status: string; version: number };
@@ -15,14 +17,15 @@ export default function LetterheadsClient({ letterheads, templates, canWrite }: 
   canWrite: boolean;
 }) {
   const router = useRouter();
+  const toast = useToast();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const [dialog, setDialog] = useState<null | "letterhead" | "template">(null);
-  const [error, setError] = useState<string | null>(null);
 
-  async function call(url: string, init: RequestInit) {
-    setError(null);
+  async function call(url: string, init: RequestInit, okText?: string) {
     const res = await fetch(url, init);
     const json = await res.json();
-    if (!json.ok) { setError(json.error); return false; }
+    if (!json.ok) { toast("error", json.error); return false; }
+    if (okText) toast("success", okText);
     router.refresh();
     return true;
   }
@@ -33,7 +36,6 @@ export default function LetterheadsClient({ letterheads, templates, canWrite }: 
         title="سربرگ و قالب نامه"
         description="سربرگ سازمان را یک بار آپلود کنید و قالب متن نامه را با متغیرها بنویسید تا برای هر مخاطب شخصی‌سازی شود."
       />
-      {error && <p role="alert" className="mb-4 rounded-xl px-4 py-3 text-sm font-semibold" style={{ background: "var(--danger-bg)", color: "var(--danger)" }}>{error}</p>}
 
       <section className="mb-6">
         <div className="mb-3 flex items-center justify-between">
@@ -62,7 +64,7 @@ export default function LetterheadsClient({ letterheads, templates, canWrite }: 
                               onClick={() => call(`/api/letterheads/${l.id}`, {
                                 method: "PATCH", headers: { "content-type": "application/json" },
                                 body: JSON.stringify({ isDefault: true }),
-                              })}>
+                              }, "سربرگ پیش‌فرض تغییر کرد.")}>
                         <Star className="h-4 w-4" />
                       </button>
                     ) : null}
@@ -90,7 +92,15 @@ export default function LetterheadsClient({ letterheads, templates, canWrite }: 
                   <p className="font-semibold">{t.name}</p>
                   {canWrite && (
                     <button className="btn btn-sm btn-danger" aria-label={`حذف قالب ${t.name}`}
-                            onClick={() => confirm(`قالب «${t.name}» حذف شود؟`) && call(`/api/templates/${t.id}`, { method: "DELETE" })}>
+                            onClick={async () => {
+                              const ok = await confirm({
+                                title: `حذف قالب ${t.name}`,
+                                body: "قالب بایگانی می‌شود. کمپین‌هایی که قبلاً از آن ساخته شده‌اند تغییری نمی‌کنند.",
+                                confirmLabel: "حذف قالب",
+                                destructive: true,
+                              });
+                              if (ok) call(`/api/templates/${t.id}`, { method: "DELETE" }, "قالب حذف شد.");
+                            }}>
                       <Trash2 className="h-4 w-4" />
                     </button>
                   )}
@@ -103,8 +113,9 @@ export default function LetterheadsClient({ letterheads, templates, canWrite }: 
         )}
       </section>
 
-      {dialog === "letterhead" && <LetterheadDialog onClose={() => setDialog(null)} onSaved={() => { setDialog(null); router.refresh(); }} />}
-      {dialog === "template" && <TemplateDialog onClose={() => setDialog(null)} onSaved={() => { setDialog(null); router.refresh(); }} />}
+      {dialog === "letterhead" && <LetterheadDialog onClose={() => setDialog(null)} onSaved={() => { setDialog(null); toast("success", "سربرگ ذخیره شد."); router.refresh(); }} />}
+      {dialog === "template" && <TemplateDialog onClose={() => setDialog(null)} onSaved={() => { setDialog(null); toast("success", "قالب ذخیره شد."); router.refresh(); }} />}
+      {confirmDialog}
     </>
   );
 }
@@ -125,25 +136,23 @@ function LetterheadDialog({ onClose, onSaved }: { onClose: () => void; onSaved: 
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4" role="dialog" aria-modal="true" aria-label="افزودن سربرگ">
-      <form onSubmit={submit} className="card w-full max-w-lg space-y-4 p-5">
-        <h2 className="text-lg font-bold">افزودن سربرگ جدید</h2>
+    <Modal title="افزودن سربرگ جدید" description="تصویر سربرگ بالای همه نامه‌های این سازمان چاپ می‌شود." size="sm" onClose={onClose}>
+      <form onSubmit={submit} className="space-y-4">
         <Field label="نام سربرگ" required><input className="input" name="name" required placeholder="سربرگ رسمی — دفتر مرکزی" /></Field>
-        <Field label="تصویر سربرگ (بالای نامه)" required hint="PNG، JPG، WEBP یا SVG — حداکثر ۴ مگابایت. عرض پیشنهادی ۱۶۰۰ پیکسل.">
-          <input className="input" type="file" name="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" required />
+        <Field label="تصویر سربرگ (بالای نامه)" required hint="PNG، JPG یا WEBP — حداکثر ۴ مگابایت. عرض پیشنهادی ۱۶۰۰ پیکسل.">
+          <input className="input" type="file" name="file" accept="image/png,image/jpeg,image/webp" required />
         </Field>
-        <Field label="تصویر پاورقی (اختیاری)"><input className="input" type="file" name="footerFile" accept="image/png,image/jpeg,image/webp,image/svg+xml" /></Field>
+        <Field label="تصویر پاورقی (اختیاری)"><input className="input" type="file" name="footerFile" accept="image/png,image/jpeg,image/webp" /></Field>
         <label className="flex cursor-pointer items-center gap-2 text-sm">
           <input type="checkbox" name="isDefault" value="true" className="custom-checkbox" />
           سربرگ پیش‌فرض سازمان باشد
         </label>
-        {error && <p role="alert" className="error-text">{error}</p>}
-        <div className="flex justify-end gap-2">
+          <div className="flex justify-end gap-2">
           <button type="button" className="btn" onClick={onClose}>انصراف</button>
           <button type="submit" className="btn btn-primary" disabled={busy}>{busy ? "در حال آپلود…" : "ذخیره سربرگ"}</button>
         </div>
       </form>
-    </div>
+    </Modal>
   );
 }
 
@@ -168,9 +177,8 @@ function TemplateDialog({ onClose, onSaved }: { onClose: () => void; onSaved: ()
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4" role="dialog" aria-modal="true" aria-label="قالب نامه جدید">
-      <form onSubmit={submit} className="card max-h-[92dvh] w-full max-w-3xl space-y-4 overflow-y-auto p-5">
-        <h2 className="text-lg font-bold">قالب نامه جدید</h2>
+    <Modal title="قالب نامه جدید" description="متغیرها هنگام ساخت نامه با اطلاعات هر مخاطب جایگزین می‌شوند." size="lg" onClose={onClose}>
+      <form onSubmit={submit} className="space-y-4">
         <Field label="نام قالب" required><input className="input" required value={name} onChange={(e) => setName(e.target.value)} placeholder="قالب دعوت‌نامه رسمی" /></Field>
 
         <Field label="متن قالب" required hint="می‌توانید از تگ‌های ساده HTML مانند <p>، <strong> و <ul> استفاده کنید.">
@@ -194,12 +202,11 @@ function TemplateDialog({ onClose, onSaved }: { onClose: () => void; onSaved: ()
           <div className="card letter-body max-h-52 overflow-y-auto bg-white p-4 text-black" dangerouslySetInnerHTML={{ __html: bodyHtml }} />
         </div>
 
-        {error && <p role="alert" className="error-text">{error}</p>}
-        <div className="flex justify-end gap-2">
+          <div className="flex justify-end gap-2">
           <button type="button" className="btn" onClick={onClose}>انصراف</button>
           <button type="submit" className="btn btn-primary" disabled={busy}>{busy ? "در حال ذخیره…" : "ذخیره قالب"}</button>
         </div>
       </form>
-    </div>
+    </Modal>
   );
 }

@@ -4,6 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { KeyRound, Plus } from "lucide-react";
 import { Badge, Field, PageHeader } from "@/components/ui/primitives";
+import Modal from "@/components/ui/modal";
+import PasswordInput from "@/components/ui/password-input";
+import { useConfirm, useToast } from "@/components/ui/toast";
+import { PASSWORD_RULES } from "@/lib/password";
 import { ROLE_LABELS } from "@/lib/rbac";
 import { faDateTime } from "@/lib/jalali";
 
@@ -21,15 +25,32 @@ export default function UsersClient({ users, departments, logs, currentUserId }:
   currentUserId: string;
 }) {
   const router = useRouter();
+  const toast = useToast();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const [adding, setAdding] = useState(false);
-  const [message, setMessage] = useState<{ tone: "ok" | "err"; text: string } | null>(null);
+  const [resetting, setResetting] = useState<Row | null>(null);
 
   async function patch(id: string, data: Record<string, unknown>, okText: string) {
-    setMessage(null);
     const res = await fetch(`/api/users/${id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify(data) });
     const json = await res.json();
-    setMessage(json.ok ? { tone: "ok", text: okText } : { tone: "err", text: json.error });
-    if (json.ok) router.refresh();
+    if (!json.ok) { toast("error", json.error); return false; }
+    toast("success", okText);
+    router.refresh();
+    return true;
+  }
+
+  async function toggleStatus(u: Row) {
+    const disabling = u.status === "ACTIVE";
+    const ok = await confirm({
+      title: disabling ? `غیرفعال کردن ${u.fullName}` : `فعال کردن ${u.fullName}`,
+      body: disabling
+        ? "این کاربر بلافاصله از همه دستگاه‌ها خارج می‌شود و تا فعال‌سازی مجدد نمی‌تواند وارد شود."
+        : "کاربر دوباره می‌تواند وارد سامانه شود و شمارنده تلاش‌های ناموفقش صفر می‌شود.",
+      confirmLabel: disabling ? "غیرفعال کن" : "فعال کن",
+      destructive: disabling,
+    });
+    if (!ok) return;
+    await patch(u.id, { status: disabling ? "INACTIVE" : "ACTIVE" }, "وضعیت کاربر تغییر کرد.");
   }
 
   return (
@@ -39,13 +60,6 @@ export default function UsersClient({ users, departments, logs, currentUserId }:
         description="مدیر سازمان برای همکاران حساب می‌سازد و سطح دسترسی هرکدام را تعیین می‌کند."
         action={<button className="btn btn-primary btn-sm" onClick={() => setAdding(true)}><Plus className="h-4 w-4" />کاربر جدید</button>}
       />
-
-      {message && (
-        <p role="alert" className="mb-4 rounded-xl px-4 py-3 text-sm font-semibold"
-           style={{ background: message.tone === "ok" ? "var(--success-bg)" : "var(--danger-bg)", color: message.tone === "ok" ? "var(--success)" : "var(--danger)" }}>
-          {message.text}
-        </p>
-      )}
 
       <div className="card mb-6 overflow-x-auto">
         <table className="table">
@@ -77,12 +91,11 @@ export default function UsersClient({ users, departments, logs, currentUserId }:
                 <td><Badge tone={u.status === "ACTIVE" ? "success" : "neutral"}>{u.status === "ACTIVE" ? "فعال" : "غیرفعال"}</Badge></td>
                 <td>
                   <span className="flex gap-1">
-                    <button className="btn btn-sm" aria-label={`تغییر گذرواژه ${u.fullName}`} onClick={() => {
-                      const password = prompt(`گذرواژه جدید برای ${u.fullName} (حداقل ۸ کاراکتر):`);
-                      if (password) patch(u.id, { password }, "گذرواژه تغییر کرد.");
-                    }}><KeyRound className="h-4 w-4" /></button>
+                    <button className="btn btn-sm" aria-label={`بازنشانی گذرواژه ${u.fullName}`} onClick={() => setResetting(u)}>
+                      <KeyRound className="h-4 w-4" />
+                    </button>
                     {u.id !== currentUserId && u.role !== "SUPER_ADMIN" && (
-                      <button className="btn btn-sm" onClick={() => patch(u.id, { status: u.status === "ACTIVE" ? "INACTIVE" : "ACTIVE" }, "وضعیت کاربر تغییر کرد.")}>
+                      <button className="btn btn-sm" onClick={() => toggleStatus(u)}>
                         {u.status === "ACTIVE" ? "غیرفعال کردن" : "فعال کردن"}
                       </button>
                     )}
@@ -96,7 +109,7 @@ export default function UsersClient({ users, departments, logs, currentUserId }:
 
       <section className="card p-4">
         <h2 className="mb-3 font-bold">تاریخچه فعالیت‌های حساس</h2>
-        <div className="max-h-96 overflow-y-auto">
+        <div className="max-h-96 overflow-y-auto" tabIndex={0} role="region" aria-label="تاریخچه فعالیت‌ها">
           <table className="table">
             <caption className="sr-only">آخرین رویدادهای ثبت‌شده</caption>
             <thead><tr><th>زمان</th><th>کاربر</th><th>عملیات</th><th>موجودیت</th><th>IP</th></tr></thead>
@@ -115,8 +128,21 @@ export default function UsersClient({ users, departments, logs, currentUserId }:
         </div>
       </section>
 
-      {adding && <AddUserDialog departments={departments} onClose={() => setAdding(false)}
-                                onSaved={() => { setAdding(false); setMessage({ tone: "ok", text: "کاربر جدید ساخته شد." }); router.refresh(); }} />}
+      {adding && (
+        <AddUserDialog
+          departments={departments}
+          onClose={() => setAdding(false)}
+          onSaved={() => { setAdding(false); toast("success", "کاربر جدید ساخته شد. در نخستین ورود باید گذرواژه را عوض کند."); router.refresh(); }}
+        />
+      )}
+      {resetting && (
+        <ResetPasswordDialog
+          user={resetting}
+          onClose={() => setResetting(null)}
+          onSaved={() => { setResetting(null); toast("success", "گذرواژه بازنشانی شد. کاربر از همه دستگاه‌ها خارج شد."); router.refresh(); }}
+        />
+      )}
+      {confirmDialog}
     </>
   );
 }
@@ -148,13 +174,12 @@ function AddUserDialog({ departments, onClose, onSaved }: {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4" role="dialog" aria-modal="true" aria-label="کاربر جدید">
-      <form onSubmit={submit} className="card w-full max-w-lg space-y-4 p-5">
-        <h2 className="text-lg font-bold">کاربر جدید</h2>
+    <Modal title="کاربر جدید" description="گذرواژه اولیه را به کاربر بدهید؛ در نخستین ورود مجبور به تغییر آن است." onClose={onClose}>
+      <form onSubmit={submit} className="space-y-4">
         <Field label="نام کامل" required><input className="input" name="fullName" required /></Field>
         <Field label="ایمیل" required><input className="input" dir="ltr" type="email" name="email" required autoComplete="off" /></Field>
-        <Field label="گذرواژه اولیه" required hint="حداقل ۸ کاراکتر. کاربر پس از ورود باید آن را تغییر دهد.">
-          <input className="input" dir="ltr" type="text" name="password" minLength={8} required autoComplete="new-password" />
+        <Field label="گذرواژه اولیه" required hint={PASSWORD_RULES}>
+          <PasswordInput name="password" minLength={10} required autoComplete="new-password" />
         </Field>
         <Field label="نقش" required>
           <select className="select" name="role" required defaultValue="USER">
@@ -173,6 +198,49 @@ function AddUserDialog({ departments, onClose, onSaved }: {
           <button type="submit" className="btn btn-primary" disabled={busy}>{busy ? "در حال ساخت…" : "ساخت کاربر"}</button>
         </div>
       </form>
-    </div>
+    </Modal>
+  );
+}
+
+function ResetPasswordDialog({ user, onClose, onSaved }: {
+  user: Row; onClose: () => void; onSaved: () => void;
+}) {
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setBusy(true);
+    setError(null);
+    const password = String(new FormData(event.currentTarget).get("password") ?? "");
+    const res = await fetch(`/api/users/${user.id}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ password }),
+    });
+    const json = await res.json();
+    setBusy(false);
+    if (!json.ok) { setError(json.error); return; }
+    onSaved();
+  }
+
+  return (
+    <Modal
+      title={`بازنشانی گذرواژه ${user.fullName}`}
+      description="نشست‌های فعال این کاربر بسته می‌شود و در ورود بعدی باید گذرواژه را دوباره عوض کند."
+      size="sm"
+      onClose={onClose}
+    >
+      <form onSubmit={submit} className="space-y-4">
+        <Field label="گذرواژه جدید" required hint={PASSWORD_RULES}>
+          <PasswordInput name="password" minLength={10} required autoComplete="new-password" />
+        </Field>
+        {error && <p role="alert" className="error-text">{error}</p>}
+        <div className="flex justify-end gap-2">
+          <button type="button" className="btn" onClick={onClose}>انصراف</button>
+          <button type="submit" className="btn btn-primary" disabled={busy}>{busy ? "در حال ذخیره…" : "بازنشانی گذرواژه"}</button>
+        </div>
+      </form>
+    </Modal>
   );
 }
