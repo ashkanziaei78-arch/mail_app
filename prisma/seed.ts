@@ -81,6 +81,9 @@ async function main() {
       { fullName: "رضا احمدی", email: "admin@mailing.local", role: "ORG_ADMIN" as const, departmentId: departments[0].id },
       { fullName: "سمیه کاظمی", email: "approver@mailing.local", role: "APPROVER" as const, departmentId: departments[1].id },
       { fullName: "امیر توکلی", email: "user@mailing.local", role: "USER" as const, departmentId: departments[0].id },
+      { fullName: "نرگس شریفی", email: "dept@mailing.local", role: "DEPT_ADMIN" as const, departmentId: departments[1].id },
+      { fullName: "مهدی رستمی", email: "manager@mailing.local", role: "APPROVER" as const, departmentId: departments[2].id },
+      { fullName: "سارا موحد", email: "pr@mailing.local", role: "USER" as const, departmentId: departments[0].id },
     ].map((u) =>
       prisma.user.upsert({
         where: { email: u.email },
@@ -137,6 +140,9 @@ async function main() {
   await prisma.user.update({ where: { email: "admin@mailing.local" }, data: { positionId: positionByName("مدیرکل"), mobilePhone: "09120000001" } });
   await prisma.user.update({ where: { email: "approver@mailing.local" }, data: { positionId: positionByName("معاون"), mobilePhone: "09120000002" } });
   await prisma.user.update({ where: { email: "user@mailing.local" }, data: { positionId: positionByName("کارشناس"), mobilePhone: "09120000003" } });
+  await prisma.user.update({ where: { email: "dept@mailing.local" }, data: { positionId: positionByName("رئیس اداره"), mobilePhone: "09120000004" } });
+  await prisma.user.update({ where: { email: "manager@mailing.local" }, data: { positionId: positionByName("معاون"), mobilePhone: "09120000005" } });
+  await prisma.user.update({ where: { email: "pr@mailing.local" }, data: { positionId: positionByName("کارشناس مسئول"), mobilePhone: "09120000006" } });
 
   const tagNames = ["مدیران_استان", "حامیان_فناوری", "صنایع_یزد", "اعضای_بنیاد", "دعوت_همایش", "روابط_بین_الملل", "اتاق_بازرگانی"];
   const tags = await Promise.all(
@@ -251,10 +257,13 @@ async function main() {
   console.log(`✅ آماده شد — ${CONTACTS.length} مخاطب، ${tags.length} برچسب، ${departments.length} واحد، ${positions.length} سمت.
 
 حساب‌های ورود (گذرواژه همه: ${SEED_PASSWORD})
-  root@mailing.local      مدیر کل سامانه
-  admin@mailing.local     مدیر سازمان
-  approver@mailing.local  تأییدکننده
-  user@mailing.local      کاربر عادی
+  root@mailing.local       مدیر کل سامانه       —
+  admin@mailing.local      مدیر سازمان          مدیرکل
+  manager@mailing.local    تأییدکننده           معاون
+  dept@mailing.local       مدیر واحد            رئیس اداره
+  approver@mailing.local   تأییدکننده           معاون
+  pr@mailing.local         کاربر عادی           کارشناس مسئول
+  user@mailing.local       کاربر عادی           کارشناس
 `);
 }
 

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Download, Pencil, Plus, Search, Trash2, Upload } from "lucide-react";
+import { CheckCircle2, Download, FileSpreadsheet, Pencil, Plus, Search, Trash2, Upload, XCircle } from "lucide-react";
 import { Badge, EmptyState, Field, PageHeader } from "@/components/ui/primitives";
 import Modal from "@/components/ui/modal";
 import { useConfirm, useToast } from "@/components/ui/toast";
@@ -77,7 +77,7 @@ export default function ContactsClient({
         action={
           canWrite && (
             <div className="flex flex-wrap gap-2">
-              <a href="/api/contacts/export" className="btn btn-sm"><Download className="h-4 w-4" />خروجی CSV</a>
+              <a href="/api/contacts/export" className="btn btn-sm"><Download className="h-4 w-4" />خروجی اکسل</a>
               <button className="btn btn-sm" onClick={() => setImporting(true)}><Upload className="h-4 w-4" />ورود گروهی</button>
               <button className="btn btn-primary btn-sm" onClick={() => setEditing(EMPTY)}><Plus className="h-4 w-4" />مخاطب جدید</button>
             </div>
@@ -313,54 +313,165 @@ function ContactDialog({ contact, tags, onClose, onSaved }: {
 }
 
 function ImportDialog({ onClose, onDone }: { onClose: () => void; onDone: (message: string) => void }) {
-  const [result, setResult] = useState<{ created: number; failed: number; errors: string[] } | null>(null);
+  const [result, setResult] = useState<{ created: number; failed: number; total: number; errors: string[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string>("");
   const [busy, setBusy] = useState(false);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
     setError(null);
+    setResult(null);
     const res = await fetch("/api/contacts/import", { method: "POST", body: new FormData(event.currentTarget) });
     const json = await res.json();
     setBusy(false);
     if (!json.ok) { setError(json.error); return; }
     setResult(json.data);
-    if (json.data.failed === 0) onDone(`${json.data.created} مخاطب وارد شد.`);
+    if (json.data.failed === 0) onDone(`${json.data.created.toLocaleString("fa-IR")} مخاطب وارد شد.`);
   }
 
   return (
-    <Modal title="ورود گروهی مخاطبین از CSV" description="فایل اکسل را با فرمت «CSV UTF-8» ذخیره کنید." onClose={onClose}>
-      <form onSubmit={submit} className="space-y-4">
-        <p className="rounded-xl p-3 text-sm" style={{ background: "var(--info-bg)", color: "var(--info)" }}>
-          ستون‌های قابل استفاده: نام، نام خانوادگی، عنوان، موبایل، تلفن ثابت، ایمیل، سازمان، سمت، رسته شغلی، استان، شهر، آدرس، توضیحات، برچسب‌ها.
-          «نام» و «نام خانوادگی» الزامی‌اند. در اکسل فایل را با فرمت «CSV UTF-8» ذخیره کنید.
-        </p>
-        <Field label="فایل CSV" required><input className="input" type="file" name="file" accept=".csv,text/csv" required /></Field>
-        <Field label="در کدام دفترچه ثبت شود؟">
-          <select className="select" name="visibility" defaultValue="PUBLIC">
-            <option value="PUBLIC">دفترچه عمومی سازمان</option><option value="PRIVATE">دفترچه خصوصی من</option>
-          </select>
-        </Field>
+    <Modal
+      title="ورود گروهی مخاطبین از اکسل"
+      description="فایل اکسل (xlsx) یا CSV را بارگذاری کنید. راهنمای تصویری هر مرحله پایین‌تر است."
+      size="lg"
+      onClose={onClose}
+    >
+      <form onSubmit={submit} className="space-y-5">
+        <ol className="space-y-4">
+          <GuideStep
+            number={1}
+            title="فایل نمونه را دانلود کنید"
+            body="سرستون‌های درست از قبل داخلش هست. داده خودتان را زیر همان سرستون‌ها بنویسید تا ستونی جا نیفتد. (همین پنجره را از دکمه «ورود گروهی» در بالای دفترچه باز کرده‌اید.)"
+            image="/guide/import-1-template.png"
+            imageAlt="نوار بالای دفترچه مخاطبین با دکمه‌های مخاطب جدید، ورود گروهی و خروجی اکسل"
+          >
+            <a href="/api/contacts/template" className="btn btn-primary btn-sm">
+              <FileSpreadsheet className="h-4 w-4" />
+              دانلود فایل نمونه اکسل
+            </a>
+          </GuideStep>
+
+          <GuideStep
+            number={2}
+            title="در اکسل پرش کنید"
+            body="سطر دوم فقط نمونه است؛ پاکش کنید. ستون «نام» و «نام خانوادگی» الزامی‌اند — بقیه اختیاری. شماره همراه را با صفر ابتدایی بنویسید."
+            image="/guide/import-2-excel.png"
+            imageAlt="نمای فایل نمونه اکسل با سرستون‌های فارسی و یک سطر داده"
+          />
+
+          <GuideStep
+            number={3}
+            title="فایل را همین‌جا بارگذاری کنید"
+            body="اگر برچسبی در ستون «برچسب‌ها» نوشته باشید که از قبل در سامانه ساخته شده، خودکار به مخاطب می‌چسبد. بعد از وارد کردن، مخاطبین این‌طور در فهرست می‌نشینند:"
+            image="/guide/import-3-upload.png"
+            imageAlt="فهرست مخاطبین پس از ورود گروهی، با ستون‌های نام، سازمان، شماره همراه و برچسب‌ها"
+          >
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="فایل اکسل یا CSV" required hint="حداکثر ۸ مگابایت">
+                <input
+                  className="input" type="file" name="file" required
+                  accept=".xlsx,.xlsm,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                  onChange={(e) => setFileName(e.target.files?.[0]?.name ?? "")}
+                />
+              </Field>
+              <Field label="در کدام دفترچه ثبت شود؟" hint="خصوصی یعنی فقط خودتان می‌بینید.">
+                <select className="select" name="visibility" defaultValue="PUBLIC">
+                  <option value="PUBLIC">دفترچه عمومی سازمان</option>
+                  <option value="PRIVATE">دفترچه خصوصی من</option>
+                </select>
+              </Field>
+            </div>
+            {fileName && (
+              <p className="hint flex items-center gap-1">
+                <FileSpreadsheet className="h-3.5 w-3.5" />
+                فایل انتخاب‌شده: <span className="font-semibold">{fileName}</span>
+              </p>
+            )}
+          </GuideStep>
+        </ol>
+
+        <details className="rounded-xl border p-3">
+          <summary className="cursor-pointer text-sm font-semibold">ستون‌های قابل استفاده</summary>
+          <p className="hint mt-2">
+            نام، نام خانوادگی، عنوان، موبایل، تلفن ثابت، ایمیل، سازمان، سمت، رسته شغلی،
+            استان، شهر، آدرس، توضیحات، برچسب‌ها.
+          </p>
+          <p className="hint">
+            اگر نام و نام خانوادگی در یک ستون باشد، سرستون را «نام و نام خانوادگی» بگذارید؛
+            خودکار تفکیک می‌شود.
+          </p>
+        </details>
 
         {error && <p role="alert" className="error-text">{error}</p>}
 
         {result && (
-          <div className="rounded-xl p-3 text-sm" style={{ background: "var(--surface-2)" }}>
-            <p className="font-bold">{result.created} مخاطب وارد شد، {result.failed} سطر رد شد.</p>
+          <div className="rounded-xl border p-3 text-sm">
+            <p className="flex flex-wrap items-center gap-2 font-bold">
+              {result.failed === 0
+                ? <CheckCircle2 className="h-4 w-4" style={{ color: "var(--success)" }} />
+                : <XCircle className="h-4 w-4" style={{ color: "var(--warn)" }} />}
+              <span>از {result.total.toLocaleString("fa-IR")} سطر:</span>
+              <Badge tone="success">{result.created.toLocaleString("fa-IR")} وارد شد</Badge>
+              {result.failed > 0 && <Badge tone="danger">{result.failed.toLocaleString("fa-IR")} رد شد</Badge>}
+            </p>
             {result.errors.length > 0 && (
-              <ul className="mt-2 list-inside list-disc space-y-1" style={{ color: "var(--danger)" }}>
-                {result.errors.map((e) => <li key={e}>{e}</li>)}
-              </ul>
+              <>
+                <p className="mt-2 font-semibold">سطرهای ردشده (بقیه سطرها وارد شده‌اند):</p>
+                <ul className="mt-1 max-h-40 list-inside list-disc space-y-1 overflow-y-auto" tabIndex={0}
+                    style={{ color: "var(--danger)" }}>
+                  {result.errors.map((e) => <li key={e}>{e}</li>)}
+                </ul>
+              </>
             )}
           </div>
         )}
 
         <div className="flex justify-end gap-2">
           <button type="button" className="btn" onClick={onClose}>بستن</button>
-          <button type="submit" className="btn btn-primary" disabled={busy}>{busy ? "در حال پردازش…" : "وارد کردن"}</button>
+          <button type="submit" className="btn btn-primary" disabled={busy}>
+            {busy ? "در حال پردازش…" : "وارد کردن"}
+          </button>
         </div>
       </form>
     </Modal>
+  );
+}
+
+/** یک مرحله از راهنمای تصویری: شماره، توضیح، تصویر و در صورت نیاز کنترل‌های همان مرحله. */
+function GuideStep({ number, title, body, image, imageAlt, children }: {
+  number: number;
+  title: string;
+  body: string;
+  image: string;
+  imageAlt: string;
+  children?: React.ReactNode;
+}) {
+  return (
+    <li className="rounded-xl border p-4">
+      <div className="mb-2 flex items-start gap-3">
+        <span className="tnum grid h-7 w-7 shrink-0 place-items-center rounded-full text-sm font-bold"
+              style={{ background: "var(--primary)", color: "var(--primary-text)" }}>
+          {number.toLocaleString("fa-IR")}
+        </span>
+        <div>
+          <p className="font-bold">{title}</p>
+          <p className="text-sm" style={{ color: "var(--muted)" }}>{body}</p>
+        </div>
+      </div>
+
+      <img
+        src={image}
+        alt={imageAlt}
+        loading="lazy"
+        width={1200}
+        height={520}
+        className="mb-3 w-full rounded-lg border"
+        style={{ background: "var(--surface-2)" }}
+      />
+
+      {children}
+    </li>
   );
 }

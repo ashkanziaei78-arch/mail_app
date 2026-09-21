@@ -1,9 +1,7 @@
 import { prisma } from "@/lib/db";
 import { requireApi } from "@/lib/api";
 import { contactScope } from "@/lib/scope";
-import { toCsv } from "@/lib/csv";
-
-const COLUMNS = ["نام", "نام خانوادگی", "عنوان", "موبایل", "تلفن ثابت", "ایمیل", "سازمان", "سمت", "رسته شغلی", "استان", "شهر", "آدرس", "برچسب‌ها", "دفترچه", "وضعیت"];
+import { buildContactsWorkbook } from "@/lib/spreadsheet";
 
 export async function GET() {
   const user = await requireApi("contacts.read");
@@ -13,31 +11,30 @@ export async function GET() {
     orderBy: [{ lastName: "asc" }],
   });
 
-  const csv = toCsv(
+  const buffer = await buildContactsWorkbook(
     contacts.map((c) => ({
-      "نام": c.firstName,
-      "نام خانوادگی": c.lastName,
-      "عنوان": c.formalTitle ?? "",
-      "موبایل": c.mobilePhone ?? "",
-      "تلفن ثابت": c.landlinePhone ?? "",
-      "ایمیل": c.email ?? "",
-      "سازمان": c.organizations[0]?.organizationName ?? "",
-      "سمت": c.organizations[0]?.jobTitle ?? "",
-      "رسته شغلی": c.organizations[0]?.jobCategory ?? "",
-      "استان": c.province ?? "",
-      "شهر": c.city ?? "",
-      "آدرس": c.address ?? "",
-      "برچسب‌ها": c.tags.map((t) => `#${t.tag.name}`).join("، "),
-      "دفترچه": c.visibility === "PUBLIC" ? "عمومی" : "خصوصی",
-      "وضعیت": c.status === "ACTIVE" ? "فعال" : "غیرفعال",
+      firstName: c.firstName,
+      lastName: c.lastName,
+      formalTitle: c.formalTitle ?? "",
+      mobilePhone: c.mobilePhone ?? "",
+      landlinePhone: c.landlinePhone ?? "",
+      email: c.email ?? "",
+      organizationName: c.organizations[0]?.organizationName ?? "",
+      jobTitle: c.organizations[0]?.jobTitle ?? "",
+      jobCategory: c.organizations[0]?.jobCategory ?? "",
+      province: c.province ?? "",
+      city: c.city ?? "",
+      address: c.address ?? "",
+      notes: c.notes ?? "",
+      tags: c.tags.map((t) => t.tag.name).join("، "),
     })),
-    COLUMNS,
   );
 
-  return new Response(csv, {
+  return new Response(new Uint8Array(buffer), {
     headers: {
-      "content-type": "text/csv; charset=utf-8",
-      "content-disposition": `attachment; filename="contacts-${Date.now()}.csv"`,
+      "content-type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "content-disposition": `attachment; filename="contacts-${Date.now()}.xlsx"`,
+      "cache-control": "no-store",
     },
   });
 }
