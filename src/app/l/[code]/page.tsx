@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { prisma } from "@/lib/db";
 import { verifySigned } from "@/lib/crypto";
-import { faDate } from "@/lib/jalali";
+import { faDate, faDateTime } from "@/lib/jalali";
 import AccessCodeForm from "./access-code-form";
 import { verifyAccessCode } from "./actions";
 import PrintButton from "./print-button";
+import ResponseForm from "./response-form";
 
 export const metadata: Metadata = { title: "مشاهده نامه", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -20,7 +21,12 @@ export default async function LetterPage({ params }: { params: Promise<{ code: s
       document: {
         include: {
           letter: { include: { letterhead: true, organization: { select: { name: true } } } },
-          campaignRecipient: { include: { contact: { select: { firstName: true, lastName: true } } } },
+          campaignRecipient: {
+            include: {
+              contact: { select: { firstName: true, lastName: true } },
+              response: true,
+            },
+          },
         },
       },
     },
@@ -42,14 +48,37 @@ export default async function LetterPage({ params }: { params: Promise<{ code: s
     if (!unlocked) return <AccessCodeForm code={code} verify={verifyAccessCode} />;
   }
 
-  await prisma.shortLink.update({
-    where: { id: link.id },
-    data: { viewCount: { increment: 1 }, lastViewedAt: new Date() },
-  });
+  // ثبت بازدید: هم شمارنده لینک، هم رویداد جداگانه برای گزارش «چه کسی کِی دید»
+  const now = new Date();
+  const recipientId = link.document.campaignRecipient.id;
+  const headerList = await headers();
+  await prisma.$transaction([
+    prisma.shortLink.update({
+      where: { id: link.id },
+      data: { viewCount: { increment: 1 }, lastViewedAt: now },
+    }),
+    prisma.campaignRecipient.update({
+      where: { id: recipientId },
+      data: {
+        viewCount: { increment: 1 },
+        lastViewedAt: now,
+        firstViewedAt: link.document.campaignRecipient.firstViewedAt ?? now,
+      },
+    }),
+    prisma.letterView.create({
+      data: {
+        campaignRecipientId: recipientId,
+        viewedAt: now,
+        ipAddress: headerList.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null,
+        userAgent: headerList.get("user-agent")?.slice(0, 300) ?? null,
+      },
+    }),
+  ]);
 
   const { document } = link;
   const letter = document.letter;
   const contact = document.campaignRecipient.contact;
+  const response = document.campaignRecipient.response;
 
   return (
     <main id="main" className="min-h-dvh p-4">
@@ -79,8 +108,18 @@ export default async function LetterPage({ params }: { params: Promise<{ code: s
         </div>
       </article>
 
+      <ResponseForm
+        code={code}
+        existing={response ? { kind: response.kind, message: response.message, at: faDateTime(response.createdAt) } : null}
+      />
+
       <p className="no-print mx-auto mt-4 max-w-[210mm] text-center text-xs" style={{ color: "var(--muted)" }}>
         این نامه از سوی {letter?.organization.name ?? "سازمان فرستنده"} صادر شده است.
+        {document.contentSignature && (
+          <>
+            {" "}اصالت سند با امضای دیجیتال <span dir="ltr" className="select-all">{document.contentSignature.slice(0, 16)}</span> تأیید می‌شود.
+          </>
+        )}
       </p>
     </main>
   );

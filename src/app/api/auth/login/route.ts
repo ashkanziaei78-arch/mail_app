@@ -6,10 +6,14 @@ import { setSession } from "@/lib/session";
 import { handle, readBody, ApiError } from "@/lib/api";
 import { audit } from "@/lib/audit";
 import { clientIp, consume, reset, RULES } from "@/lib/rate-limit";
+import { decrypt } from "@/lib/crypto";
+import { hashBackupCode, verifyCode } from "@/lib/totp";
 
 const schema = z.object({
   email: z.string().trim().toLowerCase().email("ایمیل معتبر نیست.").max(200),
   password: z.string().min(1, "گذرواژه را وارد کنید.").max(200),
+  /** کد ۶ رقمی برنامه احراز هویت یا یکی از کدهای پشتیبان */
+  totpCode: z.string().trim().max(20).optional(),
 });
 
 /**
@@ -27,7 +31,8 @@ export async function POST(request: Request) {
     const ip = await clientIp();
     await consume(`login:ip:${ip}`, RULES.loginPerIp);
 
-    const { email, password } = await readBody(request, schema);
+    const input = await readBody(request, schema);
+    const { email, password } = input;
     await consume(`login:email:${email}`, RULES.loginPerAccount);
 
     const user = await prisma.user.findUnique({ where: { email } });
@@ -66,6 +71,30 @@ export async function POST(request: Request) {
         throw new ApiError(429, `حساب پس از ${MAX_FAILED.toLocaleString("fa-IR")} تلاش ناموفق، ${LOCK_MINUTES.toLocaleString("fa-IR")} دقیقه قفل شد.`);
       }
       throw invalid;
+    }
+
+    // مرحله دوم: کد احراز هویت دومرحله‌ای
+    if (user.totpEnabled && user.totpSecretEncrypted) {
+      if (!input.totpCode) {
+        // گذرواژه درست بود ولی نشستی صادر نمی‌شود تا کد دوم بیاید
+        return { totpRequired: true };
+      }
+      const secret = decrypt(user.totpSecretEncrypted);
+      const backupHash = hashBackupCode(input.totpCode);
+      const usedBackup = user.totpBackupCodes.includes(backupHash);
+
+      if (!usedBackup && !verifyCode(secret, input.totpCode)) {
+        await audit({ organizationId: user.organizationId, userId: user.id, action: "TOTP_FAILED", entityType: "User", entityId: user.id });
+        throw new ApiError(401, "کد دومرحله‌ای نادرست است.");
+      }
+      if (usedBackup) {
+        // کد پشتیبان یک‌بارمصرف است
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { totpBackupCodes: user.totpBackupCodes.filter((h) => h !== backupHash) },
+        });
+        await audit({ organizationId: user.organizationId, userId: user.id, action: "TOTP_BACKUP_USED", entityType: "User", entityId: user.id });
+      }
     }
 
     if (user.status !== "ACTIVE") {

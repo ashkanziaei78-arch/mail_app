@@ -15,6 +15,8 @@ const schema = z.object({
     bodyHtml: z.string().trim().min(1, "متن نامه خالی است.").optional(),
     senderName: z.string().trim().max(120).optional().nullable(),
     letterheadId: z.string().uuid().optional().nullable(),
+    /** مقدار فیلدهای تعریف‌شده روی سربرگ: { key: value } */
+    fieldValues: z.record(z.string(), z.string().max(5000)).optional(),
   }).optional(),
 });
 
@@ -48,6 +50,18 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
     const letter = campaign.letters[0];
     if (input.letter && letter) {
+      // فیلدهای الزامی سربرگ باید پر باشند
+      const letterheadId = input.letter.letterheadId ?? letter.letterheadId;
+      if (letterheadId && input.letter.fieldValues) {
+        const fields = await prisma.letterheadField.findMany({ where: { letterheadId } });
+        const missing = fields
+          .filter((f) => f.required && !(input.letter!.fieldValues![f.key] ?? "").trim())
+          .map((f) => f.label);
+        if (missing.length) {
+          throw new ApiError(422, `این فیلدهای سربرگ الزامی‌اند و خالی مانده‌اند: ${missing.join("، ")}`);
+        }
+      }
+
       await prisma.letter.update({
         where: { id: letter.id },
         data: {
@@ -57,6 +71,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           senderName: input.letter.senderName,
           letterheadId: input.letter.letterheadId,
           bodyHtml: input.letter.bodyHtml ? sanitizeHtml(input.letter.bodyHtml) : undefined,
+          fieldValuesJson: input.letter.fieldValues ? (input.letter.fieldValues as object) : undefined,
           version: input.letter.bodyHtml ? { increment: 1 } : undefined,
         },
       });

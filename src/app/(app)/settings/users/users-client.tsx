@@ -13,14 +13,17 @@ import { faDateTime } from "@/lib/jalali";
 
 type Row = {
   id: string; fullName: string; email: string; role: string; status: string;
-  departmentId: string | null; departmentName: string | null; lastLoginAt: string | null;
+  departmentId: string | null; departmentName: string | null;
+  positionId: string | null; positionName: string | null;
+  totpEnabled: boolean; lastLoginAt: string | null;
 };
 
 const ASSIGNABLE = ["ORG_ADMIN", "DEPT_ADMIN", "APPROVER", "USER"] as const;
 
-export default function UsersClient({ users, departments, logs, currentUserId }: {
+export default function UsersClient({ users, departments, positions, logs, currentUserId }: {
   users: Row[];
   departments: Array<{ id: string; name: string }>;
+  positions: Array<{ id: string; name: string }>;
   logs: Array<{ id: string; action: string; entityType: string; user: string; createdAt: string; ipAddress: string | null }>;
   currentUserId: string;
 }) {
@@ -64,7 +67,7 @@ export default function UsersClient({ users, departments, logs, currentUserId }:
       <div className="card mb-6 overflow-x-auto">
         <table className="table">
           <caption className="sr-only">کاربران سازمان</caption>
-          <thead><tr><th>نام</th><th>ایمیل</th><th>نقش</th><th>واحد</th><th>آخرین ورود</th><th>وضعیت</th><th><span className="sr-only">عملیات</span></th></tr></thead>
+          <thead><tr><th>نام</th><th>ایمیل</th><th>نقش</th><th>سمت</th><th>واحد</th><th>آخرین ورود</th><th>وضعیت</th><th><span className="sr-only">عملیات</span></th></tr></thead>
           <tbody>
             {users.map((u) => (
               <tr key={u.id}>
@@ -81,6 +84,13 @@ export default function UsersClient({ users, departments, logs, currentUserId }:
                   )}
                 </td>
                 <td>
+                  <select className="select" aria-label={`سمت ${u.fullName}`} value={u.positionId ?? ""}
+                          onChange={(e) => patch(u.id, { positionId: e.target.value || null }, "سمت به‌روزرسانی شد.")}>
+                    <option value="">بدون سمت</option>
+                    {positions.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                </td>
+                <td>
                   <select className="select" aria-label={`واحد ${u.fullName}`} value={u.departmentId ?? ""}
                           onChange={(e) => patch(u.id, { departmentId: e.target.value || null }, "واحد به‌روزرسانی شد.")}>
                     <option value="">بدون واحد</option>
@@ -88,7 +98,12 @@ export default function UsersClient({ users, departments, logs, currentUserId }:
                   </select>
                 </td>
                 <td className="tnum">{u.lastLoginAt ? faDateTime(u.lastLoginAt) : "—"}</td>
-                <td><Badge tone={u.status === "ACTIVE" ? "success" : "neutral"}>{u.status === "ACTIVE" ? "فعال" : "غیرفعال"}</Badge></td>
+                <td>
+                  <span className="flex flex-wrap gap-1">
+                    <Badge tone={u.status === "ACTIVE" ? "success" : "neutral"}>{u.status === "ACTIVE" ? "فعال" : "غیرفعال"}</Badge>
+                    {u.totpEnabled && <Badge tone="info">۲FA</Badge>}
+                  </span>
+                </td>
                 <td>
                   <span className="flex gap-1">
                     <button className="btn btn-sm" aria-label={`بازنشانی گذرواژه ${u.fullName}`} onClick={() => setResetting(u)}>
@@ -131,6 +146,7 @@ export default function UsersClient({ users, departments, logs, currentUserId }:
       {adding && (
         <AddUserDialog
           departments={departments}
+          positions={positions}
           onClose={() => setAdding(false)}
           onSaved={() => { setAdding(false); toast("success", "کاربر جدید ساخته شد. در نخستین ورود باید گذرواژه را عوض کند."); router.refresh(); }}
         />
@@ -147,8 +163,9 @@ export default function UsersClient({ users, departments, logs, currentUserId }:
   );
 }
 
-function AddUserDialog({ departments, onClose, onSaved }: {
+function AddUserDialog({ departments, positions, onClose, onSaved }: {
   departments: Array<{ id: string; name: string }>;
+  positions: Array<{ id: string; name: string }>;
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -164,7 +181,10 @@ function AddUserDialog({ departments, onClose, onSaved }: {
       method: "POST", headers: { "content-type": "application/json" },
       body: JSON.stringify({
         fullName: form.get("fullName"), email: form.get("email"), password: form.get("password"),
-        role: form.get("role"), departmentId: form.get("departmentId") || null,
+        role: form.get("role"),
+        departmentId: form.get("departmentId") || null,
+        positionId: form.get("positionId") || null,
+        mobilePhone: form.get("mobilePhone") || null,
       }),
     });
     const json = await res.json();
@@ -191,6 +211,15 @@ function AddUserDialog({ departments, onClose, onSaved }: {
             <option value="">بدون واحد</option>
             {departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
           </select>
+        </Field>
+        <Field label="سمت سازمانی" hint="مبنای گردش تأیید نامه است.">
+          <select className="select" name="positionId" defaultValue="">
+            <option value="">بدون سمت</option>
+            {positions.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+        </Field>
+        <Field label="شماره همراه" hint="برای بازیابی گذرواژه با پیامک لازم است.">
+          <input className="input tnum" dir="ltr" inputMode="tel" name="mobilePhone" />
         </Field>
         {error && <p role="alert" className="error-text">{error}</p>}
         <div className="flex justify-end gap-2">

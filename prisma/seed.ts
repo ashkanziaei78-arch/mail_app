@@ -94,7 +94,51 @@ async function main() {
   );
   const [, orgAdmin] = users;
 
-  const tagNames = ["مدیران_استان", "حامیان_فناوری", "صنایع_یزد", "اعضای_بنیاد", "دعوت_همایش", "روابط_بین_الملل"];
+  // --- سمت‌های سازمانی و گردش تأیید ---
+  const positionSpecs = [
+    { name: "مدیرکل", rank: 10, canApprove: true, canSign: true },
+    { name: "معاون", rank: 20, canApprove: true, canSign: true },
+    { name: "رئیس اداره", rank: 30, canApprove: true, canSign: false },
+    { name: "کارشناس مسئول", rank: 40, canApprove: false, canSign: false },
+    { name: "کارشناس", rank: 50, canApprove: false, canSign: false },
+  ];
+  const positions = await Promise.all(
+    positionSpecs.map((spec) =>
+      prisma.position.upsert({
+        where: { organizationId_name: { organizationId: organization.id, name: spec.name } },
+        update: {},
+        create: { ...spec, organizationId: organization.id },
+      }),
+    ),
+  );
+  const positionByName = (name: string) => positions.find((p) => p.name === name)!.id;
+
+  const existingWorkflow = await prisma.workflow.findFirst({
+    where: { organizationId: organization.id, name: "گردش استاندارد دبیرخانه" },
+  });
+  if (!existingWorkflow) {
+    await prisma.workflow.create({
+      data: {
+        organizationId: organization.id,
+        name: "گردش استاندارد دبیرخانه",
+        isDefault: true,
+        steps: {
+          create: [
+            { positionId: positionByName("رئیس اداره"), order: 1, label: "بررسی اداره" },
+            { positionId: positionByName("معاون"), order: 2, label: "تأیید معاونت" },
+            { positionId: positionByName("مدیرکل"), order: 3, label: "تأیید نهایی" },
+          ],
+        },
+      },
+    });
+  }
+
+  // سمت کاربران نمونه
+  await prisma.user.update({ where: { email: "admin@mailing.local" }, data: { positionId: positionByName("مدیرکل"), mobilePhone: "09120000001" } });
+  await prisma.user.update({ where: { email: "approver@mailing.local" }, data: { positionId: positionByName("معاون"), mobilePhone: "09120000002" } });
+  await prisma.user.update({ where: { email: "user@mailing.local" }, data: { positionId: positionByName("کارشناس"), mobilePhone: "09120000003" } });
+
+  const tagNames = ["مدیران_استان", "حامیان_فناوری", "صنایع_یزد", "اعضای_بنیاد", "دعوت_همایش", "روابط_بین_الملل", "اتاق_بازرگانی"];
   const tags = await Promise.all(
     tagNames.map((name) =>
       prisma.tag.upsert({
@@ -124,6 +168,31 @@ async function main() {
     });
   }
 
+  // گروهی با اعضای متعدد تا انتخاب هشتگی محسوس باشد
+  const chamberTag = tagId("اتاق_بازرگانی");
+  for (let i = 1; i <= 20; i++) {
+    const mobile = `0912999${String(i).padStart(4, "0")}`;
+    if (await prisma.contact.findFirst({ where: { organizationId: organization.id, mobilePhone: mobile } })) continue;
+    await prisma.contact.create({
+      data: {
+        organizationId: organization.id,
+        createdByUserId: orgAdmin.id,
+        visibility: "PUBLIC",
+        formalTitle: i % 2 === 0 ? "سرکار خانم" : "جناب آقای",
+        firstName: `عضو ${i}`,
+        lastName: "اتاق بازرگانی",
+        mobilePhone: mobile,
+        city: "یزد",
+        province: "یزد",
+        organizations: {
+          create: { organizationId: organization.id, organizationName: "اتاق بازرگانی یزد", jobTitle: "عضو هیئت نمایندگان", isPrimary: true },
+        },
+        tags: { create: [{ tagId: chamberTag }] },
+        history: { create: { changedById: orgAdmin.id, changeType: "CREATE", diffJson: { source: "seed" } } },
+      },
+    });
+  }
+
   const smartMembers = await prisma.contact.findMany({
     where: { organizationId: organization.id, tags: { some: { tagId: tagId("مدیران_استان") } } },
     select: { id: true },
@@ -137,6 +206,30 @@ async function main() {
         type: "SMART",
         filterJson: { tagIds: [tagId("مدیران_استان")], tagMode: "OR" },
         members: { create: smartMembers.map((m) => ({ contactId: m.id })) },
+      },
+    });
+  }
+
+  // --- سربرگ نمونه با فیلدهای قابل تعریف ---
+  let letterhead = await prisma.letterhead.findFirst({ where: { organizationId: organization.id, isDefault: true } });
+  if (!letterhead) {
+    letterhead = await prisma.letterhead.create({
+      data: {
+        organizationId: organization.id,
+        name: "سربرگ رسمی — دفتر مرکزی",
+        fileUrl: "/hero.png", // نمونه؛ در عمل مدیر تصویر واقعی را آپلود می‌کند
+        isDefault: true,
+        versions: { create: { fileUrl: "/hero.png", version: 1 } },
+        fields: {
+          create: [
+            { key: "letterNumber", label: "شماره نامه", type: "TEXT", area: "HEADER", required: true, placeholder: "۱۴۰۴/۱۲۳", sortOrder: 0 },
+            { key: "letterDate", label: "تاریخ نامه", type: "DATE", area: "HEADER", required: true, helpText: "با تقویم شمسی انتخاب کنید.", sortOrder: 1 },
+            { key: "attachmentCount", label: "تعداد پیوست", type: "NUMBER", area: "HEADER", sortOrder: 2 },
+            { key: "urgency", label: "فوریت", type: "SELECT", area: "HEADER", optionsJson: ["عادی", "فوری", "آنی"], defaultValue: "عادی", sortOrder: 3 },
+            { key: "secretariatNote", label: "یادداشت دبیرخانه", type: "TEXTAREA", area: "FOOTER", helpText: "روی نامه چاپ نمی‌شود مگر در متن درجش کنید.", sortOrder: 4 },
+            { key: "agenda", label: "دستور جلسه", type: "RICH_TEXT", area: "BODY", helpText: "می‌توانید فهرست و جدول بگذارید.", sortOrder: 5 },
+          ],
+        },
       },
     });
   }
@@ -155,7 +248,7 @@ async function main() {
     });
   }
 
-  console.log(`✅ آماده شد — ${CONTACTS.length} مخاطب، ${tags.length} برچسب، ${departments.length} واحد.
+  console.log(`✅ آماده شد — ${CONTACTS.length} مخاطب، ${tags.length} برچسب، ${departments.length} واحد، ${positions.length} سمت.
 
 حساب‌های ورود (گذرواژه همه: ${SEED_PASSWORD})
   root@mailing.local      مدیر کل سامانه

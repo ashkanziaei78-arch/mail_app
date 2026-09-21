@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   LayoutDashboard, Contact, Tags, FileImage, FileText, Mail, PenLine,
-  MessageSquare, BarChart3, Users, ShieldCheck, Moon, Sun, LogOut, Menu, X, KeyRound, ChevronLeft,
+  MessageSquare, BarChart3, Users, ShieldCheck, Moon, Sun, LogOut, Menu, X, KeyRound, ChevronLeft, GitBranch,
 } from "lucide-react";
 import type { PermissionCode } from "@/lib/rbac";
 
@@ -13,7 +13,7 @@ export type NavItem = { href: string; label: string; icon: keyof typeof ICONS; p
 
 const ICONS = {
   LayoutDashboard, Contact, Tags, FileImage, FileText, Mail, PenLine,
-  MessageSquare, BarChart3, Users, ShieldCheck,
+  MessageSquare, BarChart3, Users, ShieldCheck, GitBranch,
 };
 
 export const NAV: Array<{ group: string; items: NavItem[] }> = [
@@ -35,6 +35,7 @@ export const NAV: Array<{ group: string; items: NavItem[] }> = [
       { href: "/settings/sms", label: "تنظیمات پیامک", icon: "MessageSquare", permission: "sms.settings" },
       { href: "/reports", label: "گزارش‌ها", icon: "BarChart3", permission: "reports.read" },
       { href: "/settings/users", label: "کاربران و نقش‌ها", icon: "Users", permission: "users.manage" },
+      { href: "/settings/workflow", label: "سمت‌ها و گردش تأیید", icon: "GitBranch", permission: "users.manage" },
     ],
   },
 ];
@@ -65,7 +66,8 @@ function useBreadcrumb(pathname: string) {
   const parent = all
     .filter((item) => item.href !== "/dashboard" && pathname.startsWith(item.href))
     .sort((a, b) => b.href.length - a.href.length)[0];
-  if (pathname.startsWith("/account/password")) return ["حساب کاربری", "تغییر گذرواژه"];
+  if (pathname.startsWith("/account/password")) return ["امنیت حساب", "تغییر گذرواژه"];
+  if (pathname.startsWith("/account/security")) return ["امنیت حساب"];
   return parent ? [parent.label, "جزئیات"] : [];
 }
 
@@ -135,9 +137,9 @@ export default function AppShell({
             <span className="block truncate text-[11px] text-brand-200">{user.roleLabel} — {user.organizationName}</span>
           </span>
         </div>
-        <Link href="/account/password" className="nav-item mt-2" aria-current={pathname === "/account/password" ? "page" : undefined}>
+        <Link href="/account/security" className="nav-item mt-2" aria-current={pathname.startsWith("/account") ? "page" : undefined}>
           <KeyRound className="h-[18px] w-[18px]" aria-hidden="true" />
-          تغییر گذرواژه
+          امنیت حساب
         </Link>
         {/* خروج، عمداً از آیتم‌های ناوبری جدا شده است */}
         <button onClick={logout} className="nav-item w-full text-right">

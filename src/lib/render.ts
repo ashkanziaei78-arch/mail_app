@@ -21,9 +21,25 @@ export const SMS_VARIABLES = [
   ...LETTER_VARIABLES,
   { token: "{{لینک}}", description: "لینک کوتاه مشاهده نامه" },
   { token: "{{کد_دسترسی}}", description: "کد دسترسی نامه محرمانه" },
+  { token: "{{لغو_اشتراک}}", description: "لینک لغو دریافت پیامک (توصیه می‌شود در انتهای پیامک بیاید)" },
 ] as const;
 
 export type RenderContext = Record<string, string>;
+
+/** مقدار فیلدهای سربرگ را به‌صورت {{فیلد:key}} وارد بافت جایگذاری می‌کند. */
+export function withLetterheadFields(
+  context: RenderContext,
+  fields: Array<{ key: string; type: string }>,
+  values: Record<string, string> | null | undefined,
+): RenderContext {
+  const merged = { ...context };
+  for (const field of fields) {
+    const raw = values?.[field.key] ?? "";
+    // تاریخ در پایگاه داده ISO است ولی در نامه باید شمسی دیده شود
+    merged[`{{فیلد:${field.key}}}`] = field.type === "DATE" && raw ? faDate(raw) : raw;
+  }
+  return merged;
+}
 
 export function buildContext(input: {
   formalTitle?: string | null;
@@ -38,6 +54,7 @@ export function buildContext(input: {
   letterNumber?: string | null;
   shortLink?: string;
   accessCode?: string;
+  unsubscribeUrl?: string;
 }): RenderContext {
   return {
     "{{عنوان}}": input.formalTitle ?? "",
@@ -53,6 +70,7 @@ export function buildContext(input: {
     "{{شماره_نامه}}": input.letterNumber ?? "",
     "{{لینک}}": input.shortLink ?? "",
     "{{کد_دسترسی}}": input.accessCode ?? "",
+    "{{لغو_اشتراک}}": input.unsubscribeUrl ?? "",
   };
 }
 

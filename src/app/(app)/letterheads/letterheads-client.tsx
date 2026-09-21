@@ -2,13 +2,18 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Star, Trash2 } from "lucide-react";
+import { ListPlus, Plus, Star, Trash2 } from "lucide-react";
 import { Badge, EmptyState, Field, PageHeader } from "@/components/ui/primitives";
 import Modal from "@/components/ui/modal";
 import { useConfirm, useToast } from "@/components/ui/toast";
 import { LETTER_VARIABLES } from "@/lib/render";
+import DynamicField, { AREA_LABELS, type FieldDefinition } from "@/components/ui/dynamic-field";
+import { FIELD_AREAS, FIELD_TYPES } from "@/lib/validators";
 
-type Letterhead = { id: string; name: string; fileUrl: string; isDefault: boolean; status: string; version: number };
+type Letterhead = {
+  id: string; name: string; fileUrl: string; isDefault: boolean; status: string; version: number;
+  fields: FieldDefinition[];
+};
 type Template = { id: string; name: string; bodyHtml: string };
 
 export default function LetterheadsClient({ letterheads, templates, canWrite }: {
@@ -20,6 +25,7 @@ export default function LetterheadsClient({ letterheads, templates, canWrite }: 
   const toast = useToast();
   const { confirm, dialog: confirmDialog } = useConfirm();
   const [dialog, setDialog] = useState<null | "letterhead" | "template">(null);
+  const [fieldsFor, setFieldsFor] = useState<Letterhead | null>(null);
 
   async function call(url: string, init: RequestInit, okText?: string) {
     const res = await fetch(url, init);
@@ -53,10 +59,18 @@ export default function LetterheadsClient({ letterheads, templates, canWrite }: 
                 <div className="flex items-center justify-between gap-2 border-t p-3">
                   <div className="min-w-0">
                     <p className="truncate font-semibold">{l.name}</p>
-                    <p className="text-xs" style={{ color: "var(--muted)" }}>نسخه {l.version}</p>
+                    <p className="text-xs" style={{ color: "var(--muted)" }}>
+                      نسخه {l.version} — {l.fields.length ? `${l.fields.length.toLocaleString("fa-IR")} فیلد` : "بدون فیلد"}
+                    </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
                     <Badge tone={l.status === "ACTIVE" ? "success" : "neutral"}>{l.status === "ACTIVE" ? "فعال" : "غیرفعال"}</Badge>
+                    {canWrite && (
+                      <button className="btn btn-sm" onClick={() => setFieldsFor(l)} aria-label={`فیلدهای سربرگ ${l.name}`}>
+                        <ListPlus className="h-4 w-4" />
+                        فیلدها
+                      </button>
+                    )}
                     {l.isDefault ? (
                       <Badge tone="info">پیش‌فرض</Badge>
                     ) : canWrite ? (
@@ -115,6 +129,14 @@ export default function LetterheadsClient({ letterheads, templates, canWrite }: 
 
       {dialog === "letterhead" && <LetterheadDialog onClose={() => setDialog(null)} onSaved={() => { setDialog(null); toast("success", "سربرگ ذخیره شد."); router.refresh(); }} />}
       {dialog === "template" && <TemplateDialog onClose={() => setDialog(null)} onSaved={() => { setDialog(null); toast("success", "قالب ذخیره شد."); router.refresh(); }} />}
+      {fieldsFor && (
+        <FieldsDialog
+          letterhead={fieldsFor}
+          onClose={() => setFieldsFor(null)}
+          onChanged={() => { router.refresh(); }}
+          notify={toast}
+        />
+      )}
       {confirmDialog}
     </>
   );
@@ -208,5 +230,214 @@ function TemplateDialog({ onClose, onSaved }: { onClose: () => void; onSaved: ()
         </div>
       </form>
     </Modal>
+  );
+}
+
+
+/**
+ * تعریف فیلدهای یک سربرگ.
+ * مدیر اینجا می‌گوید روی این سربرگ کجا یادداشت نوشته می‌شود، کجا متن قالب‌دار
+ * و کجا تاریخ شمسی. کاربر هنگام ساخت نامه فقط همین‌ها را پر می‌کند.
+ */
+function FieldsDialog({ letterhead, onClose, onChanged, notify }: {
+  letterhead: Letterhead;
+  onClose: () => void;
+  onChanged: () => void;
+  notify: (tone: "success" | "error", text: string) => void;
+}) {
+  const [adding, setAdding] = useState(false);
+  const [preview, setPreview] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState(false);
+
+  async function remove(field: FieldDefinition) {
+    setBusy(true);
+    const res = await fetch(`/api/letterheads/${letterhead.id}/fields/${field.id}`, { method: "DELETE" });
+    const json = await res.json();
+    setBusy(false);
+    if (!json.ok) { notify("error", json.error); return; }
+    notify("success", `فیلد «${field.label}» حذف شد.`);
+    onChanged();
+  }
+
+  const byArea = FIELD_AREAS.map((area) => ({
+    area,
+    fields: letterhead.fields.filter((f) => f.area === area.value),
+  }));
+
+  return (
+    <Modal
+      title={`فیلدهای سربرگ «${letterhead.name}»`}
+      description="هر فیلدی که اینجا بسازید، هنگام ساخت نامه با این سربرگ به کاربر نشان داده می‌شود."
+      size="lg"
+      onClose={onClose}
+      footer={<button className="btn" onClick={onClose}>بستن</button>}
+    >
+      <div className="space-y-5">
+        {letterhead.fields.length === 0 ? (
+          <p className="rounded-xl p-3 text-sm" style={{ background: "var(--info-bg)", color: "var(--info)" }}>
+            هنوز فیلدی تعریف نشده. برای نمونه: «شماره نامه» از نوع متن در بالای نامه،
+            «تاریخ نامه» از نوع تاریخ شمسی، و «یادداشت دبیرخانه» از نوع یادداشت چندخطی در پای نامه.
+          </p>
+        ) : (
+          byArea.map(({ area, fields }) =>
+            fields.length === 0 ? null : (
+              <section key={area.value}>
+                <h3 className="mb-2 text-sm font-bold">{area.label}</h3>
+                <ul className="space-y-2">
+                  {fields.map((field) => (
+                    <li key={field.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3">
+                      <div className="min-w-0">
+                        <p className="font-semibold">
+                          {field.label}
+                          {field.required && <span style={{ color: "var(--danger)" }}> *</span>}
+                        </p>
+                        <p className="text-xs" style={{ color: "var(--muted)" }}>
+                          {FIELD_TYPES.find((t) => t.value === field.type)?.label}
+                          {" — درج در متن با "}
+                          <code className="select-all rounded px-1" style={{ background: "var(--surface-2)" }} dir="ltr">
+                            {`{{فیلد:${field.key}}}`}
+                          </code>
+                        </p>
+                      </div>
+                      <button className="btn btn-sm btn-danger" disabled={busy}
+                              aria-label={`حذف فیلد ${field.label}`} onClick={() => remove(field)}>
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ),
+          )
+        )}
+
+        {letterhead.fields.length > 0 && (
+          <section>
+            <h3 className="mb-2 text-sm font-bold">پیش‌نمایش فرمی که کاربر می‌بیند</h3>
+            <div className="grid gap-3 rounded-xl border p-3 sm:grid-cols-2">
+              {letterhead.fields.map((field) => (
+                <div key={field.id} className={field.type === "RICH_TEXT" || field.type === "TEXTAREA" ? "sm:col-span-2" : ""}>
+                  <DynamicField
+                    field={field}
+                    value={preview[field.key] ?? field.defaultValue ?? ""}
+                    onChange={(v) => setPreview((p) => ({ ...p, [field.key]: v }))}
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {adding ? (
+          <AddFieldForm
+            letterheadId={letterhead.id}
+            existingKeys={letterhead.fields.map((f) => f.key)}
+            onCancel={() => setAdding(false)}
+            onSaved={() => { setAdding(false); notify("success", "فیلد اضافه شد."); onChanged(); }}
+          />
+        ) : (
+          <button className="btn btn-primary" onClick={() => setAdding(true)}>
+            <Plus className="h-4 w-4" />افزودن فیلد
+          </button>
+        )}
+      </div>
+    </Modal>
+  );
+}
+
+function AddFieldForm({ letterheadId, existingKeys, onCancel, onSaved }: {
+  letterheadId: string;
+  existingKeys: string[];
+  onCancel: () => void;
+  onSaved: () => void;
+}) {
+  const [form, setForm] = useState({
+    key: "", label: "", type: "TEXT", area: "HEADER",
+    placeholder: "", helpText: "", required: false, defaultValue: "",
+  });
+  const [options, setOptions] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
+    setForm((f) => ({ ...f, [key]: value }));
+  }
+
+  async function submit(event: React.FormEvent) {
+    event.preventDefault();
+    if (existingKeys.includes(form.key)) { setError("کلیدی با این نام روی این سربرگ هست."); return; }
+    setBusy(true);
+    setError(null);
+    const res = await fetch(`/api/letterheads/${letterheadId}/fields`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        ...form,
+        options: options.split("\n").map((o) => o.trim()).filter(Boolean),
+      }),
+    });
+    const json = await res.json();
+    setBusy(false);
+    if (!json.ok) { setError(json.error); return; }
+    onSaved();
+  }
+
+  const typeMeta = FIELD_TYPES.find((t) => t.value === form.type);
+
+  return (
+    <form onSubmit={submit} className="grid gap-3 rounded-xl border p-4 sm:grid-cols-2">
+      <h3 className="font-bold sm:col-span-2">فیلد جدید</h3>
+
+      <Field label="برچسب فارسی" required hint="همین متن به کاربر نشان داده می‌شود.">
+        <input className="input" required value={form.label}
+               onChange={(e) => {
+                 set("label", e.target.value);
+                 // پیشنهاد خودکار کلید لاتین از روی اولین تایپ، ولی قابل تغییر
+                 if (!form.key) set("key", "");
+               }} />
+      </Field>
+
+      <Field label="کلید لاتین" required hint="برای درج در متن نامه: {{فیلد:کلید}}">
+        <input className="input" dir="ltr" required pattern="[a-zA-Z][a-zA-Z0-9_]*" value={form.key}
+               onChange={(e) => set("key", e.target.value)} placeholder="letterNumber" />
+      </Field>
+
+      <Field label="نوع فیلد" required hint={typeMeta?.hint || undefined}>
+        <select className="select" value={form.type} onChange={(e) => set("type", e.target.value)}>
+          {FIELD_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+        </select>
+      </Field>
+
+      <Field label="جای فیلد روی برگه" required
+             hint={FIELD_AREAS.find((a) => a.value === form.area)?.hint}>
+        <select className="select" value={form.area} onChange={(e) => set("area", e.target.value)}>
+          {FIELD_AREAS.map((a) => <option key={a.value} value={a.value}>{a.label}</option>)}
+        </select>
+      </Field>
+
+      {form.type === "SELECT" && (
+        <div className="sm:col-span-2">
+          <Field label="گزینه‌ها" required hint="هر گزینه در یک خط.">
+            <textarea className="textarea" value={options} onChange={(e) => setOptions(e.target.value)} required />
+          </Field>
+        </div>
+      )}
+
+      <Field label="متن راهنما"><input className="input" value={form.helpText} onChange={(e) => set("helpText", e.target.value)} /></Field>
+      <Field label="مقدار پیش‌فرض"><input className="input" value={form.defaultValue} onChange={(e) => set("defaultValue", e.target.value)} /></Field>
+
+      <label className="flex cursor-pointer items-center gap-2 text-sm sm:col-span-2">
+        <input type="checkbox" className="custom-checkbox" checked={form.required}
+               onChange={(e) => set("required", e.target.checked)} />
+        پر کردن این فیلد الزامی است
+      </label>
+
+      {error && <p role="alert" className="error-text sm:col-span-2">{error}</p>}
+
+      <div className="flex justify-end gap-2 sm:col-span-2">
+        <button type="button" className="btn" onClick={onCancel}>انصراف</button>
+        <button type="submit" className="btn btn-primary" disabled={busy}>{busy ? "در حال ذخیره…" : "افزودن فیلد"}</button>
+      </div>
+    </form>
   );
 }

@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { prisma } from "./db";
-import { randomCode, randomDigits } from "./crypto";
-import { applyVariables, buildContext, sanitizeHtml } from "./render";
+import { randomCode, randomDigits, sign } from "./crypto";
+import { applyVariables, buildContext, sanitizeHtml, withLetterheadFields } from "./render";
 import { countSegments, normalizeMobile } from "./sms";
 import { resolveProvider } from "./sms-server";
 import type { CurrentUser } from "./auth";
@@ -65,7 +65,11 @@ export async function generateDocuments(campaignId: string) {
     where: { id: campaignId },
     include: {
       organization: { select: { name: true } },
-      letters: { orderBy: { createdAt: "asc" }, take: 1 },
+      letters: {
+        orderBy: { createdAt: "asc" },
+        take: 1,
+        include: { letterhead: { include: { fields: true } } },
+      },
       recipients: {
         include: {
           contact: { include: { organizations: { where: { isPrimary: true }, take: 1 } } },
@@ -99,7 +103,7 @@ export async function generateDocuments(campaignId: string) {
     }
 
     const primary = contact.organizations[0];
-    const context = buildContext({
+    const baseContext = buildContext({
       formalTitle: contact.formalTitle,
       firstName: contact.firstName,
       lastName: contact.lastName,
@@ -111,6 +115,11 @@ export async function generateDocuments(campaignId: string) {
       letterDate: letter.letterDate,
       letterNumber: letter.letterNumber,
     });
+    const context = withLetterheadFields(
+      baseContext,
+      letter.letterhead?.fields ?? [],
+      letter.fieldValuesJson as Record<string, string> | null,
+    );
 
     const source = recipient.letterOverrideHtml ?? letter.bodyHtml;
     const renderedHtml = sanitizeHtml(applyVariables(source, context));
@@ -128,16 +137,26 @@ export async function generateDocuments(campaignId: string) {
       // نامه تغییر کرده ⇒ نسخه جدید سند، لینک کوتاه قبلی حفظ می‌شود
       await prisma.generatedDocument.update({
         where: { id: recipient.document.id },
-        data: { renderedHtml, fileHash, version: { increment: 1 } },
+        data: {
+          renderedHtml,
+          fileHash,
+          version: { increment: 1 },
+          contentSignature: sign(`${recipient.document.documentNumber}:${fileHash}`, "link-hmac"),
+          signedAt: new Date(),
+        },
       });
     } else {
+      const number = documentNumber(campaign.createdAt.getTime() % 10000, index);
       const document = await prisma.generatedDocument.create({
         data: {
           campaignRecipientId: recipient.id,
           letterId: letter.id,
           renderedHtml,
           fileHash,
-          documentNumber: documentNumber(campaign.createdAt.getTime() % 10000, index),
+          documentNumber: number,
+          // امضای HMAC روی محتوای نهایی: هر تغییر بعدی در متن، امضا را باطل می‌کند
+          contentSignature: sign(`${number}:${fileHash}`, "link-hmac"),
+          signedAt: new Date(),
         },
       });
       await prisma.shortLink.create({
@@ -192,7 +211,9 @@ export async function sendCampaign(campaignId: string, user: CurrentUser) {
   const provider = resolveProvider(config);
   const sender = config?.senderNumber ?? "10008663";
   const baseUrl = (process.env.APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
-  const smsBody = campaign.smsBodyText ?? "{{عنوان}} {{نام_کامل}} گرامی، نامه‌ای از {{سازمان_فرستنده}} برای شما صادر شد: {{لینک}}";
+  const smsBody =
+    campaign.smsBodyText ??
+    "{{عنوان}} {{نام_کامل}} گرامی، نامه‌ای از {{سازمان_فرستنده}} برای شما صادر شد: {{لینک}}\nلغو: {{لغو_اشتراک}}";
 
   await prisma.campaign.update({ where: { id: campaign.id }, data: { status: "PROCESSING" } });
 
@@ -202,6 +223,16 @@ export async function sendCampaign(campaignId: string, user: CurrentUser) {
   for (const recipient of campaign.recipients) {
     const link = recipient.document?.shortLink;
     const mobile = normalizeMobile(recipient.contact.mobilePhone);
+
+    // مخاطبی که لغو اشتراک کرده، هرگز پیامک نمی‌گیرد — حتی اگر در فهرست کمپین باشد
+    if (!recipient.contact.smsConsent) {
+      await prisma.campaignRecipient.update({
+        where: { id: recipient.id },
+        data: { status: "SKIPPED", errorMessage: "مخاطب دریافت پیامک را لغو کرده است." },
+      });
+      continue;
+    }
+
     if (!link || !mobile) {
       failed++;
       await prisma.campaignRecipient.update({
@@ -226,6 +257,15 @@ export async function sendCampaign(campaignId: string, user: CurrentUser) {
       shortLink: `${baseUrl}/l/${link.code}`,
       accessCode: link.accessCode ?? "",
     });
+
+    // توکن لغو اشتراک یک بار ساخته و برای همیشه نگه داشته می‌شود
+    let unsubscribeToken = recipient.contact.unsubscribeToken;
+    if (!unsubscribeToken) {
+      unsubscribeToken = randomCode(14);
+      await prisma.contact.update({ where: { id: recipient.contact.id }, data: { unsubscribeToken } });
+    }
+    context["{{لغو_اشتراک}}"] = `${baseUrl}/u/${unsubscribeToken}`;
+
     const finalText = applyVariables(smsBody, context);
 
     const smsMessage = await prisma.smsMessage.upsert({
@@ -254,7 +294,10 @@ export async function sendCampaign(campaignId: string, user: CurrentUser) {
         where: { id: smsMessage.id },
         data: { status: "SENT", providerMessageId: result.providerMessageId, sentAt: new Date(), errorMessage: null },
       });
-      await prisma.campaignRecipient.update({ where: { id: recipient.id }, data: { status: "SMS_SENT", errorMessage: null } });
+      await prisma.campaignRecipient.update({
+        where: { id: recipient.id },
+        data: { status: "SMS_SENT", errorMessage: null, sentAt: new Date() },
+      });
       await prisma.contact.update({ where: { id: recipient.contact.id }, data: { lastUsedInCampaignAt: new Date() } });
 
       // نامه محرمانه: کد دسترسی در پیامک دوم و جداگانه ارسال می‌شود

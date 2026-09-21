@@ -9,7 +9,11 @@ import { NextResponse, type NextRequest } from "next/server";
 const MUTATING = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 export function middleware(request: NextRequest) {
-  if (MUTATING.has(request.method)) {
+  // وبهوک درگاه پیامک از مرورگر نمی‌آید و Origin ندارد؛ خودش با توکن مشترک
+  // محافظت می‌شود، پس از بررسی Origin مستثناست.
+  const isWebhook = request.nextUrl.pathname.startsWith("/api/sms/webhook");
+
+  if (MUTATING.has(request.method) && !isWebhook) {
     const origin = request.headers.get("origin");
     // فرم‌های same-origin مرورگر همیشه Origin می‌فرستند؛ نبودش یعنی درخواست
     // غیرمرورگری است که برای APIهای نشست‌محور ما مجاز نیست.

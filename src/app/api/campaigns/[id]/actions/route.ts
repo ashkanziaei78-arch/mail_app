@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { handle, readBody, requireApi, ApiError } from "@/lib/api";
 import { can } from "@/lib/rbac";
 import { generateDocuments, resolveRecipients, sendCampaign } from "@/lib/campaign";
+import { decide, initApprovals } from "@/lib/workflow";
 import { sanitizeHtml } from "@/lib/render";
 import { audit } from "@/lib/audit";
 
@@ -19,8 +20,8 @@ const schema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("removeRecipient"), recipientId: z.string().uuid() }),
   z.object({ action: z.literal("overrideLetter"), recipientId: z.string().uuid(), bodyHtml: z.string().nullable() }),
   z.object({ action: z.literal("generate") }),
-  z.object({ action: z.literal("submit") }),
-  z.object({ action: z.literal("approve") }),
+  z.object({ action: z.literal("submit"), workflowId: z.string().uuid().optional().nullable() }),
+  z.object({ action: z.literal("approve"), note: z.string().trim().max(500).optional() }),
   z.object({ action: z.literal("reject"), reason: z.string().trim().min(1, "دلیل رد را بنویسید.").max(500) }),
   z.object({ action: z.literal("send") }),
   z.object({ action: z.literal("retryFailed") }),
@@ -50,6 +51,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         const contactIds = await resolveRecipients(user, {
           contactIds: body.contactIds, groupIds: body.groupIds, tagIds: body.tagIds, tagMode: body.tagMode,
         });
+
+        // جایگزینی با انتخاب خالی یعنی پاک‌کردن ناخواسته کل فهرست — رد می‌شود
+        if (contactIds.length === 0 && !body.append) {
+          const existing = await prisma.campaignRecipient.count({ where: { campaignId: id } });
+          if (existing > 0) {
+            throw new ApiError(422, "انتخاب شما هیچ مخاطبی نداشت. برای خالی کردن فهرست، مخاطبین را تک‌تک حذف کنید.");
+          }
+        }
+
         if (!body.append) await prisma.campaignRecipient.deleteMany({ where: { campaignId: id } });
         await prisma.campaignRecipient.createMany({
           data: contactIds.map((contactId) => ({ campaignId: id, contactId })),
@@ -85,27 +95,21 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         const count = await prisma.campaignRecipient.count({ where: { campaignId: id } });
         if (count === 0) throw new ApiError(422, "ابتدا مخاطبین کمپین را انتخاب کنید.");
         await generateDocuments(id);
+        // مراحل تأیید از روی گردش کار سازمان ساخته می‌شود
+        const { steps } = await initApprovals(id, user.organizationId, body.workflowId ?? campaign.workflowId);
         await prisma.campaign.update({ where: { id }, data: { status: "PENDING_APPROVAL", rejectionReason: null } });
-        await audit({ organizationId: user.organizationId, userId: user.id, action: "CAMPAIGN_SUBMIT", entityType: "Campaign", entityId: id });
-        return { status: "PENDING_APPROVAL" };
+        await audit({ organizationId: user.organizationId, userId: user.id, action: "CAMPAIGN_SUBMIT", entityType: "Campaign", entityId: id, metadata: { steps } });
+        return { status: "PENDING_APPROVAL", steps };
       }
 
       case "approve": {
         if (!can(user.role, "campaigns.approve")) throw new ApiError(403, "اجازه تأیید نامه را ندارید.");
-        if (campaign.status !== "PENDING_APPROVAL") throw new ApiError(409, "این کمپین در انتظار تأیید نیست.");
-        await prisma.campaign.update({
-          where: { id },
-          data: { status: "APPROVED", approvedByUserId: user.id, approvedAt: new Date(), rejectionReason: null },
-        });
-        await audit({ organizationId: user.organizationId, userId: user.id, action: "CAMPAIGN_APPROVE", entityType: "Campaign", entityId: id });
-        return { status: "APPROVED" };
+        return decide(id, user, "APPROVED", body.note);
       }
 
       case "reject": {
         if (!can(user.role, "campaigns.approve")) throw new ApiError(403, "اجازه رد نامه را ندارید.");
-        await prisma.campaign.update({ where: { id }, data: { status: "DRAFT", rejectionReason: body.reason } });
-        await audit({ organizationId: user.organizationId, userId: user.id, action: "CAMPAIGN_REJECT", entityType: "Campaign", entityId: id, metadata: { reason: body.reason } });
-        return { status: "DRAFT" };
+        return decide(id, user, "REJECTED", body.reason);
       }
 
       case "send":

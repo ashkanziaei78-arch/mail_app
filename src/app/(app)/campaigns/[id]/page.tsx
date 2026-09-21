@@ -16,13 +16,20 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
   const campaign = await prisma.campaign.findFirst({
     where: { id, organizationId: user.organizationId },
     include: {
-      letters: { orderBy: { createdAt: "asc" }, take: 1, include: { letterhead: true } },
+      letters: {
+        orderBy: { createdAt: "asc" },
+        take: 1,
+        include: { letterhead: { include: { fields: { orderBy: { sortOrder: "asc" } } } } },
+      },
+      workflow: { include: { steps: { include: { position: true }, orderBy: { order: "asc" } } } },
+      approvals: { include: { position: true, approver: { select: { fullName: true } } }, orderBy: { order: "asc" } },
       approvedBy: { select: { fullName: true } },
       recipients: {
         include: {
           contact: { include: { organizations: { where: { isPrimary: true }, take: 1 } } },
           document: { include: { shortLink: true } },
           smsMessage: true,
+          response: true,
         },
         orderBy: { createdAt: "asc" },
       },
@@ -47,8 +54,17 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
       include: { _count: { select: { contacts: true } } },
       orderBy: { name: "asc" },
     }),
-    prisma.letterhead.findMany({ where: { organizationId: user.organizationId, status: "ACTIVE" }, orderBy: { name: "asc" } }),
+    prisma.letterhead.findMany({
+      where: { organizationId: user.organizationId, status: "ACTIVE" },
+      include: { fields: { orderBy: { sortOrder: "asc" } } },
+      orderBy: { name: "asc" },
+    }),
   ]);
+
+  const currentUserPosition = await prisma.user.findUniqueOrThrow({
+    where: { id: user.id },
+    select: { positionId: true },
+  });
 
   const letter = campaign.letters[0];
 
@@ -64,6 +80,17 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
         smsBodyText: campaign.smsBodyText,
         rejectionReason: campaign.rejectionReason,
         approvedBy: campaign.approvedBy?.fullName ?? null,
+        workflowName: campaign.workflow?.name ?? null,
+        approvals: campaign.approvals.map((a) => ({
+          id: a.id,
+          order: a.order,
+          status: a.status,
+          positionId: a.positionId,
+          positionName: a.position.name,
+          approverName: a.approver?.fullName ?? null,
+          note: a.note,
+          decidedAt: a.decidedAt?.toISOString() ?? null,
+        })),
       }}
       letter={{
         title: letter?.title ?? "",
@@ -73,6 +100,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
         senderName: letter?.senderName ?? "",
         letterheadId: letter?.letterheadId ?? "",
         letterheadUrl: letter?.letterhead?.fileUrl ?? null,
+        fieldValues: (letter?.fieldValuesJson as Record<string, string> | null) ?? {},
       }}
       recipients={campaign.recipients.map((r) => ({
         id: r.id,
@@ -90,6 +118,14 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
         accessCode: r.document?.shortLink?.accessCode ?? null,
         smsText: r.smsMessage?.finalText ?? null,
         smsStatus: r.smsMessage?.status ?? null,
+        sentAt: r.sentAt?.toISOString() ?? null,
+        deliveredAt: r.deliveredAt?.toISOString() ?? null,
+        firstViewedAt: r.firstViewedAt?.toISOString() ?? null,
+        lastViewedAt: r.lastViewedAt?.toISOString() ?? null,
+        viewCount: r.viewCount,
+        respondedAt: r.respondedAt?.toISOString() ?? null,
+        responseKind: r.response?.kind ?? null,
+        responseMessage: r.response?.message ?? null,
       }))}
       options={{
         contacts: contacts.map((c) => ({
@@ -100,12 +136,23 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
         })),
         groups: groups.map((g) => ({ id: g.id, name: g.name, count: g._count.members })),
         tags: tags.map((t) => ({ id: t.id, name: t.name, count: t._count.contacts })),
-        letterheads: letterheads.map((l) => ({ id: l.id, name: l.name, fileUrl: l.fileUrl })),
+        letterheads: letterheads.map((l) => ({
+          id: l.id,
+          name: l.name,
+          fileUrl: l.fileUrl,
+          fields: l.fields.map((f) => ({
+            id: f.id, key: f.key, label: f.label, type: f.type, area: f.area,
+            placeholder: f.placeholder, helpText: f.helpText, required: f.required,
+            defaultValue: f.defaultValue, options: (f.optionsJson as string[] | null) ?? [],
+          })),
+        })),
       }}
       permissions={{
         write: can(user.role, "campaigns.write"),
         approve: can(user.role, "campaigns.approve"),
         send: can(user.role, "campaigns.send"),
+        positionId: currentUserPosition.positionId,
+        isOrgAdmin: user.role === "ORG_ADMIN" || user.role === "SUPER_ADMIN",
       }}
     />
   );

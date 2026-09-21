@@ -50,6 +50,9 @@
   --info: #0369a1;
   --info-bg: #e0f2fe;
   --ring: #1d4ed8;
+  /* لینک از primary جداست: primary پس‌زمینه دکمه است، لینک روی سطح می‌نشیند
+     و باید روی حالت hover جدول هم کنتراست AA بدهد. */
+  --link: #1d4ed8;
   color-scheme: light;
 }
 
@@ -71,6 +74,7 @@
   --info: #7dd3fc;
   --info-bg: #0b2e42;
   --ring: #7ea6ff;
+  --link: #7da2f0; /* ۶٫۱۹:۱ روی surface-2 — #5b86e8 فقط ۴٫۴۹ می‌داد */
   color-scheme: dark;
 }
 
@@ -146,7 +150,7 @@
   /* لینک درون‌متنی: رنگش با تم عوض می‌شود.
      text-brand-600 ثابت بود و در تم تاریک کنتراست ۲٫۵۷ می‌داد (رد WCAG). */
   .link {
-    color: var(--primary);
+    color: var(--link);
     font-weight: 600;
     text-underline-offset: 3px;
   }

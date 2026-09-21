@@ -21,3 +21,35 @@ export const contactInput = z.object({
 });
 
 export type ContactInput = z.infer<typeof contactInput>;
+
+export const FIELD_TYPES = [
+  { value: "TEXT", label: "متن یک‌خطی", hint: "مثل شماره نامه یا نام واحد" },
+  { value: "TEXTAREA", label: "یادداشت چندخطی", hint: "متن ساده و بدون قالب‌بندی" },
+  { value: "RICH_TEXT", label: "متن با قالب‌بندی", hint: "پررنگ، فهرست، جدول" },
+  { value: "DATE", label: "تاریخ شمسی", hint: "با تقویم انتخاب می‌شود" },
+  { value: "NUMBER", label: "عدد", hint: "" },
+  { value: "SELECT", label: "انتخاب از فهرست", hint: "گزینه‌ها را خودتان تعیین می‌کنید" },
+] as const;
+
+export const FIELD_AREAS = [
+  { value: "HEADER", label: "بالای نامه", hint: "کنار شماره و تاریخ" },
+  { value: "BODY", label: "داخل متن", hint: "با {{فیلد:کلید}} در متن نامه درج می‌شود" },
+  { value: "FOOTER", label: "پای نامه", hint: "کنار امضا" },
+] as const;
+
+export const letterheadFieldInput = z.object({
+  /** کلید لاتین — در متن نامه به‌صورت {{فیلد:key}} استفاده می‌شود */
+  key: z.string().trim().min(1, "کلید فیلد الزامی است.").max(40)
+    .regex(/^[a-zA-Z][a-zA-Z0-9_]*$/, "کلید باید با حرف انگلیسی شروع شود و فقط حرف، رقم و _ داشته باشد."),
+  label: z.string().trim().min(1, "برچسب فیلد الزامی است.").max(80),
+  type: z.enum(["TEXT", "TEXTAREA", "RICH_TEXT", "DATE", "NUMBER", "SELECT"]).default("TEXT"),
+  area: z.enum(["HEADER", "BODY", "FOOTER"]).default("HEADER"),
+  placeholder: z.string().trim().max(120).optional().nullable(),
+  helpText: z.string().trim().max(200).optional().nullable(),
+  required: z.boolean().default(false),
+  defaultValue: z.string().trim().max(500).optional().nullable(),
+  options: z.array(z.string().trim().min(1).max(80)).max(30).default([]),
+  sortOrder: z.number().int().min(0).max(999).default(0),
+});
+
+export type LetterheadFieldInput = z.infer<typeof letterheadFieldInput>;
