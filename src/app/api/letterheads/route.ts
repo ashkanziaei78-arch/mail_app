@@ -26,7 +26,13 @@ function sniffImage(bytes: Uint8Array): ".png" | ".jpg" | ".webp" | null {
   return null;
 }
 
-/** ponytail: فایل روی دیسک محلی زیر public/uploads. برای چنداستقراری، همین تابع را به S3/MinIO ببرید. */
+/**
+ * ponytail: فایل روی دیسک محلی زیر public/uploads.
+ *
+ * روی Vercel فایل‌سیستم فقط-خواندنی است، پس آپلود سربرگ آنجا کار نمی‌کند و
+ * پیام روشنی برمی‌گرداند. برای استقرار واقعی، یا روی سروری با دیسک دائمی
+ * اجرا کنید (docker-compose همین مخزن) یا همین تابع را به S3/MinIO ببرید.
+ */
 async function store(file: File): Promise<string> {
   if (file.size > MAX_BYTES) throw new ApiError(413, "حجم تصویر بیش از ۴ مگابایت است.");
   if (file.size === 0) throw new ApiError(422, "فایل خالی است.");
@@ -37,8 +43,19 @@ async function store(file: File): Promise<string> {
 
   const name = `${Date.now()}-${randomCode(16)}${extension}`;
   const dir = path.join(process.cwd(), "public", "uploads");
-  await mkdir(dir, { recursive: true });
-  await writeFile(path.join(dir, name), buffer);
+  try {
+    await mkdir(dir, { recursive: true });
+    await writeFile(path.join(dir, name), buffer);
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code;
+    if (code === "EROFS" || code === "EACCES") {
+      throw new ApiError(
+        501,
+        "این نسخه روی فضای ابری با فایل‌سیستم فقط-خواندنی اجرا می‌شود، پس آپلود سربرگ فعال نیست. برای استفاده واقعی، سامانه را روی سرور خودتان (docker-compose داخل مخزن) اجرا کنید.",
+      );
+    }
+    throw error;
+  }
   return `/uploads/${name}`;
 }
 
