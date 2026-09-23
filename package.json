@@ -2,9 +2,11 @@
   "name": "mailing-system",
   "version": "0.1.0",
   "private": true,
+  "engines": { "node": "22.x" },
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && prisma migrate deploy && tsx prisma/seed.ts && next build",
+    "build": "prisma generate && prisma migrate deploy && next build",
+    "seed": "tsx prisma/seed.ts",
     "start": "next start",
     "lint": "next lint",
     "db:push": "prisma db push",
