@@ -45,17 +45,27 @@ const TEMPLATE_BODY = `<p>{{عنوان}} {{نام_کامل}}</p>
 <p>حضور ارزشمند شما موجب غنای بیشتر این رویداد خواهد بود.</p>
 <p>با تشکر</p>`;
 
+/**
+ * اجرای پشت‌سرهم به‌جای Promise.all.
+ * اتصال تولید از PgBouncer با connection_limit=1 عبور می‌کند؛ چند upsert همزمان روی یک
+ * اتصال به خطای Prisma می‌انجامد و seed نیمه‌کاره می‌ماند. تعداد ردیف‌ها کم است، پس
+ * ترتیبی بودن هزینه‌ای ندارد.
+ */
+async function seq<T, R>(items: readonly T[], fn: (item: T) => Promise<R>): Promise<R[]> {
+  const out: R[] = [];
+  for (const item of items) out.push(await fn(item));
+  return out;
+}
+
 async function main() {
   console.log("⏳ در حال ساخت داده آزمایشی…");
 
-  await prisma.$transaction(
-    PERMISSIONS.map((code) =>
-      prisma.permission.upsert({
-        where: { code },
-        update: { label: PERMISSION_LABELS[code] ?? code },
-        create: { code, label: PERMISSION_LABELS[code] ?? code },
-      }),
-    ),
+  await seq(PERMISSIONS, (code) =>
+    prisma.permission.upsert({
+      where: { code },
+      update: { label: PERMISSION_LABELS[code] ?? code },
+      create: { code, label: PERMISSION_LABELS[code] ?? code },
+    }),
   );
 
   const organization = await prisma.organization.upsert({
@@ -64,18 +74,16 @@ async function main() {
     create: { name: "پارک علم و فناوری یزد", slug: "yazd-park", description: "سازمان نمونه برای داده آزمایشی" },
   });
 
-  const departments = await Promise.all(
-    ["روابط عمومی", "دبیرخانه", "امور بین‌الملل", "حراست"].map((name) =>
-      prisma.department.upsert({
-        where: { organizationId_name: { organizationId: organization.id, name } },
-        update: {},
-        create: { organizationId: organization.id, name },
-      }),
-    ),
+  const departments = await seq(["روابط عمومی", "دبیرخانه", "امور بین‌الملل", "حراست"], (name) =>
+    prisma.department.upsert({
+      where: { organizationId_name: { organizationId: organization.id, name } },
+      update: {},
+      create: { organizationId: organization.id, name },
+    }),
   );
 
   const password = await bcrypt.hash(SEED_PASSWORD, 10);
-  const users = await Promise.all(
+  const users = await seq(
     [
       { fullName: "مدیر کل سامانه", email: "root@mailing.local", role: "SUPER_ADMIN" as const, departmentId: null },
       { fullName: "رضا احمدی", email: "admin@mailing.local", role: "ORG_ADMIN" as const, departmentId: departments[0].id },
@@ -84,7 +92,8 @@ async function main() {
       { fullName: "نرگس شریفی", email: "dept@mailing.local", role: "DEPT_ADMIN" as const, departmentId: departments[1].id },
       { fullName: "مهدی رستمی", email: "manager@mailing.local", role: "APPROVER" as const, departmentId: departments[2].id },
       { fullName: "سارا موحد", email: "pr@mailing.local", role: "USER" as const, departmentId: departments[0].id },
-    ].map((u) =>
+    ],
+    (u) =>
       prisma.user.upsert({
         where: { email: u.email },
         // در محیط تولید گذرواژه حساب موجود بازنویسی نمی‌شود؛ در توسعه بازنشانی می‌گردد
@@ -93,7 +102,6 @@ async function main() {
           : { passwordHash: password, failedLoginCount: 0, lockedUntil: null, mustChangePassword: false, status: "ACTIVE" },
         create: { ...u, organizationId: organization.id, passwordHash: password, mustChangePassword: false },
       }),
-    ),
   );
   const [, orgAdmin] = users;
 
@@ -105,14 +113,12 @@ async function main() {
     { name: "کارشناس مسئول", rank: 40, canApprove: false, canSign: false },
     { name: "کارشناس", rank: 50, canApprove: false, canSign: false },
   ];
-  const positions = await Promise.all(
-    positionSpecs.map((spec) =>
-      prisma.position.upsert({
-        where: { organizationId_name: { organizationId: organization.id, name: spec.name } },
-        update: {},
-        create: { ...spec, organizationId: organization.id },
-      }),
-    ),
+  const positions = await seq(positionSpecs, (spec) =>
+    prisma.position.upsert({
+      where: { organizationId_name: { organizationId: organization.id, name: spec.name } },
+      update: {},
+      create: { ...spec, organizationId: organization.id },
+    }),
   );
   const positionByName = (name: string) => positions.find((p) => p.name === name)!.id;
 
@@ -145,14 +151,12 @@ async function main() {
   await prisma.user.update({ where: { email: "pr@mailing.local" }, data: { positionId: positionByName("کارشناس مسئول"), mobilePhone: "09120000006" } });
 
   const tagNames = ["مدیران_استان", "حامیان_فناوری", "صنایع_یزد", "اعضای_بنیاد", "دعوت_همایش", "روابط_بین_الملل", "اتاق_بازرگانی"];
-  const tags = await Promise.all(
-    tagNames.map((name) =>
-      prisma.tag.upsert({
-        where: { organizationId_name: { organizationId: organization.id, name } },
-        update: {},
-        create: { organizationId: organization.id, name },
-      }),
-    ),
+  const tags = await seq(tagNames, (name) =>
+    prisma.tag.upsert({
+      where: { organizationId_name: { organizationId: organization.id, name } },
+      update: {},
+      create: { organizationId: organization.id, name },
+    }),
   );
   const tagId = (name: string) => tags.find((t) => t.name === name)!.id;
 
