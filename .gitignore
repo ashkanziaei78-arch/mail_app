@@ -7,3 +7,4 @@ storage/
 *.log
 next-env.d.ts
 .DS_Store
+*.tsbuildinfo
