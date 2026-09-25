@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && prisma migrate deploy && next build",
+    "build": "prisma generate && prisma migrate deploy && (next build > /tmp/build.log 2>&1 || (node scripts/report-build-log.mjs /tmp/build.log; cat /tmp/build.log; exit 1)) && cat /tmp/build.log",
     "seed": "tsx prisma/seed.ts",
     "start": "next start",
     "lint": "next lint",
