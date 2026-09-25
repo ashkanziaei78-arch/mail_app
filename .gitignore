@@ -8,3 +8,7 @@ storage/
 next-env.d.ts
 .DS_Store
 *.tsbuildinfo
+
+# فایل‌های موقت اشکال‌زدایی هرگز کامیت نشوند
+*.tmp.ts
+*.tmp.mjs
