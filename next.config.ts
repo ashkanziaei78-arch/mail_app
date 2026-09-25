@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  // فقط برای اجرای خودمیزبان (Docker/VPS) لازم است. روی Vercel، standalone با
+  // ردیابی وابستگی‌های خود Vercel تداخل می‌کند و بیلد را با module_not_found می‌اندازد.
+  output: process.env.STANDALONE_BUILD ? "standalone" : undefined,
   poweredByHeader: false, // نسخه فریم‌ورک را لو ندهیم
   async headers() {
     return [
