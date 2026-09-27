@@ -7,7 +7,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider  = "postgresql"
   url       = env("DATABASE_URL")
   // اتصال مستقیم (session mode) برای اجرای migration؛ PgBouncer در حالت transaction قفل‌های
   // advisory را پشتیبانی نمی‌کند و `migrate deploy` روی آن معلق می‌ماند.
@@ -20,10 +20,10 @@ datasource db {
 
 enum UserRole {
   SUPER_ADMIN // مدیر کل سامانه
-  ORG_ADMIN   // مدیر سازمان
-  DEPT_ADMIN  // مدیر واحد
-  USER        // کاربر عادی
-  APPROVER    // ناظر / تأییدکننده
+  ORG_ADMIN // مدیر سازمان
+  DEPT_ADMIN // مدیر واحد
+  USER // کاربر عادی
+  APPROVER // ناظر / تأییدکننده
 }
 
 enum EntityStatus {
@@ -33,7 +33,7 @@ enum EntityStatus {
 }
 
 enum Visibility {
-  PUBLIC  // دفترچه عمومی سازمان — همه کاربران سازمان می‌بینند
+  PUBLIC // دفترچه عمومی سازمان — همه کاربران سازمان می‌بینند
   PRIVATE // دفترچه خصوصی — فقط مالک و مدیران
 }
 
@@ -70,20 +70,25 @@ enum GroupType {
   SMART // فیلتر ذخیره‌شده
 }
 
-/** نوع فیلد قابل تعریف روی سربرگ */
+/**
+ * نوع فیلد قابل تعریف روی سربرگ
+ */
 enum FieldType {
-  TEXT       // تک‌خطی
-  TEXTAREA   // چندخطی ساده
-  RICH_TEXT  // متن با قالب‌بندی
-  DATE       // تاریخ شمسی
+  TEXT // تک‌خطی
+  TEXTAREA // چندخطی ساده
+  RICH_TEXT // متن با قالب‌بندی
+  DATE // تاریخ شمسی
   NUMBER
-  SELECT     // انتخاب از فهرست
+  SELECT // انتخاب از فهرست
+  SIGNATURE // امضای کاربر فرستنده — تصویر امضای پروفایل در همین کادر چاپ می‌شود
 }
 
-/** جای فیلد روی برگه نامه */
+/**
+ * جای فیلد روی برگه نامه
+ */
 enum FieldArea {
   HEADER // بالای نامه، کنار شماره و تاریخ
-  BODY   // داخل متن
+  BODY // داخل متن
   FOOTER // پای نامه، کنار امضا
 }
 
@@ -96,13 +101,13 @@ enum ApprovalStatus {
 
 enum ResponseKind {
   ACKNOWLEDGED // فقط رسید
-  ACCEPTED     // موافقت / حضور
-  DECLINED     // عدم حضور
-  REPLIED      // پاسخ متنی
+  ACCEPTED // موافقت / حضور
+  DECLINED // عدم حضور
+  REPLIED // پاسخ متنی
 }
 
 enum Confidentiality {
-  NORMAL       // نامه معمولی — لینک بدون کد
+  NORMAL // نامه معمولی — لینک بدون کد
   CONFIDENTIAL // محرمانه — لینک با کد دسترسی یک‌بارمصرف
 }
 
@@ -136,8 +141,54 @@ model Organization {
   smsProviderConfigs   SmsProviderConfig[]
   auditLogs            AuditLog[]
   notificationSettings NotificationSetting[]
+  shortUrls            ShortUrl[]
+  uploads              UploadedFile[]
 
   @@index([status])
+}
+
+/**
+ * فایل آپلودی (سربرگ، پاورقی، امضا) داخل خود دیتابیس.
+ * نوشتن روی دیسک روی میزبان‌های بدون دیسک دائمی (Vercel و مانند آن) شکست
+ * می‌خورد و آپلود عملاً از کار می‌افتد. حجم‌ها اینجا کوچک‌اند (حداکثر ۴ مگابایت)
+ * و تعدادشان کم، پس نگه داشتنشان در دیتابیس ساده‌ترین چیزی است که همه‌جا کار
+ * می‌کند و نیاز به S3 را از بین می‌برد.
+ */
+model UploadedFile {
+  id             String   @id @default(uuid())
+  organizationId String
+  kind           String // letterhead | footer | signature
+  mimeType       String
+  size           Int
+  data           Bytes
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId, kind])
+}
+
+/**
+ * کوتاه‌کننده لینک عمومی.
+ * جدا از ShortLink است: آن یکی به سند نامهٔ یک مخاطب گره خورده، این یکی هر نشانی
+ * دلخواهی را کوتاه می‌کند تا در متن پیامک جا شود.
+ */
+model ShortUrl {
+  id              String    @id @default(uuid())
+  organizationId  String
+  code            String    @unique // ۷ کاراکتر base58
+  targetUrl       String
+  label           String?
+  createdByUserId String
+  clicks          Int       @default(0)
+  lastClickAt     DateTime?
+  expiresAt       DateTime?
+  createdAt       DateTime  @default(now())
+  deletedAt       DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId, createdAt])
 }
 
 model Department {
@@ -167,41 +218,45 @@ model Department {
 // ---------------------------------------------------------
 
 model User {
-  id             String       @id @default(uuid())
-  organizationId String
-  departmentId   String?
-  fullName       String
-  email          String       @unique
-  passwordHash   String
-  role           UserRole
-  status         EntityStatus @default(ACTIVE)
-  lastLoginAt    DateTime?
+  id                  String       @id @default(uuid())
+  organizationId      String
+  departmentId        String?
+  fullName            String
+  email               String       @unique
+  passwordHash        String
+  role                UserRole
+  status              EntityStatus @default(ACTIVE)
+  lastLoginAt         DateTime?
   // امنیت حساب
-  positionId         String?   // سمت سازمانی — مبنای گردش تأیید
-  mobilePhone        String?   // برای بازیابی گذرواژه با پیامک
-  failedLoginCount   Int       @default(0)
-  lockedUntil        DateTime? // قفل موقت پس از تلاش‌های ناموفق پیاپی
-  passwordChangedAt  DateTime  @default(now()) // نشست‌های صادرشده پیش از این بی‌اعتبارند
-  mustChangePassword Boolean   @default(false)
+  positionId          String? // سمت سازمانی — مبنای گردش تأیید
+  mobilePhone         String? // برای بازیابی گذرواژه با پیامک
+  failedLoginCount    Int          @default(0)
+  lockedUntil         DateTime? // قفل موقت پس از تلاش‌های ناموفق پیاپی
+  passwordChangedAt   DateTime     @default(now()) // نشست‌های صادرشده پیش از این بی‌اعتبارند
+  mustChangePassword  Boolean      @default(false)
   // احراز هویت دومرحله‌ای (TOTP)
   totpSecretEncrypted String?
-  totpEnabled         Boolean  @default(false)
-  totpBackupCodes     String[] @default([]) // هش‌شده
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  deletedAt      DateTime?
+  totpEnabled         Boolean      @default(false)
+  totpBackupCodes     String[]     @default([]) // هش‌شده
+  /**
+   * تصویر امضای کاربر — در کادر امضای سربرگ چاپ می‌شود
+   */
+  signatureImagePath  String?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  deletedAt           DateTime?
 
-  organization     Organization     @relation(fields: [organizationId], references: [id])
-  department       Department?      @relation(fields: [departmentId], references: [id])
-  position         Position?        @relation(fields: [positionId], references: [id])
-  rolePermissions  UserPermission[]
-  approvalsGiven   CampaignApproval[] @relation("ApprovalBy")
+  organization      Organization       @relation(fields: [organizationId], references: [id])
+  department        Department?        @relation(fields: [departmentId], references: [id])
+  position          Position?          @relation(fields: [positionId], references: [id])
+  rolePermissions   UserPermission[]
+  approvalsGiven    CampaignApproval[] @relation("ApprovalBy")
   passwordResetCode PasswordResetCode?
-  createdContacts  Contact[]        @relation("ContactCreatedBy")
-  ownedContacts    Contact[]        @relation("ContactOwner")
-  campaignsCreated Campaign[]       @relation("CampaignCreatedBy")
-  approvals        Campaign[]       @relation("CampaignApprovedBy")
-  auditLogs        AuditLog[]
+  createdContacts   Contact[]          @relation("ContactCreatedBy")
+  ownedContacts     Contact[]          @relation("ContactOwner")
+  campaignsCreated  Campaign[]         @relation("CampaignCreatedBy")
+  approvals         Campaign[]         @relation("CampaignApprovedBy")
+  auditLogs         AuditLog[]
 
   @@index([organizationId, departmentId])
 }
@@ -221,7 +276,7 @@ model Position {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  organization  Organization   @relation(fields: [organizationId], references: [id])
+  organization  Organization       @relation(fields: [organizationId], references: [id])
   users         User[]
   workflowSteps WorkflowStep[]
   approvals     CampaignApproval[]
@@ -230,7 +285,9 @@ model Position {
   @@index([organizationId, rank])
 }
 
-/** گردش تأیید نامه: ترتیبی از سمت‌ها که باید نامه را تأیید کنند. */
+/**
+ * گردش تأیید نامه: ترتیبی از سمت‌ها که باید نامه را تأیید کنند.
+ */
 model Workflow {
   id             String   @id @default(uuid())
   organizationId String
@@ -262,7 +319,9 @@ model WorkflowStep {
   @@index([workflowId])
 }
 
-/** یک مرحله تأیید برای یک کمپین مشخص. */
+/**
+ * یک مرحله تأیید برای یک کمپین مشخص.
+ */
 model CampaignApproval {
   id             String         @id @default(uuid())
   campaignId     String
@@ -333,7 +392,9 @@ model Contact {
   address              String?
   notes                String?
   smsConsent           Boolean      @default(true)
-  /** توکن یکتای لغو دریافت پیامک — در پیامک به‌صورت لینک کوتاه می‌رود */
+  /**
+   * توکن یکتای لغو دریافت پیامک — در پیامک به‌صورت لینک کوتاه می‌رود
+   */
   unsubscribeToken     String?      @unique
   unsubscribedAt       DateTime?
   status               EntityStatus @default(ACTIVE)
@@ -503,7 +564,23 @@ model LetterheadField {
   defaultValue String?
   optionsJson  Json? // برای SELECT: ["گزینه ۱", "گزینه ۲"]
   sortOrder    Int       @default(0)
-  createdAt    DateTime  @default(now())
+
+  // --- جای کادر روی تصویر سربرگ ---
+  // درصدِ عرض/ارتفاع تصویر (۰ تا ۱۰۰)، نه پیکسل: تصویر سربرگ در هر اندازه‌ای
+  // نمایش داده شود، کادر سرِ جای خودش می‌ماند.
+  x          Float  @default(8)
+  y          Float  @default(20)
+  width      Float  @default(40)
+  height     Float  @default(8)
+  // --- قالب متن داخل کادر ---
+  fontFamily String @default("Vazirmatn")
+  fontSize   Int    @default(14) // پوینت، نسبت به عرض مرجع سربرگ
+  fontWeight String @default("400")
+  color      String @default("#111827")
+  align      String @default("right") // right | center | left | justify
+  lineHeight Float  @default(1.8)
+
+  createdAt DateTime @default(now())
 
   letterhead Letterhead @relation(fields: [letterheadId], references: [id], onDelete: Cascade)
 
@@ -551,7 +628,9 @@ model Letter {
   senderName         String?
   senderSignatureUrl String?
   attachmentsJson    Json?
-  /** مقدار فیلدهای تعریف‌شده روی سربرگ: { "<key>": "<value>" } */
+  /**
+   * مقدار فیلدهای تعریف‌شده روی سربرگ: { "<key>": "<value>" }
+   */
   fieldValuesJson    Json?
   isDraft            Boolean   @default(true)
   version            Int       @default(1)
@@ -588,6 +667,9 @@ model Campaign {
   currentStepOrder Int             @default(0) // مرحله جاری گردش تأیید
   smsTemplateId    String?
   smsBodyText      String?
+  /**
+   * لینک نامه در پیامک کوتاه شود (پیش‌فرض) یا نشانی کامل برود
+   */
   smsProvider      String?
   scheduledAt      DateTime?
   createdAt        DateTime        @default(now())
@@ -642,7 +724,9 @@ model CampaignRecipient {
 // اسناد تولیدشده و لینک کوتاه
 // ---------------------------------------------------------
 
-/** پاسخ گیرنده به نامه — از همان صفحه عمومی لینک کوتاه ثبت می‌شود. */
+/**
+ * پاسخ گیرنده به نامه — از همان صفحه عمومی لینک کوتاه ثبت می‌شود.
+ */
 model LetterResponse {
   id                  String       @id @default(uuid())
   campaignRecipientId String       @unique
@@ -657,7 +741,9 @@ model LetterResponse {
   @@index([kind])
 }
 
-/** هر بار باز شدن نامه — برای گزارش دقیق «چه کسی کِی دید». */
+/**
+ * هر بار باز شدن نامه — برای گزارش دقیق «چه کسی کِی دید».
+ */
 model LetterView {
   id                  String   @id @default(uuid())
   campaignRecipientId String
@@ -671,17 +757,19 @@ model LetterView {
 }
 
 model GeneratedDocument {
-  id                  String   @id @default(uuid())
-  campaignRecipientId String   @unique
+  id                  String    @id @default(uuid())
+  campaignRecipientId String    @unique
   letterId            String?
   renderedHtml        String // متن نهایی نامه پس از جایگذاری متغیرها
   fileHash            String // جلوگیری از تولید مجدد تکراری
-  documentNumber      String   @unique
-  version             Int      @default(1)
-  /** امضای HMAC روی محتوای نهایی — اثبات اینکه نامه پس از صدور تغییر نکرده */
+  documentNumber      String    @unique
+  version             Int       @default(1)
+  /**
+   * امضای HMAC روی محتوای نهایی — اثبات اینکه نامه پس از صدور تغییر نکرده
+   */
   contentSignature    String?
   signedAt            DateTime?
-  createdAt           DateTime @default(now())
+  createdAt           DateTime  @default(now())
 
   campaignRecipient CampaignRecipient @relation(fields: [campaignRecipientId], references: [id], onDelete: Cascade)
   letter            Letter?           @relation(fields: [letterId], references: [id])
@@ -795,10 +883,10 @@ model NotificationSetting {
  * پس از ری‌استارت هم درست کار کند (نه در حافظه یک پروسه).
  */
 model RateLimit {
-  id          String   @id @default(uuid())
-  bucket      String // login:ip:1.2.3.4 | login:user:<id> | access-code:<shortCode>
-  hits        Int      @default(1)
-  windowStart DateTime @default(now())
+  id           String    @id @default(uuid())
+  bucket       String // login:ip:1.2.3.4 | login:user:<id> | access-code:<shortCode>
+  hits         Int       @default(1)
+  windowStart  DateTime  @default(now())
   blockedUntil DateTime?
 
   @@unique([bucket])

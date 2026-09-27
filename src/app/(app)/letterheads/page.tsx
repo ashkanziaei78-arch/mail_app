@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { toFieldDefinition } from "@/lib/letterhead";
 import { prisma } from "@/lib/db";
 import { requirePage } from "@/lib/auth";
 import { can } from "@/lib/rbac";
@@ -22,11 +23,7 @@ export default async function LetterheadsPage() {
     <LetterheadsClient
       letterheads={letterheads.map((l) => ({
         id: l.id, name: l.name, fileUrl: l.fileUrl, isDefault: l.isDefault, status: l.status, version: l.version,
-        fields: l.fields.map((f) => ({
-          id: f.id, key: f.key, label: f.label, type: f.type, area: f.area,
-          placeholder: f.placeholder, helpText: f.helpText, required: f.required,
-          defaultValue: f.defaultValue, options: (f.optionsJson as string[] | null) ?? [],
-        })),
+        fields: l.fields.map(toFieldDefinition),
       }))}
       templates={templates.map((t) => ({ id: t.id, name: t.name, bodyHtml: t.bodyHtml }))}
       canWrite={can(user.role, "letterheads.write")}

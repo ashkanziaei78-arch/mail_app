@@ -3,19 +3,20 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { KeyRound, ShieldCheck, ShieldOff, Smartphone } from "lucide-react";
+import { KeyRound, PenLine, ShieldCheck, ShieldOff, Smartphone, Upload } from "lucide-react";
 import { Badge, Field, PageHeader } from "@/components/ui/primitives";
 import Modal from "@/components/ui/modal";
 import PasswordInput from "@/components/ui/password-input";
 import { useToast } from "@/components/ui/toast";
 import { faDateTime, faNumber } from "@/lib/jalali";
 
-export default function SecurityClient({ email, totpEnabled, backupCodesLeft, mobilePhone, passwordChangedAt }: {
+export default function SecurityClient({ email, totpEnabled, backupCodesLeft, mobilePhone, passwordChangedAt, signatureImagePath }: {
   email: string;
   totpEnabled: boolean;
   backupCodesLeft: number;
   mobilePhone: string | null;
   passwordChangedAt: string;
+  signatureImagePath: string | null;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -64,6 +65,8 @@ export default function SecurityClient({ email, totpEnabled, backupCodesLeft, mo
             </button>
           )}
         </section>
+
+        <SignatureCard current={signatureImagePath} />
 
         <section className="card p-5">
           <h2 className="mb-1 flex items-center gap-2 font-bold"><KeyRound className="h-5 w-5" />گذرواژه</h2>
@@ -236,5 +239,64 @@ function DisableTotpDialog({ onClose, onDone }: { onClose: () => void; onDone: (
         </div>
       </form>
     </Modal>
+  );
+}
+
+/**
+ * امضای کاربر.
+ * در سربرگ، هر کادری که نوعش «امضای فرستنده» باشد همین تصویر را می‌گیرد؛ پس
+ * کاربر یک بار امضایش را می‌گذارد و در همه نامه‌هایش می‌نشیند.
+ */
+function SignatureCard({ current }: { current: string | null }) {
+  const router = useRouter();
+  const toast = useToast();
+  const [busy, setBusy] = useState(false);
+
+  async function upload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setBusy(true);
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch("/api/account/signature", { method: "POST", body: form });
+    const json = await res.json();
+    setBusy(false);
+    event.target.value = "";
+    if (!json.ok) { toast("error", json.error); return; }
+    toast("success", "امضا ذخیره شد.");
+    router.refresh();
+  }
+
+  async function remove() {
+    setBusy(true);
+    await fetch("/api/account/signature", { method: "DELETE" });
+    setBusy(false);
+    toast("success", "امضا برداشته شد.");
+    router.refresh();
+  }
+
+  return (
+    <section className="card p-5">
+      <h2 className="mb-1 flex items-center gap-2 font-bold"><PenLine className="h-5 w-5" />امضای من</h2>
+      <p className="mb-4 text-sm" style={{ color: "var(--muted)" }}>
+        تصویر امضایتان را یک بار آپلود کنید تا در کادر امضای سربرگ نامه‌هایتان چاپ شود.
+        بهترین نتیجه: امضای روی کاغذ سفید، اسکن یا عکس، با پس‌زمینه شفاف (PNG).
+      </p>
+
+      <div className="mb-4 flex h-24 items-center justify-center rounded-xl border border-dashed bg-white p-2">
+        {current
+          ? <img src={current} alt="امضای شما" className="max-h-full object-contain" />
+          : <span className="text-sm" style={{ color: "var(--muted)" }}>هنوز امضایی ثبت نشده</span>}
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <label className="btn btn-primary">
+          <Upload className="h-4 w-4" />
+          {current ? "جایگزینی امضا" : "آپلود امضا"}
+          <input type="file" className="sr-only" accept="image/png,image/jpeg,image/webp" onChange={upload} disabled={busy} />
+        </label>
+        {current && <button className="btn btn-danger" onClick={remove} disabled={busy}>برداشتن امضا</button>}
+      </div>
+    </section>
   );
 }

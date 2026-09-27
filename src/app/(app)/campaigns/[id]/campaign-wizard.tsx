@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Clock, Copy, ExternalLink, Eye, MessageSquare, Send, Trash2 } from "lucide-react";
@@ -12,8 +12,11 @@ import { CAMPAIGN_STATUS, RECIPIENT_STATUS } from "@/lib/labels";
 import { applyVariables, buildContext, LETTER_VARIABLES, SMS_VARIABLES } from "@/lib/render";
 import { countSegments } from "@/lib/sms";
 import { faDate, faDateTime, faNumber, faRelative } from "@/lib/jalali";
-import DynamicField, { AREA_LABELS, type FieldDefinition } from "@/components/ui/dynamic-field";
+import DynamicField, { type FieldDefinition } from "@/components/ui/dynamic-field";
+import LetterheadCanvas from "@/components/ui/letterhead-canvas";
 import HashtagPicker, { type HashtagOption } from "@/components/ui/hashtag-picker";
+import MultiPicker from "@/components/ui/multi-picker";
+import VariableInserter from "@/components/ui/variable-inserter";
 
 type Recipient = {
   id: string; contactId: string; name: string; formalTitle: string; mobilePhone: string;
@@ -39,7 +42,7 @@ const RESPONSE_LABELS: Record<string, { label: string; tone: "success" | "danger
 
 const DEFAULT_SMS = "{{عنوان}} {{نام_کامل}} گرامی، با سلام و احترام، نامه‌ای از سوی {{سازمان_فرستنده}} برای شما صادر شده است.\nمشاهده نامه: {{لینک}}\nلغو: {{لغو_اشتراک}}";
 
-export default function CampaignWizard({ organizationName, campaign, letter, recipients, options, permissions }: {
+export default function CampaignWizard({ organizationName, campaign, letter, recipients, options, permissions, signatureUrl }: {
   organizationName: string;
   campaign: {
     id: string; name: string; subject: string | null; status: keyof typeof CAMPAIGN_STATUS;
@@ -58,6 +61,8 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
     letterheads: Array<{ id: string; name: string; fileUrl: string; fields: FieldDefinition[] }>;
   };
   permissions: { write: boolean; approve: boolean; send: boolean; positionId: string | null; isOrgAdmin: boolean };
+  /** امضای کاربر جاری — در کادر امضای سربرگ نشان داده می‌شود. */
+  signatureUrl: string | null;
 }) {
   const router = useRouter();
   const locked = ["PROCESSING", "COMPLETED", "CANCELLED"].includes(campaign.status);
@@ -70,14 +75,15 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
   // انتخاب مخاطبین (مرحله ۲)
   const [contactIds, setContactIds] = useState<string[]>([]);
   const [tagMode, setTagMode] = useState<"AND" | "OR">("OR");
-  const [search, setSearch] = useState("");
   const [hashtags, setHashtags] = useState<HashtagOption[]>([]);
 
   // متن نامه (مرحله ۴) و پیامک (مرحله ۶)
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
   const [body, setBody] = useState(letter.bodyHtml);
   const [letterheadId, setLetterheadId] = useState(letter.letterheadId);
   const [senderName, setSenderName] = useState(letter.senderName);
   const [smsText, setSmsText] = useState(campaign.smsBodyText ?? DEFAULT_SMS);
+  const smsRef = useRef<HTMLTextAreaElement>(null);
   const [fieldValues, setFieldValues] = useState<Record<string, string>>(letter.fieldValues ?? {});
   const [previewIndex, setPreviewIndex] = useState(0);
   const [override, setOverride] = useState<Recipient | null>(null);
@@ -94,11 +100,6 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
 
   const nothingSelected = hashtags.length === 0 && contactIds.length === 0;
 
-  const filteredContacts = useMemo(() => {
-    const q = search.trim();
-    if (!q) return options.contacts.slice(0, 200);
-    return options.contacts.filter((c) => c.name.includes(q) || c.organizationName.includes(q) || c.mobilePhone.includes(q)).slice(0, 200);
-  }, [search, options.contacts]);
 
   async function act(payload: Record<string, unknown>, okText?: string) {
     setBusy(true);
@@ -113,13 +114,34 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
     return json.data;
   }
 
+  const activeFields = options.letterheads.find((l) => l.id === letterheadId)?.fields ?? [];
+  /** کادر متن اصلی: اولین کادرِ چندخطی. اگر سربرگ چنین کادری داشته باشد، همان بدنهٔ نامه است. */
+  const bodyField = activeFields.find((f) => f.type === "RICH_TEXT" || f.type === "TEXTAREA") ?? null;
+  const signatureFields = activeFields.filter((f) => f.type === "SIGNATURE");
+  const fillableFields = activeFields.filter((f) => f.type !== "SIGNATURE");
+  const fieldVariables = activeFields
+    .filter((f) => f.type !== "SIGNATURE")
+    .map((f) => ({ token: `{{فیلد:${f.key}}}`, description: `فیلد سربرگ: ${f.label}`, example: f.label }));
+  /** مقدارهای فعلی برای پیش‌نمایش روی بوم؛ امضا تصویر پروفایل کاربر است. */
+  const canvasValues: Record<string, string> = Object.fromEntries([
+    ...activeFields.map((f) => [f.key, fieldValues[f.key] ?? f.defaultValue ?? ""]),
+    ...signatureFields.map((f) => [f.key, signatureUrl ?? ""]),
+  ]);
+
   async function saveLetter() {
     setBusy(true);
     const res = await fetch(`/api/campaigns/${campaign.id}`, {
       method: "PATCH", headers: { "content-type": "application/json" },
       body: JSON.stringify({
         smsBodyText: smsText,
-        letter: { bodyHtml: body, senderName, letterheadId: letterheadId || null, fieldValues },
+        letter: {
+          // وقتی سربرگ کادر متن چندخطی دارد، همان کادر بدنهٔ نامه است و کاربر
+          // جای دومی برای تایپ متن نمی‌بیند؛ پس مقدارش را به‌عنوان bodyHtml می‌فرستیم.
+          bodyHtml: bodyField ? (fieldValues[bodyField.key] || body) : body,
+          senderName,
+          letterheadId: letterheadId || null,
+          fieldValues,
+        },
       }),
     });
     const json = await res.json();
@@ -129,7 +151,6 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
     return true;
   }
 
-  const activeFields = options.letterheads.find((l) => l.id === letterheadId)?.fields ?? [];
 
   const previewRecipient = recipients[previewIndex];
   const previewContext = previewRecipient
@@ -213,35 +234,52 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
             />
 
             <div className="grid gap-5 lg:grid-cols-2">
-              <div>
-                <label htmlFor="contact-search" className="label">افزودن افراد مشخص</label>
-                <input
-                  id="contact-search" className="input mb-2" placeholder="جست‌وجوی نام، سازمان یا شماره"
-                  value={search} onChange={(e) => setSearch(e.target.value)}
-                />
-                <label htmlFor="contact-list" className="sr-only">فهرست مخاطبین برای انتخاب</label>
-                <select
-                  id="contact-list" multiple className="select h-56" value={contactIds}
-                  onChange={(e) => setContactIds([...e.target.selectedOptions].map((o) => o.value))}
-                >
-                  {filteredContacts.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}{c.organizationName ? ` — ${c.organizationName}` : ""}</option>
-                  ))}
-                </select>
-                <p className="hint">برای انتخاب چندتایی، Ctrl یا Cmd را نگه دارید.</p>
-              </div>
+              <MultiPicker
+                label="افزودن افراد مشخص"
+                options={options.contacts.map((c) => ({ id: c.id, label: c.name, note: c.organizationName || c.mobilePhone }))}
+                selected={contactIds}
+                onChange={setContactIds}
+                searchPlaceholder="جست‌وجوی نام، سازمان یا شماره"
+                emptyText="مخاطبی در دفترچه نیست."
+              />
 
-              <Field
-                label="شرط ترکیب برچسب‌ها"
-                hint={tagMode === "AND"
-                  ? "فقط کسانی که همه برچسب‌های انتخاب‌شده را دارند."
-                  : "هرکس دست‌کم یکی از برچسب‌های انتخاب‌شده را داشته باشد."}
-              >
-                <select className="select" value={tagMode} onChange={(e) => setTagMode(e.target.value as "AND" | "OR")}>
-                  <option value="OR">هر کدام از برچسب‌ها (OR)</option>
-                  <option value="AND">همه برچسب‌ها همزمان (AND)</option>
-                </select>
-              </Field>
+              <fieldset>
+                <legend className="label">شرط ترکیب برچسب‌ها</legend>
+                <p className="hint mb-2 mt-0">
+                  وقتی بیش از یک برچسب انتخاب می‌کنید، این شرط تعیین می‌کند چه کسانی وارد فهرست شوند.
+                </p>
+                <div className="space-y-2">
+                  <label className="choice-card" data-selected={tagMode === "OR"}>
+                    <input type="radio" name="tagMode" className="custom-checkbox mt-0.5 rounded-full" checked={tagMode === "OR"}
+                           onChange={() => setTagMode("OR")} />
+                    <span>
+                      <span className="block text-sm font-bold">هر کدام از برچسب‌ها — یا (OR)</span>
+                      <span className="block text-xs leading-6" style={{ color: "var(--muted)" }}>
+                        هرکس دست‌کم <b>یکی</b> از برچسب‌های انتخاب‌شده را داشته باشد وارد فهرست می‌شود.
+                        <br />
+                        مثال: با «#اتاق_بازرگانی» و «#صنایع_یزد»، هم اعضای اتاق بازرگانی می‌آیند، هم صنایع یزد —
+                        کسی که هر دو را دارد فقط یک بار می‌آید. فهرست <b>بزرگ‌تر</b> می‌شود.
+                      </span>
+                    </span>
+                  </label>
+                  <label className="choice-card" data-selected={tagMode === "AND"}>
+                    <input type="radio" name="tagMode" className="custom-checkbox mt-0.5 rounded-full" checked={tagMode === "AND"}
+                           onChange={() => setTagMode("AND")} />
+                    <span>
+                      <span className="block text-sm font-bold">همه برچسب‌ها با هم — و (AND)</span>
+                      <span className="block text-xs leading-6" style={{ color: "var(--muted)" }}>
+                        فقط کسانی که <b>همهٔ</b> برچسب‌های انتخاب‌شده را با هم دارند وارد فهرست می‌شوند.
+                        <br />
+                        مثال: با «#اتاق_بازرگانی» و «#صنایع_یزد»، فقط کسی می‌آید که هم عضو اتاق بازرگانی باشد و
+                        هم در صنایع یزد. فهرست <b>کوچک‌تر و دقیق‌تر</b> می‌شود.
+                      </span>
+                    </span>
+                  </label>
+                </div>
+                <p className="hint">
+                  این شرط فقط روی برچسب‌ها اثر دارد؛ گروه‌ها و افراد انتخاب‌شده همیشه به فهرست اضافه می‌شوند.
+                </p>
+              </fieldset>
             </div>
 
             <div className="flex flex-wrap items-center justify-end gap-2">
@@ -332,7 +370,7 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
           <section className="card space-y-4 p-5">
             <h2 className="font-bold">متن نامه</h2>
             <div className="grid gap-4 md:grid-cols-2">
-              <Field label="سربرگ">
+              <Field label="سربرگ" hint="کادرهای هر سربرگ را مدیر سازمان تعریف کرده؛ با تغییر سربرگ، فیلدهای پر کردنی هم عوض می‌شوند.">
                 <select className="select" value={letterheadId} onChange={(e) => setLetterheadId(e.target.value)} disabled={locked}>
                   <option value="">بدون سربرگ</option>
                   {options.letterheads.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
@@ -343,13 +381,14 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
 
             {activeFields.length > 0 && (
               <fieldset className="rounded-xl border p-4">
-                <legend className="label mb-0 px-2">فیلدهای سربرگ «{options.letterheads.find((l) => l.id === letterheadId)?.name}»</legend>
+                <legend className="label mb-0 px-2">
+                  فیلدهای سربرگ «{options.letterheads.find((l) => l.id === letterheadId)?.name}»
+                </legend>
                 <p className="hint mb-3">
-                  این فیلدها را مدیر سازمان برای همین سربرگ تعریف کرده است.
-                  هر کدام با <code dir="ltr">{"{{فیلد:کلید}}"}</code> در متن نامه قابل درج است.
+                  همین {faNumber(fillableFields.length)} مورد برای این سربرگ لازم است؛ چیز دیگری از شما خواسته نمی‌شود.
                 </p>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  {activeFields.map((field) => (
+                  {fillableFields.map((field) => (
                     <div key={field.id} className={field.type === "RICH_TEXT" || field.type === "TEXTAREA" ? "sm:col-span-2" : ""}>
                       <DynamicField
                         field={field}
@@ -357,33 +396,50 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
                         onChange={(value) => setFieldValues((v) => ({ ...v, [field.key]: value }))}
                         disabled={locked}
                       />
-                      <p className="hint" dir="ltr">{`{{فیلد:${field.key}}}`} — {AREA_LABELS[field.area]}</p>
+                    </div>
+                  ))}
+                  {signatureFields.map((field) => (
+                    <div key={field.id}>
+                      <DynamicField field={field} value={signatureUrl ?? ""} onChange={() => undefined} disabled />
                     </div>
                   ))}
                 </div>
               </fieldset>
             )}
 
-            <Field label="متن نامه" required hint="تگ‌های ساده HTML مجازند. متغیرها هنگام تولید نامه با اطلاعات هر مخاطب جایگزین می‌شوند.">
-              <textarea className="textarea h-64 font-mono text-xs" value={body} onChange={(e) => setBody(e.target.value)} disabled={locked} />
-            </Field>
+            {bodyField ? (
+              <p className="rounded-xl p-3 text-sm" style={{ background: "var(--info-bg)", color: "var(--info)" }}>
+                متن اصلی نامه همان کادر «{bodyField.label}» بالاست — جای جداگانه‌ای برای تایپ متن لازم نیست.
+              </p>
+            ) : (
+              <>
+                <Field label="متن نامه" required hint="تگ‌های ساده HTML مجازند.">
+                  <textarea ref={bodyRef} className="textarea h-64 font-mono text-xs" value={body}
+                            onChange={(e) => setBody(e.target.value)} disabled={locked} />
+                </Field>
+                {!locked && (
+                  <VariableInserter
+                    variables={[...LETTER_VARIABLES, ...fieldVariables]}
+                    value={body} onChange={setBody} targetRef={bodyRef} renderHtml
+                  />
+                )}
+              </>
+            )}
 
-            <fieldset>
-              <legend className="label">درج متغیر</legend>
-              <div className="flex flex-wrap gap-2">
-                {LETTER_VARIABLES.map((v) => (
-                  <button key={v.token} type="button" className="btn btn-sm" title={v.description} disabled={locked}
-                          onClick={() => setBody((b) => b + v.token)}>{v.token}</button>
-                ))}
-                {activeFields.map((field) => (
-                  <button key={field.id} type="button" className="btn btn-sm" title={`فیلد سربرگ: ${field.label}`} disabled={locked}
-                          style={{ borderColor: "var(--primary)", color: "var(--primary)" }}
-                          onClick={() => setBody((b) => b + `{{فیلد:${field.key}}}`)}>
-                    {`{{فیلد:${field.key}}}`}
-                  </button>
-                ))}
+            {activeLetterhead && activeFields.length > 0 && (
+              <div>
+                <p className="label">پیش‌نمایش جای کادرها روی سربرگ</p>
+                <LetterheadCanvas
+                  imageUrl={activeLetterhead}
+                  fields={activeFields}
+                  selectedId={null}
+                  onSelect={() => undefined}
+                  onGeometryChange={() => undefined}
+                  readOnly
+                  values={canvasValues}
+                />
               </div>
-            </fieldset>
+            )}
 
             <div className="flex justify-end gap-2">
               <button className="btn" onClick={() => setStep(3)}>مرحله قبل</button>
@@ -431,16 +487,14 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
           <section className="space-y-4">
             <div className="card space-y-4 p-5">
               <h2 className="font-bold">متن پیامک</h2>
-              <Field label="متن" required hint="لینک کوتاه و کد دسترسی هنگام ارسال جایگزین می‌شوند.">
-                <textarea className="textarea h-28" value={smsText} onChange={(e) => setSmsText(e.target.value)} disabled={locked} />
+              <Field label="متن" required hint="لینک و کد دسترسی هنگام ارسال با مقدار واقعی هر مخاطب جایگزین می‌شوند.">
+                <textarea ref={smsRef} className="textarea h-28" value={smsText} onChange={(e) => setSmsText(e.target.value)} disabled={locked} />
               </Field>
 
-              <div className="flex flex-wrap gap-2">
-                {SMS_VARIABLES.map((v) => (
-                  <button key={v.token} type="button" className="btn btn-sm" title={v.description} disabled={locked}
-                          onClick={() => setSmsText((t) => t + v.token)}>{v.token}</button>
-                ))}
-              </div>
+              {!locked && (
+                <VariableInserter variables={SMS_VARIABLES} value={smsText} onChange={setSmsText} targetRef={smsRef} />
+              )}
+
 
               <div className="rounded-xl p-3 text-sm" style={{ background: "var(--surface-2)" }}>
                 <p className="mb-1 font-bold">پیش‌نمایش برای {previewRecipient?.name ?? "—"}</p>

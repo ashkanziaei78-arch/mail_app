@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { handle, requireApi, ApiError } from "@/lib/api";
 import { readSpreadsheet } from "@/lib/spreadsheet";
 import { normalizeMobile } from "@/lib/sms";
+import { canCreateContact } from "@/lib/scope";
 import { audit } from "@/lib/audit";
 
 /** ستون‌های پذیرفته‌شده در فایل ورودی (سطر اول = عنوان ستون‌ها) */
@@ -40,6 +41,9 @@ export async function POST(request: Request) {
     const form = await request.formData();
     const file = form.get("file");
     const visibility = form.get("visibility") === "PRIVATE" ? "PRIVATE" : "PUBLIC";
+    if (!canCreateContact(user, visibility)) {
+      throw new ApiError(403, "بارگذاری گروهی در دفترچه عمومی فقط با مدیر سازمان است؛ دفترچه خصوصی را انتخاب کنید.");
+    }
 
     if (!(file instanceof File)) throw new ApiError(400, "فایلی انتخاب نشده است.");
     if (file.size === 0) throw new ApiError(422, "فایل خالی است.");

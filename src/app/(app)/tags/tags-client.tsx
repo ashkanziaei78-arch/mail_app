@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Plus, RefreshCw, Trash2 } from "lucide-react";
 import { Badge, EmptyState, Field, PageHeader } from "@/components/ui/primitives";
 import Modal from "@/components/ui/modal";
+import MultiPicker from "@/components/ui/multi-picker";
 import { useConfirm, useToast } from "@/components/ui/toast";
 import { faNumber } from "@/lib/jalali";
 
@@ -221,12 +222,14 @@ function GroupDialog({ tags, contacts, onClose, onSaved }: {
             </fieldset>
           </>
         ) : (
-          <Field label="مخاطبین گروه" hint="برای انتخاب چندتایی، Ctrl یا Cmd را نگه دارید.">
-            <select multiple className="select h-48" value={contactIds}
-                    onChange={(e) => setContactIds([...e.target.selectedOptions].map((o) => o.value))}>
-              {contacts.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-          </Field>
+          <MultiPicker
+            label="مخاطبین گروه"
+            options={contacts.map((c) => ({ id: c.id, label: c.name }))}
+            selected={contactIds}
+            onChange={setContactIds}
+            emptyText="مخاطبی در دفترچه نیست."
+            height="h-48"
+          />
         )}
 
   

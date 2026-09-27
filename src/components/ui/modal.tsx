@@ -16,7 +16,7 @@ export default function Modal({
   onClose: () => void;
   children: React.ReactNode;
   footer?: React.ReactNode;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
 }) {
   const ref = useRef<HTMLDialogElement>(null);
 
@@ -30,7 +30,7 @@ export default function Modal({
     return () => dialog.removeEventListener("cancel", onCancel);
   }, [onClose]);
 
-  const width = { sm: "max-w-sm", md: "max-w-2xl", lg: "max-w-4xl" }[size];
+  const width = { sm: "max-w-sm", md: "max-w-2xl", lg: "max-w-4xl", xl: "max-w-6xl" }[size];
 
   return (
     <dialog

@@ -1,7 +1,10 @@
-import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { handle, readBody, requireApi, ApiError } from "@/lib/api";
 import { audit } from "@/lib/audit";
+import { letterheadFieldInput } from "@/lib/validators";
+
+/** همان فیلدهای ساخت، ولی همه اختیاری: ویرایشگر بوم فقط جای کادر را می‌فرستد. */
+const patchInput = letterheadFieldInput.partial().omit({ key: true });
 
 async function ownedField(letterheadId: string, fieldId: string, organizationId: string) {
   const field = await prisma.letterheadField.findFirst({
@@ -16,9 +19,17 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const user = await requireApi("letterheads.write");
     const { id, fieldId } = await params;
     await ownedField(id, fieldId, user.organizationId);
-    const input = await readBody(request, z.object({ sortOrder: z.number().int().min(0).max(999) }));
-    await prisma.letterheadField.update({ where: { id: fieldId }, data: { sortOrder: input.sortOrder } });
-    return { id: fieldId };
+    const input = await readBody(request, patchInput);
+    const { options, ...rest } = input;
+    const field = await prisma.letterheadField.update({
+      where: { id: fieldId },
+      data: {
+        ...rest,
+        // undefined یعنی «دست نزن»؛ null یعنی «خالی کن». Prisma فقط کلیدهای موجود را می‌نویسد.
+        ...(options ? { optionsJson: options as object } : {}),
+      },
+    });
+    return field;
   });
 }
 

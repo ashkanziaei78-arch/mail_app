@@ -10,7 +10,7 @@ export default async function SecurityPage() {
   const user = await requirePage();
   const record = await prisma.user.findUniqueOrThrow({
     where: { id: user.id },
-    select: { totpEnabled: true, totpBackupCodes: true, mobilePhone: true, passwordChangedAt: true },
+    select: { totpEnabled: true, totpBackupCodes: true, mobilePhone: true, passwordChangedAt: true, signatureImagePath: true },
   });
 
   return (
@@ -20,6 +20,7 @@ export default async function SecurityPage() {
       backupCodesLeft={record.totpBackupCodes.length}
       mobilePhone={record.mobilePhone}
       passwordChangedAt={record.passwordChangedAt.toISOString()}
+      signatureImagePath={record.signatureImagePath}
     />
   );
 }

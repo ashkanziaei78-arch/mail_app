@@ -7,13 +7,24 @@ export type FieldDefinition = {
   id: string;
   key: string;
   label: string;
-  type: "TEXT" | "TEXTAREA" | "RICH_TEXT" | "DATE" | "NUMBER" | "SELECT";
+  type: "TEXT" | "TEXTAREA" | "RICH_TEXT" | "DATE" | "NUMBER" | "SELECT" | "SIGNATURE";
   area: "HEADER" | "BODY" | "FOOTER";
   placeholder: string | null;
   helpText: string | null;
   required: boolean;
   defaultValue: string | null;
   options: string[];
+  // جای کادر روی تصویر سربرگ (درصد) و قالب متن داخلش
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  fontFamily: string;
+  fontSize: number;
+  fontWeight: string;
+  color: string;
+  align: string;
+  lineHeight: number;
 };
 
 export const AREA_LABELS: Record<FieldDefinition["area"], string> = {
@@ -30,6 +41,19 @@ export default function DynamicField({ field, value, onChange, disabled }: {
   disabled?: boolean;
 }) {
   const common = { disabled, placeholder: field.placeholder ?? undefined, required: field.required };
+
+  // امضا را کاربر پر نمی‌کند؛ از پروفایل خودش برداشته می‌شود.
+  if (field.type === "SIGNATURE") {
+    return (
+      <Field label={field.label} hint="تصویر امضای شما از پروفایل برداشته می‌شود؛ اینجا چیزی برای پر کردن نیست.">
+        <div className="flex h-16 items-center justify-center rounded-xl border border-dashed bg-[var(--surface-2)] p-2">
+          {value
+            ? <img src={value} alt="امضای شما" className="max-h-full object-contain" />
+            : <span className="text-xs" style={{ color: "var(--muted)" }}>هنوز امضایی در پروفایل ثبت نکرده‌اید.</span>}
+        </div>
+      </Field>
+    );
+  }
 
   return (
     <Field label={field.label} hint={field.helpText ?? undefined} required={field.required}>

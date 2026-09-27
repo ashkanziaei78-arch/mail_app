@@ -79,6 +79,7 @@ export default async function ContactsPage({ searchParams }: {
       tags={tags.map((t) => ({ id: t.id, name: t.name }))}
       canWrite={can(user.role, "contacts.write")}
       canDelete={can(user.role, "contacts.delete")}
+      canManagePublic={can(user.role, "contacts.manage_public")}
     />
   );
 }

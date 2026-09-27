@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { toFieldDefinition } from "@/lib/letterhead";
 import { prisma } from "@/lib/db";
 import { requirePage } from "@/lib/auth";
 import { can } from "@/lib/rbac";
@@ -63,7 +64,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
 
   const currentUserPosition = await prisma.user.findUniqueOrThrow({
     where: { id: user.id },
-    select: { positionId: true },
+    select: { positionId: true, signatureImagePath: true },
   });
 
   const letter = campaign.letters[0];
@@ -140,13 +141,10 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
           id: l.id,
           name: l.name,
           fileUrl: l.fileUrl,
-          fields: l.fields.map((f) => ({
-            id: f.id, key: f.key, label: f.label, type: f.type, area: f.area,
-            placeholder: f.placeholder, helpText: f.helpText, required: f.required,
-            defaultValue: f.defaultValue, options: (f.optionsJson as string[] | null) ?? [],
-          })),
+          fields: l.fields.map(toFieldDefinition),
         })),
       }}
+      signatureUrl={currentUserPosition.signatureImagePath}
       permissions={{
         write: can(user.role, "campaigns.write"),
         approve: can(user.role, "campaigns.approve"),

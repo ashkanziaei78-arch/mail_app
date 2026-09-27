@@ -25,7 +25,7 @@ const EMPTY: ContactRow = {
 };
 
 export default function ContactsClient({
-  contacts, tags, initialFilters, pagination, canWrite, canDelete,
+  contacts, tags, initialFilters, pagination, canWrite, canDelete, canManagePublic,
 }: {
   contacts: ContactRow[];
   tags: Array<{ id: string; name: string }>;
@@ -33,6 +33,8 @@ export default function ContactsClient({
   pagination: { page: number; pageSize: number; total: number };
   canWrite: boolean;
   canDelete: boolean;
+  /** فقط مدیر سازمان می‌تواند دفترچه عمومی را تغییر دهد. */
+  canManagePublic: boolean;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -200,6 +202,7 @@ export default function ContactsClient({
 
       {editing && (
         <ContactDialog
+          canManagePublic={canManagePublic}
           contact={editing}
           tags={tags}
           onClose={() => setEditing(null)}
@@ -207,19 +210,22 @@ export default function ContactsClient({
         />
       )}
 
-      {importing && <ImportDialog onClose={() => setImporting(false)} onDone={(text) => { setImporting(false); toast("success", text); router.refresh(); }} />}
+      {importing && <ImportDialog canManagePublic={canManagePublic} onClose={() => setImporting(false)} onDone={(text) => { setImporting(false); toast("success", text); router.refresh(); }} />}
       {confirmDialog}
     </>
   );
 }
 
-function ContactDialog({ contact, tags, onClose, onSaved }: {
+function ContactDialog({ contact, tags, onClose, onSaved, canManagePublic }: {
   contact: ContactRow;
   tags: Array<{ id: string; name: string }>;
   onClose: () => void;
   onSaved: (message: string) => void;
+  canManagePublic: boolean;
 }) {
-  const [form, setForm] = useState(contact);
+  const [form, setForm] = useState(
+    canManagePublic ? contact : { ...contact, visibility: "PRIVATE" as const },
+  );
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const isNew = !contact.id;
@@ -249,9 +255,16 @@ function ContactDialog({ contact, tags, onClose, onSaved }: {
         <Field label="عنوان خطاب"><select className="select" value={form.formalTitle ?? ""} onChange={(e) => set("formalTitle", e.target.value)}>
           <option value="">—</option><option>جناب آقای</option><option>سرکار خانم</option><option>جناب آقای دکتر</option><option>سرکار خانم دکتر</option><option>جناب آقای مهندس</option><option>سرکار خانم مهندس</option>
         </select></Field>
-        <Field label="دفترچه" hint="خصوصی یعنی فقط خودتان این مخاطب را می‌بینید.">
-          <select className="select" value={form.visibility} onChange={(e) => set("visibility", e.target.value as "PUBLIC" | "PRIVATE")}>
-            <option value="PUBLIC">عمومی سازمان</option><option value="PRIVATE">خصوصی من</option>
+        <Field
+          label="دفترچه"
+          hint={canManagePublic
+            ? "عمومی یعنی همه کاربران سازمان می‌بینند؛ خصوصی یعنی فقط خودتان."
+            : "افزودن به دفترچه عمومی سازمان فقط با مدیر است؛ مخاطب شما در دفترچه خصوصی خودتان ثبت می‌شود."}
+        >
+          <select className="select" value={form.visibility} disabled={!canManagePublic}
+                  onChange={(e) => set("visibility", e.target.value as "PUBLIC" | "PRIVATE")}>
+            {canManagePublic && <option value="PUBLIC">عمومی سازمان</option>}
+            <option value="PRIVATE">خصوصی من</option>
           </select>
         </Field>
         <Field label="نام" required><input className="input" required value={form.firstName} onChange={(e) => set("firstName", e.target.value)} /></Field>
@@ -312,7 +325,7 @@ function ContactDialog({ contact, tags, onClose, onSaved }: {
   );
 }
 
-function ImportDialog({ onClose, onDone }: { onClose: () => void; onDone: (message: string) => void }) {
+function ImportDialog({ onClose, onDone, canManagePublic }: { onClose: () => void; onDone: (message: string) => void; canManagePublic: boolean }) {
   const [result, setResult] = useState<{ created: number; failed: number; total: number; errors: string[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string>("");
@@ -376,11 +389,14 @@ function ImportDialog({ onClose, onDone }: { onClose: () => void; onDone: (messa
                   onChange={(e) => setFileName(e.target.files?.[0]?.name ?? "")}
                 />
               </Field>
-              <Field label="در کدام دفترچه ثبت شود؟" hint="خصوصی یعنی فقط خودتان می‌بینید.">
-                <select className="select" name="visibility" defaultValue="PUBLIC">
-                  <option value="PUBLIC">دفترچه عمومی سازمان</option>
+              <Field label="در کدام دفترچه ثبت شود؟"
+                     hint={canManagePublic ? "عمومی را همه می‌بینند." : "بارگذاری در دفترچه عمومی فقط با مدیر سازمان است."}>
+                <select className="select" name="visibility" defaultValue={canManagePublic ? "PUBLIC" : "PRIVATE"}
+                        disabled={!canManagePublic}>
+                  {canManagePublic && <option value="PUBLIC">دفترچه عمومی سازمان</option>}
                   <option value="PRIVATE">دفترچه خصوصی من</option>
                 </select>
+                {!canManagePublic && <input type="hidden" name="visibility" value="PRIVATE" />}
               </Field>
             </div>
             {fileName && (

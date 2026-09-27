@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { handle, readBody, requireApi, ApiError } from "@/lib/api";
-import { canEditContact, contactScope } from "@/lib/scope";
+import { canCreateContact, canEditContact, contactScope } from "@/lib/scope";
 import { normalizeMobile } from "@/lib/sms";
 import { audit } from "@/lib/audit";
 import { contactInput } from "@/lib/validators";
@@ -18,6 +18,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const { id } = await params;
     const before = await load(id, user);
     const input = await readBody(request, contactInput);
+    // انتقال یک مخاطب خصوصی به دفترچه عمومی، خودش یک «افزودن به عمومی» است.
+    if (input.visibility !== before.visibility && !canCreateContact(user, input.visibility ?? "PUBLIC")) {
+      throw new ApiError(403, "جابه‌جایی مخاطب بین دفترچه خصوصی و عمومی فقط با مدیر سازمان است.");
+    }
 
     const mobile = normalizeMobile(input.mobilePhone);
     if (input.mobilePhone && !mobile) throw new ApiError(422, "شماره همراه معتبر نیست (نمونه: 09123456789).");

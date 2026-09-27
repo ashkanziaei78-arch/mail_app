@@ -38,10 +38,58 @@ export function kavenegarProvider(apiKey: string): SmsProvider {
   };
 }
 
+/**
+ * sms.ir — REST نسخه ۱.
+ * کلید در هدر `X-API-KEY` می‌رود و شماره فرستنده همان «خط ارسال» پنل است.
+ * پاسخ موفق `status: 1` دارد؛ هر چیز دیگری خطاست و پیامش به کاربر نشان داده می‌شود.
+ */
+export function smsIrProvider(apiKey: string): SmsProvider {
+  return {
+    name: "smsir",
+    async send(to, text, sender) {
+      try {
+        const res = await fetch("https://api.sms.ir/v1/send/bulk", {
+          method: "POST",
+          headers: { "content-type": "application/json", accept: "text/plain", "x-api-key": apiKey },
+          body: JSON.stringify({ lineNumber: sender, messageText: text, mobiles: [to] }),
+          cache: "no-store",
+        });
+        const json = (await res.json()) as {
+          status?: number;
+          message?: string;
+          data?: { messageIds?: number[]; packId?: string };
+        };
+        if (json.status !== 1) return { ok: false, error: json.message ?? `خطای درگاه (${res.status})` };
+        return { ok: true, providerMessageId: String(json.data?.messageIds?.[0] ?? json.data?.packId ?? "") };
+      } catch (error) {
+        return { ok: false, error: error instanceof Error ? error.message : "خطای شبکه" };
+      }
+    },
+  };
+}
+
 export const SUPPORTED_PROVIDERS = [
   { value: "console", label: "آزمایشی (چاپ در لاگ سرور)" },
+  { value: "smsir", label: "sms.ir" },
   { value: "kavenegar", label: "کاوه‌نگار" },
 ];
+
+/** راهنمای هر درگاه؛ در صفحه تنظیمات پیامک کنار فیلدها نشان داده می‌شود. */
+export const PROVIDER_HELP: Record<string, { apiKey: string; sender: string; docs?: string }> = {
+  console: {
+    apiKey: "در حالت آزمایشی لازم نیست؛ پیامک فقط در لاگ سرور چاپ می‌شود.",
+    sender: "هر مقداری بگذارید فرقی نمی‌کند.",
+  },
+  smsir: {
+    apiKey: "در پنل sms.ir: توسعه‌دهندگان ← کلید API. همان رشته را اینجا بگذارید.",
+    sender: "شماره «خط ارسال» پنل sms.ir، مثل ۳۰۰۰۵۰۵۶.",
+    docs: "https://app.sms.ir/developer/help",
+  },
+  kavenegar: {
+    apiKey: "در پنل کاوه‌نگار: تنظیمات ← کلید وب‌سرویس.",
+    sender: "خط ارسال اختصاصی شما در کاوه‌نگار.",
+  },
+};
 
 /** شمارش بخش‌های پیامک؛ متن فارسی یونیکد است: ۷۰ کاراکتر تک‌بخشی، ۶۷ در چندبخشی. */
 export function countSegments(text: string): { unicode: boolean; length: number; segments: number } {

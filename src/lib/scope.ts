@@ -12,12 +12,23 @@ export function contactScope(user: CurrentUser): Prisma.ContactWhereInput {
   return { ...base, OR: [{ visibility: "PUBLIC" }, { ownerUserId: user.id }] };
 }
 
-/** ویرایش/حذف: مخاطب خصوصی فقط توسط مالک یا مدیر سازمان. */
+/**
+ * ویرایش/حذف مخاطب.
+ * دفترچه عمومی را همه می‌بینند ولی فقط مدیر (contacts.manage_public) تغییرش می‌دهد؛
+ * دفترچه خصوصی را مالکش می‌چرخاند.
+ */
 export function canEditContact(
   user: CurrentUser,
   contact: { visibility: string; ownerUserId: string | null },
 ): boolean {
+  if (contact.visibility === "PUBLIC") return can(user.role, "contacts.manage_public");
   if (can(user.role, "contacts.read_all_private")) return true;
-  if (contact.visibility === "PUBLIC") return can(user.role, "contacts.write");
   return contact.ownerUserId === user.id;
+}
+
+/** آیا این کاربر اجازه دارد مخاطب تازه با این نوع دفترچه بسازد؟ */
+export function canCreateContact(user: CurrentUser, visibility: string): boolean {
+  return visibility === "PUBLIC"
+    ? can(user.role, "contacts.manage_public")
+    : can(user.role, "contacts.write");
 }

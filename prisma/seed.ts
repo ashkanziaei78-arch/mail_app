@@ -13,6 +13,7 @@ const PERMISSION_LABELS: Record<string, string> = {
   "contacts.write": "ثبت و ویرایش مخاطب",
   "contacts.delete": "حذف مخاطب",
   "contacts.read_all_private": "مشاهده دفترچه‌های خصوصی",
+  "contacts.manage_public": "ویرایش دفترچه عمومی",
   "tags.write": "مدیریت برچسب‌ها",
   "groups.write": "مدیریت گروه‌ها",
   "letterheads.write": "مدیریت سربرگ‌ها",

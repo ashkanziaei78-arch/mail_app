@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { handle, readBody, requireApi, ApiError } from "@/lib/api";
 import { letterheadFieldInput } from "@/lib/validators";
 import { audit } from "@/lib/audit";
+import { nextBoxPosition } from "@/lib/letterhead";
 
 async function ownedLetterhead(id: string, organizationId: string) {
   const letterhead = await prisma.letterhead.findFirst({ where: { id, organizationId } });
@@ -48,6 +49,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         defaultValue: input.defaultValue || null,
         optionsJson: input.type === "SELECT" ? (input.options as object) : undefined,
         sortOrder: input.sortOrder || count,
+        ...nextBoxPosition(count),
+        fontFamily: input.fontFamily,
+        fontSize: input.fontSize,
+        fontWeight: input.fontWeight,
+        color: input.color,
+        align: input.align,
+        lineHeight: input.lineHeight,
       },
     });
 

@@ -2,27 +2,57 @@ import sanitize from "sanitize-html";
 
 import { faDate } from "./jalali";
 
-/** متغیرهای مجاز در متن نامه و پیامک */
+/**
+ * متغیرهای مجاز در متن نامه و پیامک.
+ * `example` همان چیزی است که در پیش‌نمایش جای متغیر می‌نشیند تا کاربر قبل از
+ * ارسال ببیند نامه چه شکلی درمی‌آید.
+ */
 export const LETTER_VARIABLES = [
-  { token: "{{عنوان}}", description: "عنوان رسمی خطاب (جناب آقای / سرکار خانم)" },
-  { token: "{{نام}}", description: "نام" },
-  { token: "{{نام_خانوادگی}}", description: "نام خانوادگی" },
-  { token: "{{نام_کامل}}", description: "نام و نام خانوادگی" },
-  { token: "{{سمت}}", description: "سمت مخاطب" },
-  { token: "{{سازمان}}", description: "سازمان مخاطب" },
-  { token: "{{شهر}}", description: "شهر مخاطب" },
-  { token: "{{موبایل}}", description: "شماره همراه مخاطب" },
-  { token: "{{سازمان_فرستنده}}", description: "نام سازمان فرستنده" },
-  { token: "{{تاریخ}}", description: "تاریخ نامه (شمسی)" },
-  { token: "{{شماره_نامه}}", description: "شماره/شناسه نامه" },
+  { token: "{{عنوان}}", description: "عنوان رسمی خطاب (جناب آقای / سرکار خانم)", example: "جناب آقای" },
+  { token: "{{نام}}", description: "نام", example: "حسین" },
+  { token: "{{نام_خانوادگی}}", description: "نام خانوادگی", example: "موسوی" },
+  { token: "{{نام_کامل}}", description: "نام و نام خانوادگی", example: "حسین موسوی" },
+  { token: "{{سمت}}", description: "سمت مخاطب", example: "مدیرعامل" },
+  { token: "{{سازمان}}", description: "سازمان مخاطب", example: "اتاق بازرگانی یزد" },
+  { token: "{{شهر}}", description: "شهر مخاطب", example: "یزد" },
+  { token: "{{موبایل}}", description: "شماره همراه مخاطب", example: "۰۹۱۲۳۴۵۶۷۸۹" },
+  { token: "{{سازمان_فرستنده}}", description: "نام سازمان فرستنده", example: "پارک علم و فناوری یزد" },
+  { token: "{{تاریخ}}", description: "تاریخ نامه (شمسی)", example: "۱۴۰۴/۰۷/۰۵" },
+  { token: "{{شماره_نامه}}", description: "شماره/شناسه نامه", example: "۱۴۰۴/۲۳۷/ص" },
 ] as const;
 
 export const SMS_VARIABLES = [
   ...LETTER_VARIABLES,
-  { token: "{{لینک}}", description: "لینک کوتاه مشاهده نامه" },
-  { token: "{{کد_دسترسی}}", description: "کد دسترسی نامه محرمانه" },
-  { token: "{{لغو_اشتراک}}", description: "لینک لغو دریافت پیامک (توصیه می‌شود در انتهای پیامک بیاید)" },
+  { token: "{{لینک}}", description: "لینک کوتاه مشاهده نامه", example: "https://example.ir/l/Ab3xK9pQ2t" },
+  { token: "{{کد_دسترسی}}", description: "کد دسترسی نامه محرمانه", example: "۸۳۵۱۹۲" },
+  { token: "{{لغو_اشتراک}}", description: "لینک لغو دریافت پیامک (توصیه می‌شود در انتهای پیامک بیاید)", example: "https://example.ir/u/9Kd2" },
 ] as const;
+
+export type LetterVariable = { token: string; description: string; example: string };
+
+/**
+ * متغیر را سر جای مکان‌نما می‌گذارد و خودش فاصله لازم را اضافه می‌کند.
+ *
+ * بدون این کار، کلیک روی «{{نام}}» بعد از کلمه‌ای مثل «آقای» می‌شود
+ * «آقای{{نام}}» و در نامه نهایی «آقایحسین» چاپ می‌شود. اینجا اگر کاراکتر قبل یا
+ * بعدِ محل درج فاصله یا خط جدید نباشد، یک فاصله گذاشته می‌شود؛ اگر باشد، فاصله
+ * دوم اضافه نمی‌شود.
+ */
+export function insertVariable(text: string, start: number, end: number, token: string) {
+  const before = text.slice(0, start);
+  const after = text.slice(end);
+  const needsLeading = before.length > 0 && !/[\s\u200c(«"'>]$/.test(before);
+  const needsTrailing = after.length > 0 && !/^[\s\u200c)».,،:;!?"'<]/.test(after);
+  const inserted = `${needsLeading ? " " : ""}${token}${needsTrailing ? " " : ""}`;
+  return { text: before + inserted + after, caret: before.length + inserted.length };
+}
+
+/** متن را با مقدارهای نمونه پر می‌کند تا کاربر پیش‌نمایش واقعی ببیند. */
+export function fillWithExamples(text: string, variables: readonly LetterVariable[]) {
+  let out = text;
+  for (const variable of variables) out = out.split(variable.token).join(variable.example);
+  return out;
+}
 
 export type RenderContext = Record<string, string>;
 

@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { handle, readBody, requireApi, ApiError } from "@/lib/api";
-import { contactScope } from "@/lib/scope";
+import { canCreateContact, contactScope } from "@/lib/scope";
 import { normalizeMobile } from "@/lib/sms";
 import { audit } from "@/lib/audit";
 import { contactInput } from "@/lib/validators";
@@ -40,6 +40,9 @@ export async function POST(request: Request) {
   return handle(async () => {
     const user = await requireApi("contacts.write");
     const input = await readBody(request, contactInput);
+    if (!canCreateContact(user, input.visibility ?? "PUBLIC")) {
+      throw new ApiError(403, "افزودن مخاطب به دفترچه عمومی فقط با مدیر سازمان است. مخاطب را در دفترچه خصوصی خودتان ثبت کنید.");
+    }
     const mobile = normalizeMobile(input.mobilePhone);
     if (input.mobilePhone && !mobile) throw new ApiError(422, "شماره همراه معتبر نیست (نمونه: 09123456789).");
 

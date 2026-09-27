@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: "برچسب‌ها و گروه‌ها
 export const dynamic = "force-dynamic";
 
 export default async function TagsPage() {
-  const user = await requirePage("contacts.read");
+  const user = await requirePage("tags.write"); // تعریف برچسب و گروه کار مدیر است
   const [tags, groups, contacts] = await Promise.all([
     prisma.tag.findMany({
       where: { organizationId: user.organizationId, deletedAt: null },
