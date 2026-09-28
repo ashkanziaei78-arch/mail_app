@@ -39,11 +39,17 @@ export function middleware(request: NextRequest) {
     "default-src 'self'",
     // 'strict-dynamic' به اسکریپت‌های بارگذاری‌شده توسط اسکریپت مورد اعتماد Next اجازه می‌دهد؛
     // اسکریپت درون‌خطی بدون nonce (یعنی تزریق‌شده) اجرا نمی‌شود.
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https: 'unsafe-inline'`,
+    // در حالت توسعه، React و HMR از eval استفاده می‌کنند؛ بدون unsafe-eval صفحه
+    // hydrate نمی‌شود و هیچ دکمه‌ای کار نمی‌کند. در تولید این مجوز داده نمی‌شود.
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https: 'unsafe-inline'${
+      process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""
+    }`,
     // Tailwind و استایل‌های درون‌خطی کامپوننت‌ها به inline نیاز دارند.
     "style-src 'self' 'unsafe-inline'",
     "font-src 'self'",
     "img-src 'self' data: blob:",
+    // ویدیوهای آموزشی از همین دامنه پخش می‌شوند؛ بدون این، default-src جلویشان را می‌گیرد.
+    "media-src 'self'",
     "connect-src 'self'",
     "form-action 'self'",
     "frame-ancestors 'none'",   // جلوگیری از clickjacking

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Copy, Link2, MousePointerClick } from "lucide-react";
 import { EmptyState, Field, PageHeader } from "@/components/ui/primitives";
@@ -20,8 +20,11 @@ export default function ShortLinksClient({ links, canWrite }: { links: ShortLink
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
 
-  // origin فقط در مرورگر در دسترس است؛ در سرور رشته خالی می‌ماند و بعد از hydrate پر می‌شود.
-  const origin = typeof window === "undefined" ? "" : window.location.origin;
+  // origin فقط در مرورگر وجود دارد. خواندن مستقیم آن هنگام رندر، HTML سرور و
+  // کلاینت را ناهمسان می‌کند (hydration mismatch)، پس بعد از سوار شدن کامپوننت
+  // ست می‌شود.
+  const [origin, setOrigin] = useState("");
+  useEffect(() => { setOrigin(window.location.origin); }, []);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
