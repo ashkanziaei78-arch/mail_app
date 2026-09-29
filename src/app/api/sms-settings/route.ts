@@ -6,8 +6,12 @@ import { countSegments, normalizeMobile, SUPPORTED_PROVIDERS } from "@/lib/sms";
 import { resolveProvider } from "@/lib/sms-server";
 import { audit } from "@/lib/audit";
 
+// فهرست درگاه‌ها یک‌جا در SUPPORTED_PROVIDERS تعریف شده؛ اینجا از همان ساخته می‌شود
+// تا اضافه‌شدن درگاه تازه (مثل sms.ir) دوباره پشت این اعتبارسنجی گیر نکند.
+const PROVIDER_VALUES = SUPPORTED_PROVIDERS.map((p) => p.value) as [string, ...string[]];
+
 const schema = z.object({
-  providerName: z.enum(["console", "kavenegar"]),
+  providerName: z.enum(PROVIDER_VALUES, { message: "درگاه پشتیبانی نمی‌شود." }),
   apiKey: z.string().trim().default(""),
   senderNumber: z.string().trim().min(1, "شماره فرستنده الزامی است."),
 });
@@ -19,10 +23,6 @@ export async function POST(request: Request) {
     if (input.providerName !== "console" && !input.apiKey) {
       throw new ApiError(422, "کلید API درگاه را وارد کنید.");
     }
-    if (!SUPPORTED_PROVIDERS.some((p) => p.value === input.providerName)) {
-      throw new ApiError(422, "درگاه پشتیبانی نمی‌شود.");
-    }
-
     const existing = await prisma.smsProviderConfig.findFirst({
       where: { organizationId: user.organizationId, isDefault: true },
     });
