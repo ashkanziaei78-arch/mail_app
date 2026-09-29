@@ -102,6 +102,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
         letterheadId: letter?.letterheadId ?? "",
         letterheadUrl: letter?.letterhead?.fileUrl ?? null,
         fieldValues: (letter?.fieldValuesJson as Record<string, string> | null) ?? {},
+        attachments: (letter?.attachmentsJson as Array<{ id: string; name: string; size: number; mimeType: string }> | null) ?? [],
       }}
       recipients={campaign.recipients.map((r) => ({
         id: r.id,

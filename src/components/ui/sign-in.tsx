@@ -175,19 +175,32 @@ export const SignInPage: React.FC<SignInPageProps> = ({
 
       {/* ستون تصویر — روی موبایل به یک نوار کوتاه تبدیل می‌شود */}
       {heroImageSrc && (
-        <section className="relative h-40 shrink-0 p-3 md:h-auto md:flex-1 md:p-4">
+        <section className="relative h-56 shrink-0 p-3 sm:h-64 md:h-auto md:flex-1 md:p-4">
+          {/* پشت تصویر یک پس‌زمینه طراحی‌شده هست: اگر عکس بیرونی بالا نیاید
+              (فیلتر شبکه، اینترنت کند) صفحه باز هم عمدی و کامل دیده می‌شود. */}
           <div
             className="animate-slide-right animate-delay-300 absolute inset-3 rounded-3xl bg-cover bg-center md:inset-4"
-            style={{ backgroundImage: `url(${heroImageSrc})` }}
+            style={{
+              backgroundImage:
+                `linear-gradient(140deg, rgba(10,26,51,.86), rgba(37,99,235,.55)), url(${heroImageSrc}), ` +
+                "radial-gradient(120% 90% at 20% 0%, #1d4ed8 0%, #0b1a33 55%, #060d1b 100%)",
+            }}
             role="img"
             aria-label="تصویر سازمانی سامانه"
           />
           <div className="animate-slide-right animate-delay-300 absolute inset-3 rounded-3xl bg-gradient-to-t from-black/70 via-black/20 to-transparent md:inset-4" />
 
           {heroCaption && testimonials.length === 0 && (
-            <div className="animate-element animate-delay-1000 absolute bottom-8 right-8 left-8 hidden text-white md:bottom-12 md:right-12 md:left-12 md:block">
+            <div className="animate-element animate-delay-1000 absolute bottom-6 right-6 left-6 text-white md:bottom-12 md:right-12 md:left-12">
               {heroCaption}
             </div>
+          )}
+
+          {/* شرط لایسنس Unsplash: نام عکاس و منبع ذکر شود. */}
+          {heroImageSrc.includes("unsplash.com") && (
+            <p className="absolute bottom-1 left-6 text-[10px] text-white/50 md:left-8">
+              عکس: Thomas K / Unsplash
+            </p>
           )}
 
           {testimonials.length > 0 && (

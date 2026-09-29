@@ -61,3 +61,6 @@ CREATE INDEX "UploadedFile_organizationId_kind_idx" ON "UploadedFile"("organizat
 -- AddForeignKey
 ALTER TABLE "UploadedFile" ADD CONSTRAINT "UploadedFile_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
+
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "avatarPath" TEXT;

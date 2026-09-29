@@ -95,7 +95,7 @@ function useBreadcrumb(pathname: string) {
 export default function AppShell({
   user, allowed, children,
 }: {
-  user: { fullName: string; roleLabel: string; organizationName: string };
+  user: { fullName: string; roleLabel: string; organizationName: string; avatarSrc?: string | null };
   allowed: string[];
   children: React.ReactNode;
 }) {
@@ -153,8 +153,10 @@ export default function AppShell({
 
       <div className="border-t border-white/15 pt-3">
         <div className="flex items-center gap-3 px-2">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-600 text-sm font-bold">
-            {user.fullName.slice(0, 1)}
+          <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-600 text-sm font-bold">
+            {user.avatarSrc
+              ? <img src={user.avatarSrc} alt="" className="h-full w-full object-cover" />
+              : user.fullName.slice(0, 1)}
           </span>
           <span className="min-w-0">
             <span className="block truncate text-sm font-bold">{user.fullName}</span>

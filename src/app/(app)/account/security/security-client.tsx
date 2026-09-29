@@ -3,20 +3,22 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { KeyRound, PenLine, ShieldCheck, ShieldOff, Smartphone, Upload } from "lucide-react";
+import { Image as ImageIcon, KeyRound, PenLine, ShieldCheck, ShieldOff, Smartphone, Upload } from "lucide-react";
 import { Badge, Field, PageHeader } from "@/components/ui/primitives";
 import Modal from "@/components/ui/modal";
 import PasswordInput from "@/components/ui/password-input";
 import { useToast } from "@/components/ui/toast";
 import { faDateTime, faNumber } from "@/lib/jalali";
+import { AVATAR_STYLES, avatarDataUrl, avatarSrc } from "@/lib/avatars";
 
-export default function SecurityClient({ email, totpEnabled, backupCodesLeft, mobilePhone, passwordChangedAt, signatureImagePath }: {
+export default function SecurityClient({ email, totpEnabled, backupCodesLeft, mobilePhone, passwordChangedAt, signatureImagePath, avatarPath }: {
   email: string;
   totpEnabled: boolean;
   backupCodesLeft: number;
   mobilePhone: string | null;
   passwordChangedAt: string;
   signatureImagePath: string | null;
+  avatarPath: string | null;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -65,6 +67,8 @@ export default function SecurityClient({ email, totpEnabled, backupCodesLeft, mo
             </button>
           )}
         </section>
+
+        <AvatarCard current={avatarPath} />
 
         <SignatureCard current={signatureImagePath} />
 
@@ -297,6 +301,92 @@ function SignatureCard({ current }: { current: string | null }) {
         </label>
         {current && <button className="btn btn-danger" onClick={remove} disabled={busy}>برداشتن امضا</button>}
       </div>
+    </section>
+  );
+}
+
+/** عکس پروفایل: یا یکی از طرح‌های آماده، یا عکس خودِ کاربر. */
+function AvatarCard({ current }: { current: string | null }) {
+  const router = useRouter();
+  const toast = useToast();
+  const [busy, setBusy] = useState(false);
+  const src = avatarSrc(current);
+
+  async function call(init: RequestInit, message: string) {
+    setBusy(true);
+    const res = await fetch("/api/account/avatar", init);
+    const json = await res.json();
+    setBusy(false);
+    if (!json.ok) { toast("error", json.error); return; }
+    toast("success", message);
+    router.refresh();
+  }
+
+  async function upload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const form = new FormData();
+    form.append("file", file);
+    event.target.value = "";
+    await call({ method: "POST", body: form }, "عکس پروفایل ذخیره شد.");
+  }
+
+  return (
+    <section className="card p-5">
+      <h2 className="mb-1 flex items-center gap-2 font-bold"><ImageIcon className="h-5 w-5" />عکس پروفایل</h2>
+      <p className="mb-4 text-sm" style={{ color: "var(--muted)" }}>
+        یا عکس خودتان را آپلود کنید، یا یکی از طرح‌های آماده را بردارید.
+      </p>
+
+      <div className="mb-4 flex items-center gap-4">
+        <span className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-2xl"
+              style={{ background: "var(--surface-2)" }}>
+          {src
+            ? <img src={src} alt="عکس پروفایل شما" className="h-full w-full object-cover" />
+            : <span className="text-xs" style={{ color: "var(--muted)" }}>ندارد</span>}
+        </span>
+        <div className="flex flex-wrap gap-2">
+          <label className="btn btn-sm">
+            <Upload className="h-4 w-4" />
+            آپلود عکس
+            <input type="file" className="sr-only" accept="image/png,image/jpeg,image/webp"
+                   onChange={upload} disabled={busy} />
+          </label>
+          {current && (
+            <button className="btn btn-sm btn-danger" disabled={busy}
+                    onClick={() => call({ method: "DELETE" }, "عکس پروفایل برداشته شد.")}>
+              برداشتن
+            </button>
+          )}
+        </div>
+      </div>
+
+      <fieldset>
+        <legend className="label">گالری طرح‌ها</legend>
+        <ul className="flex flex-wrap gap-2">
+          {AVATAR_STYLES.map((style) => {
+            const selected = current === `avatar:${style.id}`;
+            return (
+              <li key={style.id}>
+                <button
+                  className="grid h-12 w-12 place-items-center overflow-hidden rounded-xl transition-transform hover:scale-105"
+                  style={{ outline: selected ? "3px solid var(--primary)" : "1px solid var(--border)", outlineOffset: 1 }}
+                  aria-label={`انتخاب طرح ${style.label}`}
+                  aria-pressed={selected}
+                  disabled={busy}
+                  onClick={() => call({
+                    method: "PATCH",
+                    headers: { "content-type": "application/json" },
+                    body: JSON.stringify({ styleId: style.id }),
+                  }, `طرح «${style.label}» انتخاب شد.`)}
+                >
+                  <img src={avatarDataUrl(style.id) ?? ""} alt="" className="h-full w-full object-cover" />
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </fieldset>
     </section>
   );
 }

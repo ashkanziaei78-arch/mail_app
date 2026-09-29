@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { PlayCircle } from "lucide-react";
+import { ExternalLink, PlayCircle } from "lucide-react";
 import { PageHeader } from "@/components/ui/primitives";
 import type { Tutorial } from "@/lib/tutorials";
 import { faNumber } from "@/lib/jalali";
@@ -69,6 +69,18 @@ export default function HelpClient({ tutorials }: { tutorials: Tutorial[] }) {
               {current.title}
             </h2>
             <p className="mb-5 text-sm leading-7" style={{ color: "var(--muted)" }}>{current.summary}</p>
+
+            {current.externalVideo && (
+              <a
+                href={current.externalVideo.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-sm mb-4"
+              >
+                <ExternalLink className="h-4 w-4" aria-hidden="true" />
+                {current.externalVideo.label}
+              </a>
+            )}
 
             <ol className="space-y-4">
               {current.steps.map((step, index) => (

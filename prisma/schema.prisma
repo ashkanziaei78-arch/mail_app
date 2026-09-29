@@ -242,6 +242,8 @@ model User {
    * تصویر امضای کاربر — در کادر امضای سربرگ چاپ می‌شود
    */
   signatureImagePath  String?
+  /** عکس پروفایل: یا آپلود خودش، یا یکی از طرح‌های آماده گالری (avatar:<id>) */
+  avatarPath          String?
   createdAt           DateTime     @default(now())
   updatedAt           DateTime     @updatedAt
   deletedAt           DateTime?

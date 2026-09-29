@@ -47,7 +47,8 @@ export function middleware(request: NextRequest) {
     // Tailwind و استایل‌های درون‌خطی کامپوننت‌ها به inline نیاز دارند.
     "style-src 'self' 'unsafe-inline'",
     "font-src 'self'",
-    "img-src 'self' data: blob:",
+    // تصویر پس‌زمینه ورود می‌تواند از Unsplash بیاید؛ بقیه تصاویر از همین دامنه.
+    "img-src 'self' data: blob: https://images.unsplash.com",
     // ویدیوهای آموزشی از همین دامنه پخش می‌شوند؛ بدون این، default-src جلویشان را می‌گیرد.
     "media-src 'self'",
     "connect-src 'self'",

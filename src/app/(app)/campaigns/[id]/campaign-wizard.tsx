@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Clock, Copy, ExternalLink, Eye, MessageSquare, Send, Trash2 } from "lucide-react";
+import { CheckCircle2, Clock, Copy, ExternalLink, Eye, MessageSquare, Paperclip, Send, Trash2 } from "lucide-react";
 import Stepper from "@/components/ui/stepper";
 import { Badge, Field, PageHeader } from "@/components/ui/primitives";
 import Modal from "@/components/ui/modal";
@@ -27,6 +27,8 @@ type Recipient = {
   firstViewedAt: string | null; lastViewedAt: string | null; viewCount: number;
   respondedAt: string | null; responseKind: string | null; responseMessage: string | null;
 };
+
+type Attachment = { id: string; name: string; size: number; mimeType: string };
 
 type Approval = {
   id: string; order: number; status: string; positionId: string; positionName: string;
@@ -52,6 +54,7 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
   letter: {
     title: string; letterNumber: string; subject: string; bodyHtml: string; senderName: string;
     letterheadId: string; letterheadUrl: string | null; fieldValues: Record<string, string>;
+    attachments: Attachment[];
   };
   recipients: Recipient[];
   options: {
@@ -85,6 +88,8 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
   const [smsText, setSmsText] = useState(campaign.smsBodyText ?? DEFAULT_SMS);
   const smsRef = useRef<HTMLTextAreaElement>(null);
   const [fieldValues, setFieldValues] = useState<Record<string, string>>(letter.fieldValues ?? {});
+  const [attachments, setAttachments] = useState<Attachment[]>(letter.attachments);
+  const [uploading, setUploading] = useState(false);
   const [previewIndex, setPreviewIndex] = useState(0);
   const [override, setOverride] = useState<Recipient | null>(null);
 
@@ -441,6 +446,16 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
               </div>
             )}
 
+            <AttachmentsPanel
+              campaignId={campaign.id}
+              attachments={attachments}
+              onChange={setAttachments}
+              disabled={locked || !permissions.write}
+              busy={uploading}
+              setBusy={setUploading}
+              notify={toast}
+            />
+
             <div className="flex justify-end gap-2">
               <button className="btn" onClick={() => setStep(3)}>مرحله قبل</button>
               <button className="btn btn-primary" disabled={busy || locked}
@@ -736,5 +751,81 @@ function RejectDialog({ onClose, onSubmit }: { onClose: () => void; onSubmit: (r
         <textarea className="textarea" value={reason} onChange={(e) => setReason(e.target.value)} autoFocus />
       </Field>
     </Modal>
+  );
+}
+
+/** پیوست‌های نامه — یک یا چند فایل که همراه نامه برای مخاطب باز می‌شود. */
+function AttachmentsPanel({ campaignId, attachments, onChange, disabled, busy, setBusy, notify }: {
+  campaignId: string;
+  attachments: Attachment[];
+  onChange: (list: Attachment[]) => void;
+  disabled: boolean;
+  busy: boolean;
+  setBusy: (value: boolean) => void;
+  notify: (tone: "success" | "error", text: string) => void;
+}) {
+  async function upload(event: React.ChangeEvent<HTMLInputElement>) {
+    const files = [...(event.target.files ?? [])];
+    if (files.length === 0) return;
+    setBusy(true);
+    const form = new FormData();
+    for (const file of files) form.append("files", file);
+    const res = await fetch(`/api/campaigns/${campaignId}/attachments`, { method: "POST", body: form });
+    const json = await res.json();
+    setBusy(false);
+    event.target.value = "";
+    if (!json.ok) { notify("error", json.error); return; }
+    onChange(json.data);
+    notify("success", `${faNumber(files.length)} پیوست اضافه شد.`);
+  }
+
+  async function remove(file: Attachment) {
+    setBusy(true);
+    const res = await fetch(`/api/campaigns/${campaignId}/attachments?fileId=${file.id}`, { method: "DELETE" });
+    const json = await res.json();
+    setBusy(false);
+    if (!json.ok) { notify("error", json.error); return; }
+    onChange(json.data);
+  }
+
+  return (
+    <fieldset className="rounded-xl border p-4">
+      <legend className="label mb-0 px-2">پیوست نامه</legend>
+      <p className="hint mb-3 mt-0">
+        فایل‌هایی که همراه نامه برای مخاطب باز می‌شود — مثل فرم ثبت‌نام، نقشه محل یا مصوبه.
+        هر فایل حداکثر ۸ مگابایت، تا ۱۰ فایل. پیوست‌ها در پیامک نمی‌روند؛ مخاطب آن‌ها را در صفحه نامه می‌بیند.
+      </p>
+
+      {attachments.length > 0 && (
+        <ul className="mb-3 space-y-2">
+          {attachments.map((file) => (
+            <li key={file.id} className="flex items-center justify-between gap-2 rounded-lg border p-2">
+              <a href={`/api/files/${file.id}?name=${encodeURIComponent(file.name)}`}
+                 className="link min-w-0 flex-1 truncate text-sm" target="_blank" rel="noopener noreferrer">
+                {file.name}
+              </a>
+              <span className="tnum shrink-0 text-xs" style={{ color: "var(--muted)" }}>
+                {faNumber(Math.max(1, Math.round(file.size / 1024)))} کیلوبایت
+              </span>
+              {!disabled && (
+                <button className="btn btn-sm btn-danger shrink-0" disabled={busy}
+                        aria-label={`حذف پیوست ${file.name}`} onClick={() => remove(file)}>
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {!disabled && (
+        <label className="btn btn-sm">
+          <Paperclip className="h-4 w-4" />
+          {busy ? "در حال بارگذاری…" : "افزودن فایل"}
+          <input type="file" multiple className="sr-only" disabled={busy}
+                 accept=".pdf,.png,.jpg,.jpeg,.webp,.docx,.xlsx,.pptx,.zip,.txt" onChange={upload} />
+        </label>
+      )}
+    </fieldset>
   );
 }

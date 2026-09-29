@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { Download, Paperclip } from "lucide-react";
 import { cookies, headers } from "next/headers";
 import { prisma } from "@/lib/db";
 import { verifySigned } from "@/lib/crypto";
@@ -77,6 +78,8 @@ export default async function LetterPage({ params }: { params: Promise<{ code: s
 
   const { document } = link;
   const letter = document.letter;
+  const attachments =
+    (letter?.attachmentsJson as Array<{ id: string; name: string; size: number; mimeType: string }> | null) ?? [];
   const contact = document.campaignRecipient.contact;
   const response = document.campaignRecipient.response;
 
@@ -107,6 +110,34 @@ export default async function LetterPage({ params }: { params: Promise<{ code: s
           {letter?.senderName && <p className="mt-10 text-left font-bold">{letter.senderName}</p>}
         </div>
       </article>
+
+      {attachments.length > 0 && (
+        <section className="no-print mx-auto mt-4 max-w-[210mm]">
+          <div className="card p-4">
+            <h2 className="mb-3 flex items-center gap-2 font-bold">
+              <Paperclip className="h-4 w-4" aria-hidden="true" />
+              پیوست‌ها ({attachments.length.toLocaleString("fa-IR")})
+            </h2>
+            <ul className="space-y-2">
+              {attachments.map((file) => (
+                <li key={file.id}>
+                  <a
+                    href={`/api/files/${file.id}?name=${encodeURIComponent(file.name)}`}
+                    className="flex items-center justify-between gap-2 rounded-lg border p-2.5 hover:bg-[var(--surface-2)]"
+                    download={file.name}
+                  >
+                    <span className="min-w-0 flex-1 truncate text-sm font-semibold">{file.name}</span>
+                    <span className="tnum shrink-0 text-xs" style={{ color: "var(--muted)" }}>
+                      {Math.max(1, Math.round(file.size / 1024)).toLocaleString("fa-IR")} کیلوبایت
+                    </span>
+                    <Download className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
 
       <ResponseForm
         code={code}

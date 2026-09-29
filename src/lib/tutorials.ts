@@ -12,6 +12,8 @@ export type Tutorial = {
   /** مجوزی که برای دیدن این درس لازم است؛ خالی یعنی برای همه. */
   permission?: string;
   steps: Array<{ title: string; body: string }>;
+  /** ویدیوی بیرونی مرتبط (مثلاً آموزش رسمی خود سرویس‌دهنده). */
+  externalVideo?: { label: string; url: string };
 };
 
 export const TUTORIALS: Tutorial[] = [
@@ -56,6 +58,10 @@ export const TUTORIALS: Tutorial[] = [
     title: "اتصال درگاه پیامک sms.ir",
     summary: "بدون درگاه پیامک، نامه‌ها ساخته می‌شوند ولی ارسال نمی‌شوند. اتصال یک بار انجام می‌شود.",
     permission: "sms.settings",
+    externalVideo: {
+      label: "ویدیوی آموزش رسمی sms.ir در آپارات",
+      url: "https://www.aparat.com/v/dxgepw7",
+    },
     steps: [
       { title: "کلید API را بردارید", body: "وارد پنل sms.ir شوید: بخش «توسعه‌دهندگان» ← «کلید API». همان رشته را کپی کنید." },
       { title: "شماره خط ارسال", body: "در همان پنل، شماره «خط ارسال» شما مشخص است (مثل ۳۰۰۰۵۰۵۶). این شماره فرستنده پیامک‌هاست." },

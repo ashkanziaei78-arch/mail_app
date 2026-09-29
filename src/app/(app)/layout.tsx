@@ -5,6 +5,7 @@ import { ToastProvider } from "@/components/ui/toast";
 import { prisma } from "@/lib/db";
 import { requirePage } from "@/lib/auth";
 import { PERMISSIONS, ROLE_LABELS, can } from "@/lib/rbac";
+import { avatarSrc } from "@/lib/avatars";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await requirePage();
@@ -20,10 +21,20 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     if (mustChangePassword) redirect("/account/password?first=1");
   }
 
+  const { avatarPath } = await prisma.user.findUniqueOrThrow({
+    where: { id: user.id },
+    select: { avatarPath: true },
+  });
+
   const allowed = PERMISSIONS.filter((p) => can(user.role, p));
   return (
     <AppShell
-      user={{ fullName: user.fullName, roleLabel: ROLE_LABELS[user.role], organizationName: user.organizationName }}
+      user={{
+        fullName: user.fullName,
+        roleLabel: ROLE_LABELS[user.role],
+        organizationName: user.organizationName,
+        avatarSrc: avatarSrc(avatarPath),
+      }}
       allowed={allowed}
     >
       <ToastProvider>{children}</ToastProvider>
