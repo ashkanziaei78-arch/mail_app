@@ -11,6 +11,6 @@ export default async function LoginPage() {
   // NEXT_PUBLIC_HERO_IMAGE عکس ساختمان خودش را جایگزین کند.
   const hero =
     process.env.NEXT_PUBLIC_HERO_IMAGE ||
-    "https://images.unsplash.com/photo-1763568946839-3599812c50ec?auto=format&fit=crop&w=1400&q=70";
+    "https://images.unsplash.com/photo-1621831337128-35676ca30868?auto=format&fit=crop&w=1400&q=70";
   return <LoginClient heroImageSrc={hero} />;
 }

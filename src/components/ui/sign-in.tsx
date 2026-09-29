@@ -199,7 +199,7 @@ export const SignInPage: React.FC<SignInPageProps> = ({
           {/* شرط لایسنس Unsplash: نام عکاس و منبع ذکر شود. */}
           {heroImageSrc.includes("unsplash.com") && (
             <p className="absolute bottom-1 left-6 text-[10px] text-white/50 md:left-8">
-              عکس: Thomas K / Unsplash
+              عکس: Kenrick Baksh / Unsplash
             </p>
           )}
 
