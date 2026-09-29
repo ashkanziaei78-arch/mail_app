@@ -34,7 +34,12 @@ export default function LoginClient({ heroImageSrc }: { heroImageSrc: string }) 
       router.replace("/dashboard");
       router.refresh();
     } catch {
-      setError("ارتباط با سرور برقرار نشد. اتصال اینترنت را بررسی کنید.");
+      // پاسخ نرسید. ممکن است ورود روی سرور انجام شده باشد ولی پاسخش در راه گم
+      // شده باشد (مرورگرهای داخل اپ‌ها زود قطع می‌کنند)، پس به‌جای بن‌بست،
+      // یک بار داشبورد را امتحان می‌کنیم؛ اگر واقعاً وارد نشده باشد، خود سامانه
+      // دوباره به همین صفحه برمی‌گرداند.
+      setError("پاسخ سرور دیر رسید. اگر وارد نشدید، یک بار دیگر بزنید.");
+      router.replace("/dashboard");
     } finally {
       setPending(false);
     }
@@ -57,7 +62,8 @@ export default function LoginClient({ heroImageSrc }: { heroImageSrc: string }) 
       router.replace("/dashboard");
       router.refresh();
     } catch {
-      setError("ارتباط با سرور برقرار نشد.");
+      setError("پاسخ سرور دیر رسید. یک بار دیگر بزنید.");
+      router.replace("/dashboard");
     } finally {
       setPending(false);
     }
