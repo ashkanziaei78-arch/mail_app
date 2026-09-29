@@ -2,6 +2,8 @@ import { prisma } from "./db";
 import { ApiError } from "./api";
 import type { CurrentUser } from "./auth";
 import { audit } from "./audit";
+import { normalizeMobile } from "./sms";
+import { resolveProvider } from "./sms-server";
 
 /**
  * گردش تأیید نامه بر اساس سمت سازمانی.
@@ -116,6 +118,7 @@ export async function decide(
   const next = await pendingStep(campaignId);
   if (next) {
     await prisma.campaign.update({ where: { id: campaignId }, data: { currentStepOrder: next.order } });
+    await notifyPendingApprover(campaignId, user.organizationId);
     await audit({
       organizationId: user.organizationId, userId: user.id, action: "CAMPAIGN_APPROVE_STEP",
       entityType: "Campaign", entityId: campaignId, metadata: { step: step.order, position: step.position.name },
@@ -132,4 +135,42 @@ export async function decide(
     entityType: "Campaign", entityId: campaignId, metadata: { finalStep: step.order },
   });
   return { status: "APPROVED" as const, remaining: 0 };
+}
+
+/**
+ * خبر دادن به صاحب مرحله جاری با پیامک: «نامه‌ای منتظر تأیید شماست».
+ *
+ * بهترین‌تلاش است و هیچ‌وقت کار تأیید را نمی‌شکند؛ اگر درگاه پیامک تنظیم نشده
+ * یا شماره کاربر ثبت نیست، بی‌سروصدا رد می‌شود.
+ */
+export async function notifyPendingApprover(campaignId: string, organizationId: string) {
+  try {
+    const step = await pendingStep(campaignId);
+    if (!step) return;
+
+    const approvers = await prisma.user.findMany({
+      where: { organizationId, positionId: step.positionId, status: "ACTIVE", deletedAt: null },
+      select: { mobilePhone: true },
+    });
+    const numbers = approvers
+      .map((u) => normalizeMobile(u.mobilePhone))
+      .filter((n): n is string => Boolean(n));
+    if (numbers.length === 0) return;
+
+    const campaign = await prisma.campaign.findUniqueOrThrow({
+      where: { id: campaignId },
+      select: { name: true },
+    });
+    const baseUrl = (process.env.APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
+    const config = await prisma.smsProviderConfig.findFirst({ where: { organizationId, isDefault: true } });
+    const provider = resolveProvider(config);
+    const sender = config?.senderNumber ?? "10008663";
+    const text = `نامه «${campaign.name}» منتظر تأیید شماست: ${baseUrl}/approvals`;
+
+    for (const to of numbers) {
+      await provider.send(to, text, sender);
+    }
+  } catch {
+    // خطای اطلاع‌رسانی نباید جلوی گردش تأیید را بگیرد
+  }
 }

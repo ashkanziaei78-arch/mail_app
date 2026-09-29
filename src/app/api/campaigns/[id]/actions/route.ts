@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { handle, readBody, requireApi, ApiError } from "@/lib/api";
 import { can } from "@/lib/rbac";
 import { generateDocuments, resolveRecipients, sendCampaign } from "@/lib/campaign";
-import { decide, initApprovals } from "@/lib/workflow";
+import { decide, initApprovals, notifyPendingApprover } from "@/lib/workflow";
 import { sanitizeHtml } from "@/lib/render";
 import { audit } from "@/lib/audit";
 
@@ -20,7 +20,12 @@ const schema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("removeRecipient"), recipientId: z.string().uuid() }),
   z.object({ action: z.literal("overrideLetter"), recipientId: z.string().uuid(), bodyHtml: z.string().nullable() }),
   z.object({ action: z.literal("generate") }),
-  z.object({ action: z.literal("submit"), workflowId: z.string().uuid().optional().nullable() }),
+  z.object({
+    action: z.literal("submit"),
+    workflowId: z.string().uuid().optional().nullable(),
+    /** مدیر سازمان می‌تواند نامه آزمایشی را بدون گردش تأیید مستقیم آماده ارسال کند */
+    skipApproval: z.boolean().default(false),
+  }),
   z.object({ action: z.literal("approve"), note: z.string().trim().max(500).optional() }),
   z.object({ action: z.literal("reject"), reason: z.string().trim().min(1, "دلیل رد را بنویسید.").max(500) }),
   z.object({ action: z.literal("send") }),
@@ -95,9 +100,24 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         const count = await prisma.campaignRecipient.count({ where: { campaignId: id } });
         if (count === 0) throw new ApiError(422, "ابتدا مخاطبین کمپین را انتخاب کنید.");
         await generateDocuments(id);
+
+        // میان‌بر مدیر سازمان: نامه آزمایشی بدون عبور از گردش تأیید آماده ارسال
+        // می‌شود. برای بقیه نقش‌ها باز است تا کسی تأیید سازمان را دور نزند.
+        if (body.skipApproval) {
+          if (!can(user.role, "campaigns.approve")) throw new ApiError(403, "رد کردن گردش تأیید فقط با اجازه تأیید نامه ممکن است.");
+          await prisma.campaignApproval.deleteMany({ where: { campaignId: id } });
+          await prisma.campaign.update({
+            where: { id },
+            data: { status: "APPROVED", approvedByUserId: user.id, approvedAt: new Date(), rejectionReason: null, currentStepOrder: 0 },
+          });
+          await audit({ organizationId: user.organizationId, userId: user.id, action: "CAMPAIGN_APPROVE", entityType: "Campaign", entityId: id, metadata: { skipApproval: true } });
+          return { status: "APPROVED", steps: 0 };
+        }
+
         // مراحل تأیید از روی گردش کار سازمان ساخته می‌شود
         const { steps } = await initApprovals(id, user.organizationId, body.workflowId ?? campaign.workflowId);
         await prisma.campaign.update({ where: { id }, data: { status: "PENDING_APPROVAL", rejectionReason: null } });
+        await notifyPendingApprover(id, user.organizationId);
         await audit({ organizationId: user.organizationId, userId: user.id, action: "CAMPAIGN_SUBMIT", entityType: "Campaign", entityId: id, metadata: { steps } });
         return { status: "PENDING_APPROVAL", steps };
       }

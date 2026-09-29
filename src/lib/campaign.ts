@@ -6,6 +6,7 @@ import { countSegments, normalizeMobile } from "./sms";
 import { resolveProvider } from "./sms-server";
 import type { CurrentUser } from "./auth";
 import { contactScope } from "./scope";
+import { shortenLongUrls } from "./shorten";
 import { audit } from "./audit";
 
 export type RecipientSelection = {
@@ -281,7 +282,14 @@ export async function sendCampaign(campaignId: string, user: CurrentUser) {
     }
     context["{{لغو_اشتراک}}"] = `${baseUrl}/u/${unsubscribeToken}`;
 
-    const finalText = applyVariables(smsBody, context);
+    // نشانی‌های بلندی که کاربر داخل متن گذاشته، خودکار کوتاه می‌شوند تا تعداد
+    // بخش‌های پیامک (و هزینه کمپین) بی‌خود بالا نرود.
+    const finalText = await shortenLongUrls(
+      applyVariables(smsBody, context),
+      campaign.organizationId,
+      user.id,
+      baseUrl,
+    );
 
     const smsMessage = await prisma.smsMessage.upsert({
       where: { campaignRecipientId: recipient.id },

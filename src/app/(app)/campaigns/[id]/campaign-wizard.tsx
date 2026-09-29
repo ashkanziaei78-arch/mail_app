@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Clock, Copy, ExternalLink, Eye, MessageSquare, Paperclip, Send, Trash2 } from "lucide-react";
 import Stepper from "@/components/ui/stepper";
+import FlowGraph from "@/components/ui/flow-graph";
+import { campaignFlow } from "@/lib/flow";
 import { Badge, Field, PageHeader } from "@/components/ui/primitives";
 import Modal from "@/components/ui/modal";
 import { useConfirm, useToast } from "@/components/ui/toast";
@@ -215,6 +217,14 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
         <p role="alert" className="mb-4 rounded-xl px-4 py-3 text-sm font-semibold" style={{ background: "var(--danger-bg)", color: "var(--danger)" }}>
           این کمپین رد شد: {campaign.rejectionReason}
         </p>
+      )}
+
+      {campaign.status !== "DRAFT" && (
+        <div className="card mb-4 p-3">
+          <FlowGraph nodes={campaignFlow(campaign.status, campaign.approvals.map((a) => ({
+            id: a.id, order: a.order, status: a.status, positionName: a.positionName, approverName: a.approverName,
+          })))} />
+        </div>
       )}
 
       <Stepper current={step} onSelect={setStep} />
@@ -524,6 +534,19 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
               {!locked && (
                 <div className="flex flex-wrap justify-end gap-2">
                   <button className="btn" disabled={busy} onClick={saveLetter}>ذخیره پیش‌نویس</button>
+                  {permissions.write && campaign.status === "DRAFT" && permissions.approve && (
+                    <button className="btn" disabled={busy || recipients.length === 0}
+                            onClick={async () => {
+                              const ok = await confirm({
+                                title: "آماده ارسال بدون گردش تأیید",
+                                body: "نامه بدون عبور از مراحل تأیید مستقیم آماده ارسال می‌شود. برای نامه آزمایشی مناسب است، برای مکاتبه رسمی نه.",
+                                confirmLabel: "آماده ارسال کن",
+                              });
+                              if (ok && await saveLetter()) await act({ action: "submit", skipApproval: true }, "نامه آماده ارسال شد.");
+                            }}>
+                      آماده ارسال بدون تأیید (آزمایشی)
+                    </button>
+                  )}
                   {permissions.write && campaign.status === "DRAFT" && (
                     <button className="btn btn-primary" disabled={busy || recipients.length === 0}
                             onClick={async () => { if (await saveLetter()) await act({ action: "submit" }, "کمپین برای تأیید ارسال شد."); }}>
@@ -560,6 +583,11 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
             {campaign.approvals.length > 0 && (
               <div className="card p-5">
                 <h2 className="mb-1 font-bold">گردش تأیید{campaign.workflowName ? `: ${campaign.workflowName}` : ""}</h2>
+                <div className="mb-3">
+                  <FlowGraph nodes={campaignFlow(campaign.status, campaign.approvals.map((a) => ({
+                    id: a.id, order: a.order, status: a.status, positionName: a.positionName, approverName: a.approverName,
+                  })))} />
+                </div>
                 <p className="mb-3 text-sm" style={{ color: "var(--muted)" }}>
                   نامه به ترتیب از این سمت‌ها عبور می‌کند. رد شدن در هر مرحله، نامه را به پیش‌نویس برمی‌گرداند.
                 </p>

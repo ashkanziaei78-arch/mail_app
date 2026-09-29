@@ -23,10 +23,10 @@ export default function WorkflowClient({ positions, workflows }: { positions: Po
   const { confirm, dialog: confirmDialog } = useConfirm();
   const [adding, setAdding] = useState<null | "position" | "workflow">(null);
 
-  async function remove(kind: "positions" | "workflows", id: string, name: string, body: string) {
+  async function remove(kind: "positions" | "workflows", id: string, name: string, body: string, force = false) {
     const ok = await confirm({ title: `حذف ${name}`, body, confirmLabel: "حذف", destructive: true });
     if (!ok) return;
-    const res = await fetch(`/api/${kind}/${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/${kind}/${id}${force ? "?force=1" : ""}`, { method: "DELETE" });
     const json = await res.json();
     if (!json.ok) { toast("error", json.error); return; }
     toast("success", "حذف شد.");
@@ -121,7 +121,15 @@ export default function WorkflowClient({ positions, workflows }: { positions: Po
                   <span className="flex shrink-0 items-center gap-1">
                     {w.isDefault && <Badge tone="info">پیش‌فرض</Badge>}
                     <button className="btn btn-sm btn-danger" aria-label={`حذف گردش ${w.name}`}
-                            onClick={() => remove("workflows", w.id, `گردش ${w.name}`, "این گردش تأیید حذف می‌شود.")}>
+                            onClick={() =>
+                              w.campaignCount > 0
+                                ? remove(
+                                    "workflows", w.id, `گردش ${w.name}`,
+                                    `${w.campaignCount} نامه از این گردش استفاده کرده‌اند. با حذف، آن نامه‌ها از گردش جدا می‌شوند و نامه‌های وسط تأیید به پیش‌نویس برمی‌گردند. تاریخچه تصمیم‌ها پاک نمی‌شود.`,
+                                    true,
+                                  )
+                                : remove("workflows", w.id, `گردش ${w.name}`, "این گردش تأیید حذف می‌شود.")
+                            }>
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </span>
