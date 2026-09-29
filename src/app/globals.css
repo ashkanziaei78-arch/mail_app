@@ -162,7 +162,14 @@
     font-size: .72rem; font-weight: 700; white-space: nowrap;
   }
 
+  /* هیچ صفحه‌ای نباید افقی اسکرول بخورد؛ جدول‌ها ظرف اسکرول خودشان را دارند. */
+  html, body { overflow-x: clip; }
+
   .table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+
+  /* ستون کم‌اهمیت: روی گوشی پنهان می‌شود تا جدول در عرض صفحه جا شود. */
+  .col-optional { display: none; }
+  @media (min-width: 640px) { .col-optional { display: table-cell; } }
   .table th {
     text-align: right; font-weight: 700; font-size: .78rem; color: var(--muted);
     padding: .65rem .75rem; border-bottom: 1px solid var(--border); background: var(--surface-2);

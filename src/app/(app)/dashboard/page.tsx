@@ -86,14 +86,14 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
               <table className="table">
                 <caption className="sr-only">فهرست شش کمپین اخیر سازمان</caption>
                 <thead>
-                  <tr><th>نام کمپین</th><th>واحد</th><th>مخاطبین</th><th>وضعیت</th><th>تاریخ</th></tr>
+                  <tr><th>نام کمپین</th><th className="col-optional">واحد</th><th className="col-optional">مخاطبین</th><th>وضعیت</th><th>تاریخ</th></tr>
                 </thead>
                 <tbody>
                   {recent.map((c) => (
                     <tr key={c.id}>
                       <td><Link href={`/campaigns/${c.id}`} className="link">{c.name}</Link></td>
-                      <td>{c.department?.name ?? "—"}</td>
-                      <td className="tnum">{faNumber(c._count.recipients)}</td>
+                      <td className="col-optional">{c.department?.name ?? "—"}</td>
+                      <td className="tnum col-optional">{faNumber(c._count.recipients)}</td>
                       <td><Badge tone={CAMPAIGN_STATUS[c.status].tone}>{CAMPAIGN_STATUS[c.status].label}</Badge></td>
                       <td className="tnum">{faDate(c.createdAt)}</td>
                     </tr>

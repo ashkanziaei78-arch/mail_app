@@ -9,7 +9,14 @@ import {
 } from "lucide-react";
 import type { PermissionCode } from "@/lib/rbac";
 
-export type NavItem = { href: string; label: string; icon: keyof typeof ICONS; permission?: PermissionCode };
+export type NavItem = {
+  href: string;
+  label: string;
+  /** نام کوتاه برای نوار پایین موبایل؛ نام بلند آنجا جا نمی‌شود. */
+  short?: string;
+  icon: keyof typeof ICONS;
+  permission?: PermissionCode;
+};
 
 const ICONS = {
   LayoutDashboard, Contact, Tags, FileImage, Mail, PenLine, Link2, GraduationCap,
@@ -28,11 +35,11 @@ export const NAV: Array<{ group: string; items: NavItem[] }> = [
     group: "روزمره",
     items: [
       { href: "/dashboard", label: "داشبورد", icon: "LayoutDashboard" },
-      { href: "/campaigns/new", label: "نامه جدید", icon: "PenLine", permission: "campaigns.write" },
-      { href: "/campaigns", label: "نامه‌های من", icon: "Mail", permission: "campaigns.read" },
-      { href: "/contacts", label: "دفترچه مخاطبین", icon: "Contact", permission: "contacts.read" },
-      { href: "/approvals", label: "کارتابل تأیید", icon: "ShieldCheck", permission: "campaigns.approve" },
-      { href: "/help", label: "آموزش تصویری", icon: "GraduationCap" },
+      { href: "/campaigns/new", label: "نامه جدید", short: "نامه نو", icon: "PenLine", permission: "campaigns.write" },
+      { href: "/campaigns", label: "نامه‌های من", short: "نامه‌ها", icon: "Mail", permission: "campaigns.read" },
+      { href: "/contacts", label: "دفترچه مخاطبین", short: "مخاطبین", icon: "Contact", permission: "contacts.read" },
+      { href: "/approvals", label: "کارتابل تأیید", short: "تأیید", icon: "ShieldCheck", permission: "campaigns.approve" },
+      { href: "/help", label: "آموزش تصویری", short: "آموزش", icon: "GraduationCap" },
     ],
   },
   {
@@ -219,12 +226,14 @@ export default function AppShell({
             return (
               <Link
                 key={item.href} href={item.href}
-                className="flex flex-1 flex-col items-center gap-1 py-2 text-[11px] font-semibold"
+                // min-w-0 لازم است: بدون آن، آیتم flex کوچک‌تر از متنش نمی‌شود و
+                // نوار از عرض صفحه می‌زند بیرون و کل صفحه افقی اسکرول می‌خورد.
+                className="flex min-w-0 flex-1 flex-col items-center gap-1 py-2 text-[10px] font-semibold"
                 aria-current={active ? "page" : undefined}
                 style={{ color: active ? "var(--primary)" : "var(--muted)" }}
               >
-                <Icon className="h-5 w-5" aria-hidden="true" />
-                <span className="max-w-full truncate px-1">{item.label}</span>
+                <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                <span className="w-full truncate px-0.5 text-center">{item.short ?? item.label}</span>
               </Link>
             );
           })}

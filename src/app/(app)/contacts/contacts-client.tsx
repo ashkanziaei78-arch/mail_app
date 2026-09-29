@@ -128,8 +128,8 @@ export default function ContactsClient({
             <caption className="sr-only">فهرست مخاطبین سازمان</caption>
             <thead>
               <tr>
-                <th>نام و نام خانوادگی</th><th>سازمان / سمت</th><th>شماره همراه</th>
-                <th>برچسب‌ها</th><th>دفترچه</th><th>آخرین استفاده</th><th><span className="sr-only">عملیات</span></th>
+                <th>نام و نام خانوادگی</th><th className="col-optional">سازمان / سمت</th><th>شماره همراه</th>
+                <th className="col-optional">برچسب‌ها</th><th className="col-optional">دفترچه</th><th className="col-optional">آخرین استفاده</th><th><span className="sr-only">عملیات</span></th>
               </tr>
             </thead>
             <tbody>
@@ -140,12 +140,12 @@ export default function ContactsClient({
                     {c.status !== "ACTIVE" && <span className="ms-2"><Badge tone="warn">غیرفعال</Badge></span>}
                     {!c.smsConsent && <span className="ms-2"><Badge tone="danger">بدون رضایت پیامک</Badge></span>}
                   </td>
-                  <td>
+                  <td className="col-optional">
                     <span className="block">{c.organizationName || "—"}</span>
                     <span className="block text-xs" style={{ color: "var(--muted)" }}>{c.jobTitle}</span>
                   </td>
                   <td className="tnum" dir="ltr">{c.mobilePhone ?? "—"}</td>
-                  <td>
+                  <td className="col-optional">
                     <span className="flex flex-wrap gap-1">
                       {c.tagIds.map((id) => {
                         const tag = tags.find((t) => t.id === id);
@@ -153,8 +153,8 @@ export default function ContactsClient({
                       })}
                     </span>
                   </td>
-                  <td><Badge tone={VISIBILITY[c.visibility].tone}>{VISIBILITY[c.visibility].label}</Badge></td>
-                  <td className="tnum">{c.lastUsedInCampaignAt ? faDate(c.lastUsedInCampaignAt) : "—"}</td>
+                  <td className="col-optional"><Badge tone={VISIBILITY[c.visibility].tone}>{VISIBILITY[c.visibility].label}</Badge></td>
+                  <td className="tnum col-optional">{c.lastUsedInCampaignAt ? faDate(c.lastUsedInCampaignAt) : "—"}</td>
                   <td>
                     <span className="flex gap-1">
                       {canWrite && (

@@ -41,16 +41,16 @@ export default async function CampaignsPage() {
           <table className="table">
             <caption className="sr-only">فهرست کمپین‌های سازمان</caption>
             <thead>
-              <tr><th>نام کمپین</th><th>واحد</th><th>مخاطبین</th><th>پیامک موفق</th><th>محرمانگی</th><th>وضعیت</th><th>تاریخ</th></tr>
+              <tr><th>نام کمپین</th><th className="col-optional">واحد</th><th className="col-optional">مخاطبین</th><th className="col-optional">پیامک موفق</th><th className="col-optional">محرمانگی</th><th>وضعیت</th><th>تاریخ</th></tr>
             </thead>
             <tbody>
               {campaigns.map((c) => (
                 <tr key={c.id}>
                   <td><Link href={`/campaigns/${c.id}`} className="link">{c.name}</Link></td>
-                  <td>{c.department?.name ?? "—"}</td>
-                  <td className="tnum">{faNumber(c._count.recipients)}</td>
-                  <td className="tnum">{faNumber(c.recipients.length)} / {faNumber(c._count.recipients)}</td>
-                  <td>{c.confidentiality === "CONFIDENTIAL" ? <Badge tone="warn">محرمانه</Badge> : <Badge>معمولی</Badge>}</td>
+                  <td className="col-optional">{c.department?.name ?? "—"}</td>
+                  <td className="tnum col-optional">{faNumber(c._count.recipients)}</td>
+                  <td className="tnum col-optional">{faNumber(c.recipients.length)} / {faNumber(c._count.recipients)}</td>
+                  <td className="col-optional">{c.confidentiality === "CONFIDENTIAL" ? <Badge tone="warn">محرمانه</Badge> : <Badge>معمولی</Badge>}</td>
                   <td><Badge tone={CAMPAIGN_STATUS[c.status].tone}>{CAMPAIGN_STATUS[c.status].label}</Badge></td>
                   <td className="tnum">{faDate(c.createdAt)}</td>
                 </tr>
