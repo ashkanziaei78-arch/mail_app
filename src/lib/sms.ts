@@ -3,7 +3,25 @@ export type SmsSendResult = { ok: true; providerMessageId: string } | { ok: fals
 export type SmsProvider = {
   name: string;
   send(to: string, text: string, sender: string): Promise<SmsSendResult>;
+  /**
+   * ارسال گروهی با متن متفاوت برای هر شماره.
+   *
+   * هر نامه متن شخصی خودش را دارد، پس «ارسال گروهی» معمولی به‌درد نمی‌خورد و
+   * باید نظیربه‌نظیر فرستاد. بدون این، یک کمپین صد نفره صد درخواست HTTP پشت‌سرهم
+   * می‌شود و از مهلت اجرای تابع سرور می‌زند بیرون.
+   * نتیجه هم‌ترتیب با ورودی برمی‌گردد.
+   */
+  sendMany?(messages: Array<{ to: string; text: string }>, sender: string): Promise<SmsSendResult[]>;
 };
+
+/** حداکثر شماره در هر درخواست، طبق مستندات sms.ir */
+const SMSIR_BATCH = 100;
+
+function chunk<T>(items: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
+  return out;
+}
 
 /** درگاه آزمایشی — پیامک را فقط در لاگ سرور چاپ می‌کند (محیط توسعه). */
 export const consoleProvider: SmsProvider = {
@@ -11,6 +29,10 @@ export const consoleProvider: SmsProvider = {
   async send(to, text) {
     console.info(`[SMS:console] → ${to}\n${text}\n`);
     return { ok: true, providerMessageId: `console-${Date.now()}` };
+  },
+  async sendMany(messages) {
+    for (const message of messages) console.info(`[SMS:console] → ${message.to}\n${message.text}\n`);
+    return messages.map((_, index) => ({ ok: true as const, providerMessageId: `console-${Date.now()}-${index}` }));
   },
 };
 
@@ -44,26 +66,79 @@ export function kavenegarProvider(apiKey: string): SmsProvider {
  * پاسخ موفق `status: 1` دارد؛ هر چیز دیگری خطاست و پیامش به کاربر نشان داده می‌شود.
  */
 export function smsIrProvider(apiKey: string): SmsProvider {
+  const headers = {
+    "content-type": "application/json",
+    accept: "application/json",
+    "x-api-key": apiKey,
+  };
+
+  /** شماره خط در مستندات Long است؛ اگر عددی بود عدد می‌فرستیم. */
+  function line(sender: string): number | string {
+    return /^\d+$/.test(sender) ? Number(sender) : sender;
+  }
+
+  function failure(json: { status?: number; message?: string }, httpStatus: number): string {
+    if (httpStatus === 401) return "کلید API پذیرفته نشد. کلید را در پنل sms.ir بررسی کنید.";
+    if (httpStatus === 429) return "تعداد درخواست بیش از حد مجاز است؛ کمی بعد دوباره تلاش کنید.";
+    return json.message ?? `خطای درگاه (${httpStatus})`;
+  }
+
   return {
     name: "smsir",
+
     async send(to, text, sender) {
       try {
         const res = await fetch("https://api.sms.ir/v1/send/bulk", {
           method: "POST",
-          headers: { "content-type": "application/json", accept: "text/plain", "x-api-key": apiKey },
-          body: JSON.stringify({ lineNumber: sender, messageText: text, mobiles: [to] }),
+          headers,
+          body: JSON.stringify({ lineNumber: line(sender), messageText: text, mobiles: [to] }),
           cache: "no-store",
         });
         const json = (await res.json()) as {
-          status?: number;
-          message?: string;
+          status?: number; message?: string;
           data?: { messageIds?: number[]; packId?: string };
         };
-        if (json.status !== 1) return { ok: false, error: json.message ?? `خطای درگاه (${res.status})` };
+        if (json.status !== 1) return { ok: false, error: failure(json, res.status) };
         return { ok: true, providerMessageId: String(json.data?.messageIds?.[0] ?? json.data?.packId ?? "") };
       } catch (error) {
         return { ok: false, error: error instanceof Error ? error.message : "خطای شبکه" };
       }
+    },
+
+    async sendMany(messages, sender) {
+      const results: SmsSendResult[] = [];
+      for (const group of chunk(messages, SMSIR_BATCH)) {
+        try {
+          const res = await fetch("https://api.sms.ir/v1/send/likeToLike", {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+              lineNumber: line(sender),
+              messageTexts: group.map((m) => m.text),
+              mobiles: group.map((m) => m.to),
+            }),
+            cache: "no-store",
+          });
+          const json = (await res.json()) as {
+            status?: number; message?: string;
+            data?: { messageIds?: number[]; packId?: string };
+          };
+          if (json.status !== 1) {
+            const error = failure(json, res.status);
+            for (const _ of group) results.push({ ok: false, error });
+            continue;
+          }
+          // messageIds هم‌ترتیب با ورودی برمی‌گردد.
+          group.forEach((_, index) => {
+            const id = json.data?.messageIds?.[index];
+            results.push({ ok: true, providerMessageId: String(id ?? json.data?.packId ?? "") });
+          });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "خطای شبکه";
+          for (const _ of group) results.push({ ok: false, error: message });
+        }
+      }
+      return results;
     },
   };
 }
@@ -81,9 +156,12 @@ export const PROVIDER_HELP: Record<string, { apiKey: string; sender: string; doc
     sender: "هر مقداری بگذارید فرقی نمی‌کند.",
   },
   smsir: {
-    apiKey: "در پنل sms.ir: توسعه‌دهندگان ← کلید API. همان رشته را اینجا بگذارید.",
-    sender: "شماره «خط ارسال» پنل sms.ir، مثل ۳۰۰۰۵۰۵۶.",
-    docs: "https://app.sms.ir/developer/help",
+    apiKey:
+      "پنل sms.ir ← برنامه‌نویسان ← لیست کلیدهای API ← ایجاد کلید جدید. " +
+      "«محدود کردن به IP» را خالی بگذارید؛ این سامانه آی‌پی ثابت ندارد و با محدودیت IP ارسال قطع می‌شود. " +
+      "برای آزمایش بدون کسر اعتبار، کلید از نوع Sandbox بسازید.",
+    sender: "شماره «خط ارسال» پنل sms.ir، مثل ۳۰۰۰۴۵۰۵۰۰۰۰۱۷. فهرست خطوط فعالتان در همان پنل هست.",
+    docs: "https://app.sms.ir/developer/help/introduction",
   },
   kavenegar: {
     apiKey: "در پنل کاوه‌نگار: تنظیمات ← کلید وب‌سرویس.",

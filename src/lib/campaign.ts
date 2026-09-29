@@ -220,6 +220,21 @@ export async function sendCampaign(campaignId: string, user: CurrentUser) {
   let sent = 0;
   let failed = 0;
 
+  /**
+   * مرحله یک: آماده‌سازی.
+   * متن هر نفر ساخته و ردیف SmsMessage نوشته می‌شود، ولی هنوز چیزی فرستاده
+   * نمی‌شود. اینطوری کارِ شبکه از کارِ دیتابیس جدا می‌ماند و می‌شود ارسال را
+   * گروهی انجام داد.
+   */
+  const outbox: Array<{
+    recipientId: string;
+    contactId: string;
+    smsMessageId: string;
+    mobile: string;
+    text: string;
+    accessCode: string | null;
+  }> = [];
+
   for (const recipient of campaign.recipients) {
     const link = recipient.document?.shortLink;
     const mobile = normalizeMobile(recipient.contact.mobilePhone);
@@ -287,31 +302,57 @@ export async function sendCampaign(campaignId: string, user: CurrentUser) {
       },
     });
 
-    const result = await provider.send(mobile, finalText, sender);
+    outbox.push({
+      recipientId: recipient.id,
+      contactId: recipient.contact.id,
+      smsMessageId: smsMessage.id,
+      mobile,
+      text: finalText,
+      accessCode: link.accessCode ?? null,
+    });
+  }
+
+  /**
+   * مرحله دو: ارسال.
+   * اگر درگاه ارسال نظیربه‌نظیر داشته باشد (sms.ir دارد، تا ۱۰۰ شماره در هر
+   * درخواست)، کل کمپین با چند درخواست می‌رود؛ وگرنه تک‌تک. بدون این، یک کمپین
+   * صدنفره صد درخواست پشت‌سرهم می‌شد و از مهلت اجرای تابع می‌زد بیرون.
+   */
+  const results = provider.sendMany
+    ? await provider.sendMany(outbox.map((m) => ({ to: m.mobile, text: m.text })), sender)
+    : await (async () => {
+        const out = [];
+        for (const message of outbox) out.push(await provider.send(message.mobile, message.text, sender));
+        return out;
+      })();
+
+  // مرحله سه: ثبت نتیجه هر نفر.
+  for (const [index, message] of outbox.entries()) {
+    const result = results[index] ?? { ok: false as const, error: "پاسخی از درگاه برای این شماره برنگشت." };
     if (result.ok) {
       sent++;
       await prisma.smsMessage.update({
-        where: { id: smsMessage.id },
+        where: { id: message.smsMessageId },
         data: { status: "SENT", providerMessageId: result.providerMessageId, sentAt: new Date(), errorMessage: null },
       });
       await prisma.campaignRecipient.update({
-        where: { id: recipient.id },
+        where: { id: message.recipientId },
         data: { status: "SMS_SENT", errorMessage: null, sentAt: new Date() },
       });
-      await prisma.contact.update({ where: { id: recipient.contact.id }, data: { lastUsedInCampaignAt: new Date() } });
+      await prisma.contact.update({ where: { id: message.contactId }, data: { lastUsedInCampaignAt: new Date() } });
 
       // نامه محرمانه: کد دسترسی در پیامک دوم و جداگانه ارسال می‌شود
-      if (link.accessCode) {
-        await provider.send(mobile, `کد دسترسی نامه محرمانه شما: ${link.accessCode}`, sender);
+      if (message.accessCode) {
+        await provider.send(message.mobile, `کد دسترسی نامه محرمانه شما: ${message.accessCode}`, sender);
       }
     } else {
       failed++;
       await prisma.smsMessage.update({
-        where: { id: smsMessage.id },
+        where: { id: message.smsMessageId },
         data: { status: "FAILED", errorMessage: result.error },
       });
       await prisma.campaignRecipient.update({
-        where: { id: recipient.id },
+        where: { id: message.recipientId },
         data: { status: "SMS_FAILED", errorMessage: result.error },
       });
     }

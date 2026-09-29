@@ -1,10 +1,11 @@
 /* بررسی سریع منطق‌های غیربدیهی — اجرا: npm test */
 import assert from "node:assert/strict";
+import { createServer } from "node:http";
 
 process.env.APP_SECRET ??= "selftest-secret-selftest-secret-0123456789";
 
 import { sanitizeHtml, applyVariables, missingVariables, htmlToPlainText } from "./render";
-import { countSegments, normalizeMobile } from "./sms";
+import { countSegments, normalizeMobile, smsIrProvider } from "./sms";
 import { parseCsv, toCsv } from "./csv";
 import { encrypt, decrypt, randomCode } from "./crypto";
 import { serialize, parse } from "./session";
@@ -166,4 +167,61 @@ assert.equal(faDateLong(new Date(2025, 2, 21)), "۱ فروردین ۱۴۰۴");
   assert.equal(hashBackupCode("abcde-12345"), hashBackupCode("ABCDE12345")); // نرمال‌سازی
 }
 
-console.log("✓ همه بررسی‌ها موفق بود");
+// --- درگاه sms.ir: قرارداد مستندات را می‌سازد؟ ---
+// تابع async چون تست شبکه دارد؛ top-level await ماژول را async می‌کند و اجرا می‌شکند.
+async function checkSmsIr() {
+  const calls: Array<{ path: string; body: Record<string, unknown>; key?: string }> = [];
+  const server = createServer((req, res) => {
+    let raw = "";
+    req.on("data", (chunk) => { raw += chunk; });
+    req.on("end", () => {
+      const body = raw ? JSON.parse(raw) : {};
+      calls.push({ path: req.url ?? "", body, key: req.headers["x-api-key"] as string | undefined });
+      const count = Array.isArray(body.mobiles) ? body.mobiles.length : 1;
+      res.setHeader("content-type", "application/json");
+      res.end(JSON.stringify({
+        status: 1,
+        message: "موفق",
+        data: { packId: "2b99e63c", messageIds: Array.from({ length: count }, (_, i) => 86522023 + i), cost: count },
+      }));
+    });
+  });
+  await new Promise<void>((resolve) => server.listen(0, resolve));
+  const { port } = server.address() as { port: number };
+
+  // درخواست‌ها را به سرور محلی برمی‌گردانیم تا چیزی واقعاً به sms.ir نرود
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = ((url: RequestInfo | URL, init?: RequestInit) =>
+    realFetch(String(url).replace("https://api.sms.ir", `http://127.0.0.1:${port}`), init)) as typeof fetch;
+
+  const provider = smsIrProvider("TEST_KEY");
+
+  const single = await provider.send("09121234567", "سلام", "30004505000017");
+  assert.equal(single.ok, true);
+  assert.equal(calls[0].path, "/v1/send/bulk");
+  assert.equal(calls[0].key, "TEST_KEY");
+  // مستندات: lineNumber از نوع Long است
+  assert.equal(calls[0].body.lineNumber, 30004505000017);
+
+  calls.length = 0;
+  const many = Array.from({ length: 250 }, (_, i) => ({ to: `0912000${String(i).padStart(4, "0")}`, text: `متن ${i}` }));
+  const results = await provider.sendMany!(many, "30004505000017");
+  assert.equal(results.length, 250);
+  assert.ok(results.every((r) => r.ok));
+  // مستندات: حداکثر ۱۰۰ شماره در هر درخواست ⇒ ۲۵۰ نفر باید ۳ درخواست شود
+  assert.equal(calls.length, 3);
+  assert.equal(calls[0].path, "/v1/send/likeToLike");
+  assert.equal((calls[0].body.mobiles as string[]).length, 100);
+  assert.equal((calls[2].body.mobiles as string[]).length, 50);
+  // مستندات: تعداد متن‌ها و شماره‌ها باید برابر و هم‌ترتیب باشد
+  assert.equal((calls[0].body.messageTexts as string[]).length, 100);
+  assert.equal((calls[0].body.messageTexts as string[])[7], "متن 7");
+  assert.equal((calls[0].body.mobiles as string[])[7], "09120000007");
+
+  globalThis.fetch = realFetch;
+  server.close();
+}
+
+checkSmsIr().then(() => {
+  console.log("✓ همه بررسی‌ها موفق بود");
+});
