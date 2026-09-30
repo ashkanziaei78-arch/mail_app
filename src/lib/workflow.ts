@@ -11,12 +11,12 @@ import { decrypt } from "./crypto";
 /**
  * گردش تأیید نامه بر اساس سمت سازمانی.
  *
- * هر کمپین یک گردش کار دارد؛ گردش کار ترتیبی از سمت‌هاست (مثلاً
+ * هر نامه یک گردش کار دارد؛ گردش کار ترتیبی از سمت‌هاست (مثلاً
  * «کارشناس مسئول ← رئیس اداره ← معاون»). نامه فقط وقتی ارسال می‌شود که
  * همه مراحل غیراختیاری تأیید شده باشند.
  */
 
-/** ساخت مراحل تأیید یک کمپین از روی گردش کارِ انتخاب‌شده (یا پیش‌فرض سازمان). */
+/** ساخت مراحل تأیید یک نامه از روی گردش کارِ انتخاب‌شده (یا پیش‌فرض سازمان). */
 export async function initApprovals(campaignId: string, organizationId: string, workflowId?: string | null) {
   const workflow = workflowId
     ? await prisma.workflow.findFirst({ where: { id: workflowId, organizationId }, include: { steps: { orderBy: { order: "asc" } } } })
@@ -71,12 +71,12 @@ export async function decide(
   note?: string,
 ) {
   const campaign = await prisma.campaign.findFirst({ where: { id: campaignId, organizationId: user.organizationId } });
-  if (!campaign) throw new ApiError(404, "کمپین یافت نشد.");
-  if (campaign.status !== "PENDING_APPROVAL") throw new ApiError(409, "این کمپین در انتظار تأیید نیست.");
+  if (!campaign) throw new ApiError(404, "نامه یافت نشد.");
+  if (campaign.status !== "PENDING_APPROVAL") throw new ApiError(409, "این نامه در انتظار تأیید نیست.");
 
   const step = await pendingStep(campaignId);
 
-  // کمپین بدون گردش کار: همان مسیر تک‌مرحله‌ای
+  // نامه بدون گردش کار: همان مسیر تک‌مرحله‌ای
   if (!step) {
     if (decision === "REJECTED") {
       await prisma.campaign.update({ where: { id: campaignId }, data: { status: "DRAFT", rejectionReason: note ?? null } });

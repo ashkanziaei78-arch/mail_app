@@ -114,7 +114,7 @@ export default function SmsSettingsClient({ current, baleConnected }: {
         <div className="card space-y-4 p-5">
           <h2 className="font-bold">ارسال آزمایشی</h2>
           <p className="text-sm" style={{ color: "var(--muted)" }}>
-            پیش از ارسال یک کمپین واقعی، صحت تنظیمات را با یک شماره در اختیار خودتان بررسی کنید.
+            پیش از ارسال یک نامه واقعی، صحت تنظیمات را با یک شماره در اختیار خودتان بررسی کنید.
           </p>
           <Field label="شماره همراه" hint="نمونه: ۰۹۱۲۳۴۵۶۷۸۹">
             <input className="input tnum" dir="ltr" inputMode="tel" value={testPhone} onChange={(e) => setTestPhone(e.target.value)} />

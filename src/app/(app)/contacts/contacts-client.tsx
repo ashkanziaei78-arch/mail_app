@@ -60,7 +60,7 @@ export default function ContactsClient({
   async function remove(contact: ContactRow) {
     const ok = await confirm({
       title: `حذف ${contact.firstName} ${contact.lastName}`,
-      body: "این مخاطب از فهرست برداشته می‌شود. سابقه کمپین‌های قبلی و نامه‌های ارسال‌شده دست‌نخورده می‌ماند.",
+      body: "این مخاطب از فهرست برداشته می‌شود. سابقه نامه‌های قبلی و نامه‌های ارسال‌شده دست‌نخورده می‌ماند.",
       confirmLabel: "حذف مخاطب",
       destructive: true,
     });

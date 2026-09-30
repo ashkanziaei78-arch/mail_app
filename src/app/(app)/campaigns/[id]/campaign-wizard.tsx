@@ -224,7 +224,7 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
 
       {campaign.rejectionReason && (
         <p role="alert" className="mb-4 rounded-xl px-4 py-3 text-sm font-semibold" style={{ background: "var(--danger-bg)", color: "var(--danger)" }}>
-          این کمپین رد شد: {campaign.rejectionReason}
+          این نامه رد شد: {campaign.rejectionReason}
         </p>
       )}
 
@@ -351,9 +351,9 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
             {recipients.length === 0 ? (
               <p className="text-sm" style={{ color: "var(--muted)" }}>هنوز مخاطبی انتخاب نشده است.</p>
             ) : (
-              <div className="max-h-[60dvh] overflow-auto" tabIndex={0} role="region" aria-label="فهرست مخاطبین کمپین">
+              <div className="max-h-[60dvh] overflow-auto" tabIndex={0} role="region" aria-label="فهرست مخاطبین نامه">
                 <table className="table">
-                  <caption className="sr-only">مخاطبین این کمپین</caption>
+                  <caption className="sr-only">مخاطبین این نامه</caption>
                   <thead><tr><th>نام</th><th>سازمان / سمت</th><th>شماره همراه</th><th>متن اختصاصی</th><th>وضعیت</th><th><span className="sr-only">حذف</span></th></tr></thead>
                   <tbody>
                     {recipients.map((r) => (
@@ -374,7 +374,7 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
                         </td>
                         <td>
                           {permissions.write && !locked && (
-                            <button className="btn btn-sm btn-danger" aria-label={`حذف ${r.name} از کمپین`}
+                            <button className="btn btn-sm btn-danger" aria-label={`حذف ${r.name} از نامه`}
                                     onClick={() => act({ action: "removeRecipient", recipientId: r.id })}>
                               <Trash2 className="h-4 w-4" />
                             </button>
@@ -593,14 +593,14 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
                   )}
                   {permissions.write && campaign.status === "DRAFT" && (
                     <button className="btn btn-primary" disabled={busy || recipients.length === 0}
-                            onClick={async () => { if (await saveLetter()) await act({ action: "submit" }, "کمپین برای تأیید ارسال شد."); }}>
+                            onClick={async () => { if (await saveLetter()) await act({ action: "submit" }, "نامه برای تأیید ارسال شد."); }}>
                       تولید نامه‌ها و ارسال برای تأیید
                     </button>
                   )}
                   {permissions.approve && campaign.status === "PENDING_APPROVAL" && (
                     <>
                       <button className="btn btn-danger" disabled={busy} onClick={() => setRejecting(true)}>رد نامه</button>
-                      <button className="btn btn-primary" disabled={busy} onClick={() => act({ action: "approve" }, "کمپین تأیید شد. حالا می‌توانید ارسال کنید.")}>
+                      <button className="btn btn-primary" disabled={busy} onClick={() => act({ action: "approve" }, "نامه تأیید شد. حالا می‌توانید ارسال کنید.")}>
                         تأیید نامه
                       </button>
                     </>
@@ -762,7 +762,7 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
       {rejecting && (
         <RejectDialog
           onClose={() => setRejecting(false)}
-          onSubmit={async (reason) => { setRejecting(false); await act({ action: "reject", reason }, "کمپین رد شد و به پیش‌نویس برگشت."); }}
+          onSubmit={async (reason) => { setRejecting(false); await act({ action: "reject", reason }, "نامه رد شد و به پیش‌نویس برگشت."); }}
         />
       )}
       {confirmDialog}
@@ -786,7 +786,7 @@ function OverrideDialog({ recipient, defaultBody, onClose, onSave }: {
   return (
     <Modal
       title={`متن اختصاصی برای ${recipient.name}`}
-      description="این متن فقط برای همین مخاطب استفاده می‌شود و متن اصلی کمپین را تغییر نمی‌دهد."
+      description="این متن فقط برای همین مخاطب استفاده می‌شود و متن اصلی نامه را تغییر نمی‌دهد."
       onClose={onClose}
       footer={
         <>
@@ -807,7 +807,7 @@ function RejectDialog({ onClose, onSubmit }: { onClose: () => void; onSubmit: (r
   return (
     <Modal
       title="رد نامه"
-      description="دلیل رد برای سازنده کمپین نمایش داده می‌شود تا بداند چه چیزی را اصلاح کند."
+      description="دلیل رد برای سازنده نامه نمایش داده می‌شود تا بداند چه چیزی را اصلاح کند."
       size="sm"
       onClose={onClose}
       footer={

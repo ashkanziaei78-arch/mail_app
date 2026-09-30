@@ -8,7 +8,7 @@ import { can } from "@/lib/rbac";
 import { contactScope } from "@/lib/scope";
 import CampaignWizard from "./campaign-wizard";
 
-export const metadata: Metadata = { title: "کمپین" };
+export const metadata: Metadata = { title: "نامه" };
 export const dynamic = "force-dynamic";
 
 export default async function CampaignPage({ params }: { params: Promise<{ id: string }> }) {

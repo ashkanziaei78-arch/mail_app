@@ -74,7 +74,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   });
 }
 
-/** حذف نرم — رکورد برای تاریخچه کمپین‌ها باقی می‌ماند. */
+/** حذف نرم — رکورد برای تاریخچه نامه‌ها باقی می‌ماند. */
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   return handle(async () => {
     const user = await requireApi("contacts.delete");

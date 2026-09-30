@@ -45,10 +45,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       where: { id, organizationId: user.organizationId },
       include: { letters: { orderBy: { createdAt: "asc" }, take: 1 } },
     });
-    if (!campaign) throw new ApiError(404, "کمپین یافت نشد.");
+    if (!campaign) throw new ApiError(404, "نامه یافت نشد.");
 
     const needsWrite = () => {
-      if (!allows(user, "campaigns.write")) throw new ApiError(403, "اجازه ویرایش کمپین را ندارید.");
+      if (!allows(user, "campaigns.write")) throw new ApiError(403, "اجازه ویرایش نامه را ندارید.");
     };
 
     switch (body.action) {
@@ -99,7 +99,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       case "submit": {
         needsWrite();
         const count = await prisma.campaignRecipient.count({ where: { campaignId: id } });
-        if (count === 0) throw new ApiError(422, "ابتدا مخاطبین کمپین را انتخاب کنید.");
+        if (count === 0) throw new ApiError(422, "ابتدا مخاطبین نامه را انتخاب کنید.");
         await generateDocuments(id);
 
         // میان‌بر مدیر سازمان: نامه آزمایشی بدون عبور از گردش تأیید آماده ارسال
@@ -142,13 +142,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       case "send":
       case "retryFailed": {
         if (!allows(user, "campaigns.send")) throw new ApiError(403, "اجازه ارسال پیامک را ندارید.");
-        if (campaign.status === "PENDING_APPROVAL") throw new ApiError(409, "کمپین هنوز تأیید نشده است.");
+        if (campaign.status === "PENDING_APPROVAL") throw new ApiError(409, "نامه هنوز تأیید نشده است.");
         return sendCampaign(id, user);
       }
 
       case "cancel": {
         needsWrite();
-        if (campaign.status === "COMPLETED") throw new ApiError(409, "کمپین تکمیل‌شده قابل لغو نیست.");
+        if (campaign.status === "COMPLETED") throw new ApiError(409, "نامه تکمیل‌شده قابل لغو نیست.");
         await prisma.$transaction([
           prisma.smsMessage.updateMany({ where: { campaignRecipient: { campaignId: id }, status: "QUEUED" }, data: { status: "CANCELLED" } }),
           prisma.campaign.update({ where: { id }, data: { status: "CANCELLED" } }),

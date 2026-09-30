@@ -76,7 +76,7 @@ function documentNumber(campaignSeq: number, index: number): string {
 }
 
 /**
- * تولید سند اختصاصی + لینک کوتاه برای هر مخاطب کمپین.
+ * تولید سند اختصاصی + لینک کوتاه برای هر مخاطب نامه.
  * ایدمپوتنت: کلید یکتایی = هش (campaignId, contactId, متن نهایی) ⇒ اجرای مجدد سند تکراری نمی‌سازد.
  */
 export async function generateDocuments(campaignId: string) {
@@ -99,7 +99,7 @@ export async function generateDocuments(campaignId: string) {
   });
 
   const letter = campaign.letters[0];
-  if (!letter) throw new Error("برای این کمپین متن نامه ثبت نشده است.");
+  if (!letter) throw new Error("برای این نامه متن نامه ثبت نشده است.");
 
   let created = 0;
   let skipped = 0;
@@ -205,9 +205,9 @@ export async function generateDocuments(campaignId: string) {
 }
 
 /**
- * ارسال پیامک کمپین.
+ * ارسال پیامک نامه.
  * ponytail: حلقه ترتیبی داخل همین درخواست به‌جای BullMQ/Redis — برای چند صد مخاطب کافی است.
- * سقف: کمپین چندهزارنفره از timeout رد می‌شود؛ آن‌وقت این تابع را داخل worker صف ببرید.
+ * سقف: نامه چندهزارنفره از timeout رد می‌شود؛ آن‌وقت این تابع را داخل worker صف ببرید.
  */
 export async function sendCampaign(campaignId: string, user: CurrentUser) {
   const campaign = await prisma.campaign.findUniqueOrThrow({
@@ -227,7 +227,7 @@ export async function sendCampaign(campaignId: string, user: CurrentUser) {
   });
 
   if (campaign.status !== "APPROVED" && campaign.status !== "PROCESSING") {
-    throw new Error("کمپین باید ابتدا تأیید شود.");
+    throw new Error("نامه باید ابتدا تأیید شود.");
   }
 
   const config = await prisma.smsProviderConfig.findFirst({
@@ -274,7 +274,7 @@ export async function sendCampaign(campaignId: string, user: CurrentUser) {
     const link = recipient.document?.shortLink;
     const mobile = normalizeMobile(recipient.contact.mobilePhone);
 
-    // مخاطبی که لغو اشتراک کرده، هرگز پیامک نمی‌گیرد — حتی اگر در فهرست کمپین باشد
+    // مخاطبی که لغو اشتراک کرده، هرگز پیامک نمی‌گیرد — حتی اگر در فهرست نامه باشد
     if (!recipient.contact.smsConsent) {
       await prisma.campaignRecipient.update({
         where: { id: recipient.id },
@@ -317,7 +317,7 @@ export async function sendCampaign(campaignId: string, user: CurrentUser) {
     context["{{لغو_اشتراک}}"] = `${baseUrl}/u/${unsubscribeToken}`;
 
     // نشانی‌های بلندی که کاربر داخل متن گذاشته، خودکار کوتاه می‌شوند تا تعداد
-    // بخش‌های پیامک (و هزینه کمپین) بی‌خود بالا نرود.
+    // بخش‌های پیامک (و هزینه نامه) بی‌خود بالا نرود.
     const finalText = await shortenLongUrls(
       applyVariables(smsBody, context),
       campaign.organizationId,
@@ -356,7 +356,7 @@ export async function sendCampaign(campaignId: string, user: CurrentUser) {
   /**
    * مرحله دو: ارسال.
    * اگر درگاه ارسال نظیربه‌نظیر داشته باشد (sms.ir دارد، تا ۱۰۰ شماره در هر
-   * درخواست)، کل کمپین با چند درخواست می‌رود؛ وگرنه تک‌تک. بدون این، یک کمپین
+   * درخواست)، کل نامه با چند درخواست می‌رود؛ وگرنه تک‌تک. بدون این، یک نامه
    * صدنفره صد درخواست پشت‌سرهم می‌شد و از مهلت اجرای تابع می‌زد بیرون.
    */
   const results = provider.sendMany

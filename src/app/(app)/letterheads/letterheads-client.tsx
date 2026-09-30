@@ -98,7 +98,7 @@ export default function LetterheadsClient({ letterheads, templates, canWrite }: 
         </div>
 
         {templates.length === 0 ? (
-          <EmptyState title="قالبی وجود ندارد" description="قالب، متن آماده نامه است؛ هنگام ساخت کمپین آن را انتخاب و در صورت نیاز ویرایش می‌کنید." />
+          <EmptyState title="قالبی وجود ندارد" description="قالب، متن آماده نامه است؛ هنگام ساخت نامه آن را انتخاب و در صورت نیاز ویرایش می‌کنید." />
         ) : (
           <ul className="grid gap-3 md:grid-cols-2">
             {templates.map((t) => (
@@ -110,7 +110,7 @@ export default function LetterheadsClient({ letterheads, templates, canWrite }: 
                             onClick={async () => {
                               const ok = await confirm({
                                 title: `حذف قالب ${t.name}`,
-                                body: "قالب بایگانی می‌شود. کمپین‌هایی که قبلاً از آن ساخته شده‌اند تغییری نمی‌کنند.",
+                                body: "قالب بایگانی می‌شود. نامه‌هایی که قبلاً از آن ساخته شده‌اند تغییری نمی‌کنند.",
                                 confirmLabel: "حذف قالب",
                                 destructive: true,
                               });

@@ -1,6 +1,6 @@
-const STEPS = ["اطلاعات کمپین", "انتخاب مخاطبین", "فهرست نهایی", "متن نامه", "پیش‌نمایش", "پیامک و ارسال"];
+const STEPS = ["اطلاعات نامه", "انتخاب مخاطبین", "فهرست نهایی", "متن نامه", "پیش‌نمایش", "پیامک و ارسال"];
 
-/** نوار مراحل ساخت کمپین — وضعیت جاری با رنگ و متن (نه فقط رنگ) مشخص می‌شود. */
+/** نوار مراحل ساخت نامه — وضعیت جاری با رنگ و متن (نه فقط رنگ) مشخص می‌شود. */
 export default function Stepper({ current, onSelect }: { current: number; onSelect?: (step: number) => void }) {
   return (
     <ol className="card flex flex-wrap items-center gap-x-1 gap-y-2 p-3" aria-label={`مرحله ${current} از ${STEPS.length}`}>

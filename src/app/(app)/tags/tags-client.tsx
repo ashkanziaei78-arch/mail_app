@@ -35,7 +35,7 @@ export default function TagsClient({ tags, groups, contacts, canWrite }: {
 
   return (
     <>
-      <PageHeader title="برچسب‌ها و گروه‌ها" description="با برچسب، مخاطبین را دسته‌بندی کنید و هنگام ساخت کمپین بر اساس آن‌ها فیلتر بگیرید." />
+      <PageHeader title="برچسب‌ها و گروه‌ها" description="با برچسب، مخاطبین را دسته‌بندی کنید و هنگام ساخت نامه بر اساس آن‌ها فیلتر بگیرید." />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="card p-4">

@@ -115,7 +115,7 @@ export default function WorkflowClient({ positions, workflows }: { positions: Po
                   <div>
                     <p className="font-bold">{w.name}</p>
                     <p className="text-xs" style={{ color: "var(--muted)" }}>
-                      {faNumber(w.campaignCount)} کمپین از این گردش استفاده کرده‌اند
+                      {faNumber(w.campaignCount)} نامه از این گردش استفاده کرده‌اند
                     </p>
                   </div>
                   <span className="flex shrink-0 items-center gap-1">
@@ -289,7 +289,7 @@ function WorkflowDialog({ positions, onClose, onSaved }: {
 
         <label className="flex cursor-pointer items-center gap-2 text-sm">
           <input type="checkbox" className="custom-checkbox" checked={isDefault} onChange={(e) => setIsDefault(e.target.checked)} />
-          گردش پیش‌فرض سازمان باشد (روی کمپین‌های جدید اعمال می‌شود)
+          گردش پیش‌فرض سازمان باشد (روی نامه‌های جدید اعمال می‌شود)
         </label>
 
         {error && <p role="alert" className="error-text">{error}</p>}

@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { requirePage } from "@/lib/auth";
 import NewCampaignForm from "./new-campaign-form";
 
-export const metadata: Metadata = { title: "ساخت کمپین جدید" };
+export const metadata: Metadata = { title: "ساخت نامه جدید" };
 export const dynamic = "force-dynamic";
 
 export default async function NewCampaignPage() {

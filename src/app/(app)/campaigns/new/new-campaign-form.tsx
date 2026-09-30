@@ -39,11 +39,11 @@ export default function NewCampaignForm({ letterheads, templates }: {
 
   return (
     <>
-      <PageHeader title="ساخت کمپین جدید" description="مرحله اول: مشخصات کلی نامه. مراحل بعد پس از ذخیره باز می‌شوند." />
+      <PageHeader title="ساخت نامه جدید" description="مرحله اول: مشخصات کلی نامه. مراحل بعد پس از ذخیره باز می‌شوند." />
       <Stepper current={1} />
 
       <form onSubmit={submit} className="card mt-4 grid gap-4 p-5 md:grid-cols-2">
-        <Field label="نام کمپین" required hint="مثال: دعوت‌نامه همایش سالانه فناوری">
+        <Field label="نام نامه" required hint="مثال: دعوت‌نامه همایش سالانه فناوری">
           <input className="input" name="name" required maxLength={120} />
         </Field>
         <Field label="موضوع نامه"><input className="input" name="subject" maxLength={200} placeholder="موضوع نامه" /></Field>

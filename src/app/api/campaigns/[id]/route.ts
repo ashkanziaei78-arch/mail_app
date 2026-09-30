@@ -22,7 +22,7 @@ const schema = z.object({
   }).optional(),
 });
 
-/** فقط کمپین در وضعیت قابل ویرایش را تغییر می‌دهیم؛ کمپین ارسال‌شده قفل است. */
+/** فقط نامه در وضعیت قابل ویرایش را تغییر می‌دهیم؛ نامه ارسال‌شده قفل است. */
 const EDITABLE = ["DRAFT", "PENDING_APPROVAL", "APPROVED"];
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -35,8 +35,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       where: { id, organizationId: user.organizationId },
       include: { letters: { orderBy: { createdAt: "asc" }, take: 1 } },
     });
-    if (!campaign) throw new ApiError(404, "کمپین یافت نشد.");
-    if (!EDITABLE.includes(campaign.status)) throw new ApiError(409, "کمپین ارسال‌شده قابل ویرایش نیست. از آن یک رونوشت بسازید.");
+    if (!campaign) throw new ApiError(404, "نامه یافت نشد.");
+    if (!EDITABLE.includes(campaign.status)) throw new ApiError(409, "نامه ارسال‌شده قابل ویرایش نیست. از آن یک رونوشت بسازید.");
 
     await prisma.campaign.update({
       where: { id },
@@ -99,8 +99,8 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
     const user = await requireApi("campaigns.write");
     const { id } = await params;
     const campaign = await prisma.campaign.findFirst({ where: { id, organizationId: user.organizationId } });
-    if (!campaign) throw new ApiError(404, "کمپین یافت نشد.");
-    if (campaign.status !== "DRAFT") throw new ApiError(409, "فقط کمپین پیش‌نویس حذف می‌شود. کمپین‌های دیگر را لغو کنید.");
+    if (!campaign) throw new ApiError(404, "نامه یافت نشد.");
+    if (campaign.status !== "DRAFT") throw new ApiError(409, "فقط نامه پیش‌نویس حذف می‌شود. نامه‌های دیگر را لغو کنید.");
     await prisma.campaign.delete({ where: { id } });
     return { id };
   });

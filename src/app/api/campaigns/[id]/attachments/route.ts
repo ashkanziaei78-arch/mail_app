@@ -18,7 +18,7 @@ function current(letter: { attachmentsJson: unknown }): StoredAttachment[] {
   return (letter.attachmentsJson as StoredAttachment[] | null) ?? [];
 }
 
-/** افزودن یک یا چند پیوست به نامه این کمپین. */
+/** افزودن یک یا چند پیوست به نامه این نامه. */
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   return handle(async () => {
     const user = await requireApi("campaigns.write");

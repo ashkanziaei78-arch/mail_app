@@ -4,7 +4,7 @@ import { toCsv } from "@/lib/csv";
 import { faDateTime } from "@/lib/jalali";
 import { SMS_STATUS } from "@/lib/labels";
 
-const COLUMNS = ["کمپین", "مخاطب", "شماره", "وضعیت", "تعداد بخش", "زمان ارسال", "خطا", "متن پیامک"];
+const COLUMNS = ["نامه", "مخاطب", "شماره", "وضعیت", "تعداد بخش", "زمان ارسال", "خطا", "متن پیامک"];
 
 export async function GET(request: Request) {
   const user = await requireApi("reports.read");
@@ -25,7 +25,7 @@ export async function GET(request: Request) {
 
   const csv = toCsv(
     messages.map((m) => ({
-      "کمپین": m.campaignRecipient.campaign.name,
+      "نامه": m.campaignRecipient.campaign.name,
       "مخاطب": `${m.campaignRecipient.contact.firstName} ${m.campaignRecipient.contact.lastName}`,
       "شماره": m.toPhone,
       "وضعیت": SMS_STATUS[m.status].label,

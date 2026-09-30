@@ -4,7 +4,7 @@ import { handle, readBody, requireApi } from "@/lib/api";
 import { audit } from "@/lib/audit";
 
 const schema = z.object({
-  name: z.string().trim().min(1, "نام کمپین الزامی است.").max(120),
+  name: z.string().trim().min(1, "نام نامه الزامی است.").max(120),
   subject: z.string().trim().max(200).optional().nullable(),
   confidentiality: z.enum(["NORMAL", "CONFIDENTIAL"]).default("NORMAL"),
   letterheadId: z.string().uuid().optional().nullable(),

@@ -64,7 +64,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="کل مخاطبین" value={faNumber(contacts)} hint={`${faNumber(activeContacts)} مخاطب فعال`} href="/contacts" />
-        <StatCard label="کمپین‌های ارسال‌شده" value={faNumber(campaignsSent)} hint={`${faNumber(groups)} گروه، ${faNumber(tags)} برچسب`} href="/campaigns" />
+        <StatCard label="نامه‌های ارسال‌شده" value={faNumber(campaignsSent)} hint={`${faNumber(groups)} گروه، ${faNumber(tags)} برچسب`} href="/campaigns" />
         <StatCard label="پیامک‌های موفق" value={totalSms ? `${successRate}٪` : "—"} hint={`${faNumber(sent)} موفق از ${faNumber(totalSms)} ارسال`} href="/reports" />
         <StatCard label="نامه‌های در انتظار تأیید" value={faNumber(pendingApproval)} hint="نیازمند بررسی" href="/approvals" />
       </div>
@@ -72,21 +72,21 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       <div className="mt-4 grid gap-4 lg:grid-cols-3">
         <section className="card p-4 lg:col-span-2">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="font-bold">آخرین کمپین‌ها</h2>
+            <h2 className="font-bold">آخرین نامه‌ها</h2>
             <Link href="/campaigns" className="btn btn-sm">مشاهده همه</Link>
           </div>
           {recent.length === 0 ? (
             <EmptyState
-              title="هنوز کمپینی ساخته نشده"
-              description="اولین کمپین را بسازید: قالب نامه را انتخاب کنید، مخاطبین هدف را مشخص کنید و پیامک را بفرستید."
-              action={<Link href="/campaigns/new" className="btn btn-primary">ساخت کمپین جدید</Link>}
+              title="هنوز نامه‌ای ساخته نشده"
+              description="اولین نامه را بسازید: قالب نامه را انتخاب کنید، مخاطبین هدف را مشخص کنید و پیامک را بفرستید."
+              action={<Link href="/campaigns/new" className="btn btn-primary">ساخت نامه جدید</Link>}
             />
           ) : (
             <div className="overflow-x-auto">
               <table className="table">
-                <caption className="sr-only">فهرست شش کمپین اخیر سازمان</caption>
+                <caption className="sr-only">فهرست شش نامه اخیر سازمان</caption>
                 <thead>
-                  <tr><th>نام کمپین</th><th className="col-optional">واحد</th><th className="col-optional">مخاطبین</th><th>وضعیت</th><th>تاریخ</th></tr>
+                  <tr><th>نام نامه</th><th className="col-optional">واحد</th><th className="col-optional">مخاطبین</th><th>وضعیت</th><th>تاریخ</th></tr>
                 </thead>
                 <tbody>
                   {recent.map((c) => (
@@ -114,7 +114,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                 <li key={d.name}>
                   <div className="mb-1 flex items-baseline justify-between text-sm">
                     <span className="font-semibold">{d.name}</span>
-                    <span className="tnum" style={{ color: "var(--muted)" }}>{faNumber(d.count)} کمپین</span>
+                    <span className="tnum" style={{ color: "var(--muted)" }}>{faNumber(d.count)} نامه</span>
                   </div>
                   <div className="h-2 w-full overflow-hidden rounded-full" style={{ background: "var(--surface-2)" }}>
                     <div className="h-full rounded-full" style={{ width: `${(d.count / maxDept) * 100}%`, background: "var(--primary)" }} />
