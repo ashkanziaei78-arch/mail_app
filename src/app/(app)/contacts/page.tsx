@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { requirePage } from "@/lib/auth";
+import { allows, requirePage } from "@/lib/auth";
 import { contactScope } from "@/lib/scope";
 import { can } from "@/lib/rbac";
 import ContactsClient from "./contacts-client";
@@ -77,9 +77,9 @@ export default async function ContactsPage({ searchParams }: {
         tagIds: c.tags.map((t) => t.tagId),
       }))}
       tags={tags.map((t) => ({ id: t.id, name: t.name }))}
-      canWrite={can(user.role, "contacts.write")}
-      canDelete={can(user.role, "contacts.delete")}
-      canManagePublic={can(user.role, "contacts.manage_public")}
+      canWrite={allows(user, "contacts.write")}
+      canDelete={allows(user, "contacts.delete")}
+      canManagePublic={allows(user, "contacts.manage_public")}
     />
   );
 }

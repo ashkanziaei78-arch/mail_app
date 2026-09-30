@@ -59,6 +59,7 @@ export const NAV: Array<{ group: string; items: NavItem[] }> = [
       { href: "/tags", label: "برچسب و گروه", icon: "Tags", permission: "tags.write" },
       { href: "/settings/users", label: "کاربران", icon: "Users", permission: "users.manage" },
       { href: "/settings/workflow", label: "سمت و گردش تأیید", icon: "GitBranch", permission: "users.manage" },
+      { href: "/settings/access", label: "دسترسی‌ها", icon: "ShieldCheck", permission: "users.manage" },
       { href: "/settings/sms", label: "درگاه پیامک", icon: "MessageSquare", permission: "sms.settings" },
     ],
   },

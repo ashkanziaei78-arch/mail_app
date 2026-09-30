@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { requirePage } from "@/lib/auth";
+import { allows, requirePage } from "@/lib/auth";
 import { can } from "@/lib/rbac";
 import ShortLinksClient from "./short-links-client";
 
@@ -16,7 +16,7 @@ export default async function ShortLinksPage() {
 
   return (
     <ShortLinksClient
-      canWrite={can(user.role, "campaigns.write")}
+      canWrite={allows(user, "campaigns.write")}
       links={links.map((l) => ({
         id: l.id,
         code: l.code,

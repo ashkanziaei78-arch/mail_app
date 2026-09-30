@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { toFieldDefinition } from "@/lib/letterhead";
 import { prisma } from "@/lib/db";
-import { requirePage } from "@/lib/auth";
+import { allows, requirePage } from "@/lib/auth";
 import { can } from "@/lib/rbac";
 import { contactScope } from "@/lib/scope";
 import CampaignWizard from "./campaign-wizard";
@@ -147,9 +147,9 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
       }}
       signatureUrl={currentUserPosition.signatureImagePath}
       permissions={{
-        write: can(user.role, "campaigns.write"),
-        approve: can(user.role, "campaigns.approve"),
-        send: can(user.role, "campaigns.send"),
+        write: allows(user, "campaigns.write"),
+        approve: allows(user, "campaigns.approve"),
+        send: allows(user, "campaigns.send"),
         positionId: currentUserPosition.positionId,
         isOrgAdmin: user.role === "ORG_ADMIN" || user.role === "SUPER_ADMIN",
       }}

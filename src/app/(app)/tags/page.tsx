@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
-import { requirePage } from "@/lib/auth";
+import { allows, requirePage } from "@/lib/auth";
 import { can } from "@/lib/rbac";
 import { contactScope } from "@/lib/scope";
 import TagsClient from "./tags-client";
@@ -34,7 +34,7 @@ export default async function TagsPage() {
       tags={tags.map((t) => ({ id: t.id, name: t.name, color: t.color, count: t._count.contacts }))}
       groups={groups.map((g) => ({ id: g.id, name: g.name, type: g.type, count: g._count.members }))}
       contacts={contacts.map((c) => ({ id: c.id, name: `${c.firstName} ${c.lastName}` }))}
-      canWrite={can(user.role, "tags.write")}
+      canWrite={allows(user, "tags.write")}
     />
   );
 }

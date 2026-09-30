@@ -1,3 +1,4 @@
+import { allows } from "@/lib/auth";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { handle, readBody, requireApi, ApiError } from "@/lib/api";
@@ -47,7 +48,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (!campaign) throw new ApiError(404, "کمپین یافت نشد.");
 
     const needsWrite = () => {
-      if (!can(user.role, "campaigns.write")) throw new ApiError(403, "اجازه ویرایش کمپین را ندارید.");
+      if (!allows(user, "campaigns.write")) throw new ApiError(403, "اجازه ویرایش کمپین را ندارید.");
     };
 
     switch (body.action) {
@@ -127,18 +128,18 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       }
 
       case "approve": {
-        if (!can(user.role, "campaigns.approve")) throw new ApiError(403, "اجازه تأیید نامه را ندارید.");
+        if (!allows(user, "campaigns.approve")) throw new ApiError(403, "اجازه تأیید نامه را ندارید.");
         return decide(id, user, "APPROVED", body.note);
       }
 
       case "reject": {
-        if (!can(user.role, "campaigns.approve")) throw new ApiError(403, "اجازه رد نامه را ندارید.");
+        if (!allows(user, "campaigns.approve")) throw new ApiError(403, "اجازه رد نامه را ندارید.");
         return decide(id, user, "REJECTED", body.reason);
       }
 
       case "send":
       case "retryFailed": {
-        if (!can(user.role, "campaigns.send")) throw new ApiError(403, "اجازه ارسال پیامک را ندارید.");
+        if (!allows(user, "campaigns.send")) throw new ApiError(403, "اجازه ارسال پیامک را ندارید.");
         if (campaign.status === "PENDING_APPROVAL") throw new ApiError(409, "کمپین هنوز تأیید نشده است.");
         return sendCampaign(id, user);
       }

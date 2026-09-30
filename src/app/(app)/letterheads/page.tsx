@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { toFieldDefinition } from "@/lib/letterhead";
 import { prisma } from "@/lib/db";
-import { requirePage } from "@/lib/auth";
+import { allows, requirePage } from "@/lib/auth";
 import { can } from "@/lib/rbac";
 import LetterheadsClient from "./letterheads-client";
 
@@ -26,7 +26,7 @@ export default async function LetterheadsPage() {
         fields: l.fields.map(toFieldDefinition),
       }))}
       templates={templates.map((t) => ({ id: t.id, name: t.name, bodyHtml: t.bodyHtml }))}
-      canWrite={can(user.role, "letterheads.write")}
+      canWrite={allows(user, "letterheads.write")}
     />
   );
 }

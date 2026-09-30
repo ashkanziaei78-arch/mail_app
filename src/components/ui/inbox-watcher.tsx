@@ -3,16 +3,18 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Bell } from "lucide-react";
-import { faNumber } from "@/lib/jalali";
+import { faDateTime, faNumber } from "@/lib/jalali";
+
+type Item = { id: string; name: string; subject: string | null; author: string; step: string | null; at: string };
 
 /**
- * دیده‌بان کارتابل: هر نیم‌دقیقه تعداد نامه‌های منتظر تصمیم کاربر را می‌پرسد و
- * اگر زیاد شده بود، هشدار می‌دهد — نشان روی زنگ، یک بوق کوتاه، و اعلان سیستمی
- * اگر کاربر اجازه‌اش را داده باشد.
+ * دیده‌بان کارتابل: هر نیم‌دقیقه نامه‌های منتظر تصمیم کاربر را می‌پرسد. زدن روی
+ * زنگ فهرست کشویی باز می‌کند (نه رفتن مستقیم به تأیید)، تا کاربر اول ببیند چه
+ * چیزی آمده و بعد خودش انتخاب کند.
  *
  * صدا با WebAudio ساخته می‌شود نه فایل صوتی: نه دانلودی دارد و نه به مسیر
- * استاتیک وابسته است. مرورگرها تا وقتی کاربر با صفحه کار نکرده باشد اجازه پخش
- * نمی‌دهند؛ برای همین خطای پخش بی‌سروصدا رد می‌شود.
+ * استاتیک وابسته است. مرورگر تا وقتی کاربر با صفحه کار نکرده اجازه پخش نمی‌دهد،
+ * پس خطای پخش بی‌سروصدا رد می‌شود.
  */
 function beep() {
   try {
@@ -36,8 +38,11 @@ function beep() {
 }
 
 export default function InboxWatcher() {
+  const [items, setItems] = useState<Item[]>([]);
   const [pending, setPending] = useState(0);
+  const [open, setOpen] = useState(false);
   const previous = useRef<number | null>(null);
+  const box = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let alive = true;
@@ -47,6 +52,7 @@ export default function InboxWatcher() {
         const res = await fetch("/api/notifications", { cache: "no-store" });
         const json = await res.json();
         if (!alive || !json.ok) return;
+        setItems(json.data.items ?? []);
         const count: number = json.data.pending;
         setPending(count);
 
@@ -65,35 +71,89 @@ export default function InboxWatcher() {
 
     check();
     const timer = setInterval(check, 30_000);
-    // برگشتن به تب هم یک بررسی فوری بگیرد
     const onFocus = () => check();
     window.addEventListener("focus", onFocus);
     return () => { alive = false; clearInterval(timer); window.removeEventListener("focus", onFocus); };
   }, []);
 
-  async function askPermission() {
-    if (typeof Notification === "undefined") return;
-    if (Notification.permission === "default") await Notification.requestPermission();
+  // کلیک بیرون و کلید Esc، فهرست را می‌بندد
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => { if (box.current && !box.current.contains(e.target as Node)) setOpen(false); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onKey); };
+  }, [open]);
+
+  async function toggle() {
+    if (typeof Notification !== "undefined" && Notification.permission === "default") {
+      await Notification.requestPermission();
+    }
+    setOpen((v) => !v);
   }
 
   return (
-    <Link
-      href="/approvals"
-      onClick={askPermission}
-      className="relative grid h-9 w-9 place-items-center rounded-xl"
-      style={{ background: "var(--surface-2)" }}
-      aria-label={pending > 0 ? `${pending} نامه منتظر تأیید` : "کارتابل تأیید"}
-      title={pending > 0 ? "نامه منتظر تأیید دارید" : "کارتابل تأیید"}
-    >
-      <Bell className="h-4 w-4" aria-hidden="true" />
-      {pending > 0 && (
-        <span
-          className="tnum absolute -top-1 -left-1 grid min-w-5 place-items-center rounded-full px-1 text-[10px] font-bold"
-          style={{ background: "var(--danger)", color: "#fff" }}
+    <div className="relative" ref={box}>
+      <button
+        onClick={toggle}
+        className="relative grid h-9 w-9 place-items-center rounded-xl"
+        style={{ background: "var(--surface-2)" }}
+        aria-label={pending > 0 ? `${pending} نامه منتظر تأیید` : "کارتابل تأیید"}
+        aria-expanded={open}
+        aria-haspopup="true"
+      >
+        <Bell className="h-4 w-4" aria-hidden="true" />
+        {pending > 0 && (
+          <span
+            className="tnum absolute -top-1 -left-1 grid min-w-5 place-items-center rounded-full px-1 text-[10px] font-bold"
+            style={{ background: "var(--danger)", color: "#fff" }}
+          >
+            {faNumber(pending)}
+          </span>
+        )}
+      </button>
+
+      {open && (
+        <div
+          className="card absolute left-0 z-40 mt-2 w-[min(22rem,calc(100vw-2rem))] overflow-hidden p-0 shadow-lg"
+          role="menu"
         >
-          {faNumber(pending)}
-        </span>
+          <p className="border-b px-3 py-2 text-xs font-bold">
+            {pending > 0 ? `${faNumber(pending)} نامه منتظر تأیید شماست` : "چیزی در کارتابل نیست"}
+          </p>
+
+          {items.length > 0 ? (
+            <ul className="max-h-80 overflow-y-auto">
+              {items.map((item) => (
+                <li key={item.id}>
+                  <Link
+                    href={`/campaigns/${item.id}`}
+                    onClick={() => setOpen(false)}
+                    className="block border-b px-3 py-2.5 hover:opacity-80"
+                    role="menuitem"
+                  >
+                    <span className="block truncate text-sm font-bold">{item.name}</span>
+                    <span className="block truncate text-xs" style={{ color: "var(--muted)" }}>
+                      {item.subject ?? "بدون موضوع"} — {item.author}
+                      {item.step && <> — مرحله «{item.step}»</>}
+                    </span>
+                    <span className="tnum block text-[11px]" style={{ color: "var(--muted)" }}>{faDateTime(item.at)}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="px-3 py-4 text-xs" style={{ color: "var(--muted)" }}>
+              هر نامه‌ای که برای تأیید شما فرستاده شود، همین‌جا با صدا خبر داده می‌شود.
+            </p>
+          )}
+
+          <Link href="/approvals" onClick={() => setOpen(false)} className="block px-3 py-2 text-center text-xs font-bold" role="menuitem">
+            رفتن به کارتابل تأیید
+          </Link>
+        </div>
       )}
-    </Link>
+    </div>
   );
 }

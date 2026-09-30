@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { ZodError, type ZodSchema } from "zod";
-import { currentUser, type CurrentUser } from "./auth";
-import { can, type PermissionCode } from "./rbac";
+import { allows, currentUser, type CurrentUser } from "./auth";
+import { type PermissionCode } from "./rbac";
 import { RateLimitError } from "./rate-limit";
 
 export class ApiError extends Error {
@@ -14,7 +14,7 @@ export class ApiError extends Error {
 export async function requireApi(permission?: PermissionCode): Promise<CurrentUser> {
   const user = await currentUser();
   if (!user) throw new ApiError(401, "برای این عملیات باید وارد شوید.");
-  if (permission && !can(user.role, permission)) throw new ApiError(403, "دسترسی لازم را ندارید.");
+  if (permission && !allows(user, permission)) throw new ApiError(403, "دسترسی لازم را ندارید.");
   return user;
 }
 

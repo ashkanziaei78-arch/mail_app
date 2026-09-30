@@ -26,7 +26,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     select: { avatarPath: true },
   });
 
-  const allowed = PERMISSIONS.filter((p) => can(user.role, p));
+  const allowed = user.permissions;
   return (
     <AppShell
       user={{

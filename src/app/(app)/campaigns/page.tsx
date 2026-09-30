@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
-import { requirePage } from "@/lib/auth";
+import { allows, requirePage } from "@/lib/auth";
 import { can } from "@/lib/rbac";
 import { faDate, faNumber } from "@/lib/jalali";
 import { Badge, EmptyState, PageHeader } from "@/components/ui/primitives";
@@ -27,14 +27,14 @@ export default async function CampaignsPage() {
       <PageHeader
         title="کمپین‌ها"
         description="هر کمپین یک نامه است که برای فهرستی از مخاطبین شخصی‌سازی و پیامک می‌شود."
-        action={can(user.role, "campaigns.write") && <Link href="/campaigns/new" className="btn btn-primary">+ کمپین جدید</Link>}
+        action={allows(user, "campaigns.write") && <Link href="/campaigns/new" className="btn btn-primary">+ کمپین جدید</Link>}
       />
 
       {campaigns.length === 0 ? (
         <EmptyState
           title="هنوز کمپینی ندارید"
           description="برای شروع، یک کمپین بسازید: نام، سربرگ و قالب نامه را انتخاب کنید و سپس مخاطبین را مشخص کنید."
-          action={can(user.role, "campaigns.write") && <Link href="/campaigns/new" className="btn btn-primary">ساخت کمپین جدید</Link>}
+          action={allows(user, "campaigns.write") && <Link href="/campaigns/new" className="btn btn-primary">ساخت کمپین جدید</Link>}
         />
       ) : (
         <div className="card overflow-x-auto">

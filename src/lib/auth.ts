@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import bcrypt from "bcryptjs";
 import { prisma } from "./db";
 import { getSession, refreshSession } from "./session";
-import { can, type PermissionCode } from "./rbac";
+import { effectivePermissions, type PermissionCode } from "./rbac";
 import type { UserRole } from "@prisma/client";
 
 export type CurrentUser = {
@@ -13,7 +13,14 @@ export type CurrentUser = {
   organizationId: string;
   organizationName: string;
   departmentId: string | null;
+  /** مجوزهای مؤثر: پیش‌فرض نقش + استثناهای همین کاربر */
+  permissions: PermissionCode[];
 };
+
+/** آیا کاربر این مجوز را دارد؟ همه‌جا به‌جای بررسی نقش از این استفاده کنید. */
+export function allows(user: CurrentUser, permission: PermissionCode): boolean {
+  return user.permissions.includes(permission);
+}
 
 export async function currentUser(): Promise<CurrentUser | null> {
   const session = await getSession();
@@ -23,7 +30,10 @@ export async function currentUser(): Promise<CurrentUser | null> {
   // حساب بلافاصله اثر می‌کند و منتظر انقضای کوکی نمی‌ماند.
   const user = await prisma.user.findFirst({
     where: { id: session.userId, status: "ACTIVE", deletedAt: null },
-    include: { organization: { select: { name: true, status: true } } },
+    include: {
+      organization: { select: { name: true, status: true } },
+      rolePermissions: { include: { permission: { select: { code: true } } } },
+    },
   });
   if (!user) return null;
   if (user.organization.status !== "ACTIVE") return null;
@@ -49,6 +59,10 @@ export async function currentUser(): Promise<CurrentUser | null> {
     organizationId: user.organizationId,
     organizationName: user.organization.name,
     departmentId: user.departmentId,
+    permissions: effectivePermissions(
+      user.role,
+      user.rolePermissions.map((p) => ({ code: p.permission.code, granted: p.granted })),
+    ),
   };
 }
 
@@ -56,7 +70,7 @@ export async function currentUser(): Promise<CurrentUser | null> {
 export async function requirePage(permission?: PermissionCode): Promise<CurrentUser> {
   const user = await currentUser();
   if (!user) redirect("/login");
-  if (permission && !can(user.role, permission)) redirect("/dashboard?denied=1");
+  if (permission && !allows(user, permission)) redirect("/dashboard?denied=1");
   return user;
 }
 
