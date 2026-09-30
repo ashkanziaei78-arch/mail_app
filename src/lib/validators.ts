@@ -29,7 +29,11 @@ export const FIELD_TYPES = [
   { value: "DATE", label: "تاریخ شمسی", hint: "با تقویم انتخاب می‌شود" },
   { value: "NUMBER", label: "عدد", hint: "" },
   { value: "SELECT", label: "انتخاب از فهرست", hint: "گزینه‌ها را خودتان تعیین می‌کنید" },
-  { value: "SIGNATURE", label: "امضای فرستنده", hint: "تصویر امضای کاربری که نامه را می‌سازد، خودکار در این کادر می‌نشیند" },
+  { value: "SIGNATURE", label: "امضای فرستنده", hint: "تصویر امضای انتخاب‌شده نامه، خودکار در این کادر می‌نشیند" },
+  { value: "SIGNER_NAME", label: "نام امضاکننده", hint: "نام و سمتی که در نامه به‌عنوان امضاکننده ثبت شده، خودکار می‌آید" },
+  { value: "IMAGE", label: "تصویر", hint: "مهر، نمودار یا هر تصویری که هنگام نوشتن نامه آپلود می‌شود" },
+  { value: "TABLE", label: "جدول از اکسل", hint: "فایل اکسل یا CSV را آپلود کنید تا جدولش در این کادر بنشیند" },
+  { value: "ATTACHMENTS", label: "فهرست پیوست‌ها", hint: "نام فایل‌های پیوست همان نامه خودکار فهرست می‌شود" },
 ] as const;
 
 export const FIELD_AREAS = [
@@ -43,7 +47,7 @@ export const letterheadFieldInput = z.object({
   key: z.string().trim().min(1, "کلید فیلد الزامی است.").max(40)
     .regex(/^[a-zA-Z][a-zA-Z0-9_]*$/, "کلید باید با حرف انگلیسی شروع شود و فقط حرف، رقم و _ داشته باشد."),
   label: z.string().trim().min(1, "برچسب فیلد الزامی است.").max(80),
-  type: z.enum(["TEXT", "TEXTAREA", "RICH_TEXT", "DATE", "NUMBER", "SELECT", "SIGNATURE"]).default("TEXT"),
+  type: z.enum(["TEXT", "TEXTAREA", "RICH_TEXT", "DATE", "NUMBER", "SELECT", "SIGNATURE", "SIGNER_NAME", "IMAGE", "TABLE", "ATTACHMENTS"]).default("TEXT"),
   area: z.enum(["HEADER", "BODY", "FOOTER"]).default("HEADER"),
   placeholder: z.string().trim().max(120).optional().nullable(),
   helpText: z.string().trim().max(200).optional().nullable(),

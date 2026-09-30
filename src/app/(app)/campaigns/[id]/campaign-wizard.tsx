@@ -129,7 +129,8 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
   /** کادر متن اصلی: اولین کادرِ چندخطی. اگر سربرگ چنین کادری داشته باشد، همان بدنهٔ نامه است. */
   const bodyField = activeFields.find((f) => f.type === "RICH_TEXT" || f.type === "TEXTAREA") ?? null;
   const signatureFields = activeFields.filter((f) => f.type === "SIGNATURE");
-  const fillableFields = activeFields.filter((f) => f.type !== "SIGNATURE");
+  const AUTO_TYPES = ["SIGNATURE", "SIGNER_NAME", "ATTACHMENTS"];
+  const fillableFields = activeFields.filter((f) => !AUTO_TYPES.includes(f.type));
   const fieldVariables = activeFields
     .filter((f) => f.type !== "SIGNATURE")
     .map((f) => ({ token: `{{فیلد:${f.key}}}`, description: `فیلد سربرگ: ${f.label}`, example: f.label }));
@@ -137,6 +138,9 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
   const canvasValues: Record<string, string> = Object.fromEntries([
     ...activeFields.map((f) => [f.key, fieldValues[f.key] ?? f.defaultValue ?? ""]),
     ...signatureFields.map((f) => [f.key, signature]),
+    // کادرهای خودکار: همان چیزی که در نامه نهایی می‌نشیند
+    ...activeFields.filter((f) => f.type === "SIGNER_NAME").map((f) => [f.key, senderName]),
+    ...activeFields.filter((f) => f.type === "ATTACHMENTS").map((f) => [f.key, attachments.map((a) => a.name).join("، ")]),
   ]);
 
   async function saveLetter() {

@@ -61,12 +61,22 @@ export function withLetterheadFields(
   context: RenderContext,
   fields: Array<{ key: string; type: string }>,
   values: Record<string, string> | null | undefined,
+  /** داده‌هایی که کادرهای خودکار از خود نامه می‌گیرند */
+  auto?: { signerName?: string | null; attachments?: Array<{ name: string }> },
 ): RenderContext {
   const merged = { ...context };
   for (const field of fields) {
     const raw = values?.[field.key] ?? "";
-    // تاریخ در پایگاه داده ISO است ولی در نامه باید شمسی دیده شود
-    merged[`{{فیلد:${field.key}}}`] = field.type === "DATE" && raw ? faDate(raw) : raw;
+    const token = `{{فیلد:${field.key}}}`;
+
+    if (field.type === "DATE") { merged[token] = raw ? faDate(raw) : ""; continue; }
+    // این دو کادر را کاربر پر نمی‌کند؛ از خود نامه برداشته می‌شوند
+    if (field.type === "SIGNER_NAME") { merged[token] = auto?.signerName ?? ""; continue; }
+    if (field.type === "ATTACHMENTS") {
+      merged[token] = (auto?.attachments ?? []).map((a) => a.name).join("، ");
+      continue;
+    }
+    merged[token] = raw;
   }
   return merged;
 }

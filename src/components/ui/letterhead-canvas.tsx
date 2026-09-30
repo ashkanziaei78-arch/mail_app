@@ -203,10 +203,10 @@ export default function LetterheadCanvas({
                 direction: "rtl",
               }}
             >
-              {field.type === "SIGNATURE" && content ? (
+              {(field.type === "SIGNATURE" || field.type === "IMAGE") && content ? (
                 <img src={content} alt="" className="h-full w-full object-contain" />
               ) : content ? (
-                field.type === "RICH_TEXT"
+                field.type === "RICH_TEXT" || field.type === "TABLE"
                   ? <span dangerouslySetInnerHTML={{ __html: content }} />
                   : content
               ) : (

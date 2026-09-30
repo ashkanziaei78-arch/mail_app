@@ -138,6 +138,10 @@ export async function generateDocuments(campaignId: string) {
       baseContext,
       letter.letterhead?.fields ?? [],
       letter.fieldValuesJson as Record<string, string> | null,
+      {
+        signerName: letter.senderName,
+        attachments: (letter.attachmentsJson as Array<{ name: string }> | null) ?? [],
+      },
     );
 
     const source = recipient.letterOverrideHtml ?? letter.bodyHtml;
