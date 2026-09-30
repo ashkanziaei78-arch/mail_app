@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
+import { redirect } from "next/navigation";
 import { requirePage } from "@/lib/auth";
+import { hasApprovalDuty } from "@/lib/workflow";
 import { campaignFlow } from "@/lib/flow";
 import { EmptyState, PageHeader } from "@/components/ui/primitives";
 import ApprovalCard, { type PendingCampaign } from "./approval-card";
@@ -9,7 +11,9 @@ export const metadata: Metadata = { title: "تأیید نامه‌ها" };
 export const dynamic = "force-dynamic";
 
 export default async function ApprovalsPage() {
-  const user = await requirePage("campaigns.approve");
+  const user = await requirePage();
+  // صاحب سمتی که حق تأیید دارد هم کارتابل می‌بیند، نه فقط نقش‌های دارای مجوز
+  if (!(await hasApprovalDuty(user))) redirect("/dashboard?denied=1");
   const pending = await prisma.campaign.findMany({
     where: { organizationId: user.organizationId, status: "PENDING_APPROVAL" },
     include: {

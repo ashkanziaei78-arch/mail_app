@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { toFieldDefinition } from "@/lib/letterhead";
 import { prisma } from "@/lib/db";
 import { allows, requirePage } from "@/lib/auth";
+import { hasApprovalDuty } from "@/lib/workflow";
 import { can } from "@/lib/rbac";
 import { contactScope } from "@/lib/scope";
 import CampaignWizard from "./campaign-wizard";
@@ -158,7 +159,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
       }))}
       permissions={{
         write: allows(user, "campaigns.write"),
-        approve: allows(user, "campaigns.approve"),
+        approve: await hasApprovalDuty(user),
         send: allows(user, "campaigns.send"),
         positionId: currentUserPosition.positionId,
         isOrgAdmin: user.role === "ORG_ADMIN" || user.role === "SUPER_ADMIN",

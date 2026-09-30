@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { handle, requireApi } from "@/lib/api";
+import { hasApprovalDuty } from "@/lib/workflow";
 
 /**
  * نامه‌های منتظر تصمیمِ همین کاربر (کارتابل تأیید).
@@ -9,7 +10,8 @@ import { handle, requireApi } from "@/lib/api";
  */
 export async function GET() {
   return handle(async () => {
-    const user = await requireApi("campaigns.approve");
+    const user = await requireApi();
+    if (!(await hasApprovalDuty(user))) return { pending: 0, items: [] };
     const isAdmin = user.role === "ORG_ADMIN" || user.role === "SUPER_ADMIN";
 
     const record = await prisma.user.findUniqueOrThrow({ where: { id: user.id }, select: { positionId: true } });

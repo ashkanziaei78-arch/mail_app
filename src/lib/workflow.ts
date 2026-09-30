@@ -1,6 +1,6 @@
 import { prisma } from "./db";
 import { ApiError } from "./api";
-import type { CurrentUser } from "./auth";
+import { allows, type CurrentUser } from "./auth";
 import { audit } from "./audit";
 import { normalizeMobile } from "./sms";
 import { resolveProvider } from "./sms-server";
@@ -189,4 +189,21 @@ export async function notifyPendingApprover(campaignId: string, organizationId: 
   } catch {
     // خطای اطلاع‌رسانی نباید جلوی گردش تأیید را بگیرد
   }
+}
+
+/**
+ * آیا این کاربر اصلاً کار تأیید دارد؟
+ *
+ * دو راه: یا نقشش مجوز عمومی تأیید دارد، یا سمتش سمتی است که در سازمان حق
+ * تأیید دارد (Position.canApprove). راه دوم لازم است چون گردش کار روی «سمت»
+ * تعریف می‌شود نه «نقش»؛ بدون آن، نامه‌ای که مرحله‌اش سمت رئیس اداره است در
+ * کارتابل هیچ‌کس نمی‌نشست و فقط مدیر سازمان می‌توانست جلو ببردش.
+ */
+export async function hasApprovalDuty(user: CurrentUser): Promise<boolean> {
+  if (allows(user, "campaigns.approve")) return true;
+  const record = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { position: { select: { canApprove: true } } },
+  });
+  return record?.position?.canApprove === true;
 }

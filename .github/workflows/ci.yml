@@ -1,0 +1,56 @@
+name: بررسی خودکار
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    # دیتابیس واقعی لازم است چون هم migrationها و هم دود-تست سرتاسری روی آن اجرا می‌شوند
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: mailing
+          POSTGRES_PASSWORD: mailing
+          POSTGRES_DB: mailing
+        options: >-
+          --health-cmd "pg_isready -U mailing"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+        ports: ["5432:5432"]
+
+    env:
+      DATABASE_URL: postgresql://mailing:mailing@localhost:5432/mailing?schema=mailing
+      DIRECT_URL: postgresql://mailing:mailing@localhost:5432/mailing?schema=mailing
+      APP_URL: http://localhost:3000
+      # کلیدهای ساختگی فقط برای اجرای تست؛ هیچ داده واقعی در CI نیست
+      SESSION_SECRET: ci-session-secret-ci-session-secret-32
+      ENCRYPTION_KEY: ci-encryption-key-ci-encryption-key-32
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npx prisma migrate deploy
+      - run: npx tsc --noEmit
+      - run: npm test           # بررسی‌های واحد (تقویم، رمزنگاری، قرارداد sms.ir)
+      - run: npx tsx prisma/seed.ts
+      - run: npx next build
+
+      - name: دود-تست سرتاسری
+        run: |
+          npx next start -p 3100 &
+          # صبر تا بالا آمدن سرور، بدون وابستگی تازه
+          for i in $(seq 1 60); do
+            curl -sf http://localhost:3100/login > /dev/null && break
+            sleep 2
+          done
+          BASE_URL=http://localhost:3100 npm run test:e2e

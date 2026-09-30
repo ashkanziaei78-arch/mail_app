@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { handle, readBody, requireApi, ApiError } from "@/lib/api";
 import { can } from "@/lib/rbac";
 import { generateDocuments, resolveRecipients, sendCampaign } from "@/lib/campaign";
-import { decide, initApprovals, notifyPendingApprover } from "@/lib/workflow";
+import { decide, hasApprovalDuty, initApprovals, notifyPendingApprover } from "@/lib/workflow";
 import { sanitizeHtml } from "@/lib/render";
 import { audit } from "@/lib/audit";
 
@@ -128,12 +128,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       }
 
       case "approve": {
-        if (!allows(user, "campaigns.approve")) throw new ApiError(403, "اجازه تأیید نامه را ندارید.");
+        // یا مجوز عمومی تأیید، یا صاحب سمتِ همین مرحله بودن؛ تصمیم نهایی را
+        // decide با تطبیق دقیق سمت می‌گیرد.
+        if (!(await hasApprovalDuty(user))) throw new ApiError(403, "اجازه تأیید نامه را ندارید.");
         return decide(id, user, "APPROVED", body.note);
       }
 
       case "reject": {
-        if (!allows(user, "campaigns.approve")) throw new ApiError(403, "اجازه رد نامه را ندارید.");
+        if (!(await hasApprovalDuty(user))) throw new ApiError(403, "اجازه رد نامه را ندارید.");
         return decide(id, user, "REJECTED", body.reason);
       }
 

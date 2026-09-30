@@ -4,8 +4,9 @@ import AppShell from "@/components/ui/app-shell";
 import { ToastProvider } from "@/components/ui/toast";
 import { prisma } from "@/lib/db";
 import { requirePage } from "@/lib/auth";
-import { PERMISSIONS, ROLE_LABELS, can } from "@/lib/rbac";
+import { ROLE_LABELS } from "@/lib/rbac";
 import { avatarSrc } from "@/lib/avatars";
+import { hasApprovalDuty } from "@/lib/workflow";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await requirePage();
@@ -26,7 +27,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     prisma.organization.findUniqueOrThrow({ where: { id: user.organizationId }, select: { logoPath: true } }),
   ]);
 
-  const allowed = user.permissions;
+  // کارتابل و زنگ اعلان به «سمتِ دارای حق تأیید» هم باز می‌شود، نه فقط نقش‌هایی
+  // که مجوز عمومی تأیید دارند؛ گردش کار روی سمت تعریف شده است.
+  const approvalDuty = await hasApprovalDuty(user);
+  const allowed = approvalDuty && !user.permissions.includes("campaigns.approve")
+    ? [...user.permissions, "campaigns.approve" as const]
+    : user.permissions;
   return (
     <AppShell
       user={{

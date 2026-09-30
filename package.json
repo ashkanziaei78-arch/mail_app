@@ -15,7 +15,8 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
     "test": "tsx src/lib/selftest.ts",
-    "build:local": "prisma generate && next build"
+    "build:local": "prisma generate && next build",
+    "test:e2e": "node tests/smoke.mjs"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
