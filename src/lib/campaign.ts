@@ -212,9 +212,20 @@ export async function sendCampaign(campaignId: string, user: CurrentUser) {
   const provider = resolveProvider(config);
   const sender = config?.senderNumber ?? "10008663";
   const baseUrl = (process.env.APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
-  const smsBody =
+  let smsBody =
     campaign.smsBodyText ??
     "{{عنوان}} {{نام_کامل}} گرامی، نامه‌ای از {{سازمان_فرستنده}} برای شما صادر شد: {{لینک}}\nلغو: {{لغو_اشتراک}}";
+
+  // پیامکِ بدون لینک بی‌فایده است: مخاطب راهی برای دیدن نامه ندارد. اگر کاربر
+  // متن را دست‌نویس کرده و {{لینک}} نگذاشته، خودش ته متن اضافه می‌شود.
+  if (!smsBody.includes("{{لینک}}")) smsBody = `${smsBody.trimEnd()}\nنامه: {{لینک}}`;
+
+  // نامه محرمانه: کد دسترسی در همان پیامک، کنار لینک — نه پیامک دوم. پیامک
+  // جدا نه ترتیبش تضمینی بود و نه معلوم می‌شد کد مال کدام لینک است.
+  const confidential = campaign.confidentiality === "CONFIDENTIAL";
+  if (confidential && !smsBody.includes("{{کد_دسترسی}}")) {
+    smsBody = `${smsBody.trimEnd()}\nکد دسترسی: {{کد_دسترسی}}`;
+  }
 
   await prisma.campaign.update({ where: { id: campaign.id }, data: { status: "PROCESSING" } });
 
@@ -233,7 +244,6 @@ export async function sendCampaign(campaignId: string, user: CurrentUser) {
     smsMessageId: string;
     mobile: string;
     text: string;
-    accessCode: string | null;
   }> = [];
 
   for (const recipient of campaign.recipients) {
@@ -316,7 +326,6 @@ export async function sendCampaign(campaignId: string, user: CurrentUser) {
       smsMessageId: smsMessage.id,
       mobile,
       text: finalText,
-      accessCode: link.accessCode ?? null,
     });
   }
 
@@ -349,10 +358,6 @@ export async function sendCampaign(campaignId: string, user: CurrentUser) {
       });
       await prisma.contact.update({ where: { id: message.contactId }, data: { lastUsedInCampaignAt: new Date() } });
 
-      // نامه محرمانه: کد دسترسی در پیامک دوم و جداگانه ارسال می‌شود
-      if (message.accessCode) {
-        await provider.send(message.mobile, `کد دسترسی نامه محرمانه شما: ${message.accessCode}`, sender);
-      }
     } else {
       failed++;
       await prisma.smsMessage.update({

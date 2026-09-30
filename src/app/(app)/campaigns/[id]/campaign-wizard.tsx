@@ -512,7 +512,15 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
           <section className="space-y-4">
             <div className="card space-y-4 p-5">
               <h2 className="font-bold">متن پیامک</h2>
-              <Field label="متن" required hint="لینک و کد دسترسی هنگام ارسال با مقدار واقعی هر مخاطب جایگزین می‌شوند.">
+              <Field
+                label="متن"
+                required
+                hint={
+                  smsText.includes("{{لینک}}")
+                    ? "لینک و کد دسترسی هنگام ارسال با مقدار واقعی هر مخاطب جایگزین می‌شوند."
+                    : "متن شما لینک نامه ندارد؛ هنگام ارسال خودکار ته پیامک اضافه می‌شود. برای جای دلخواه، {{لینک}} را خودتان بگذارید."
+                }
+              >
                 <textarea ref={smsRef} className="textarea h-28" value={smsText} onChange={(e) => setSmsText(e.target.value)} disabled={locked} />
               </Field>
 
