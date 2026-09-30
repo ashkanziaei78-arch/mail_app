@@ -312,3 +312,41 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='white' stroke-width='2.5'%3E%3Cpath d='M3 8.5l3.5 3.5L13 5'/%3E%3C/svg%3E");
   background-size: 14px; background-position: center; background-repeat: no-repeat;
 }
+
+/* ---------------------------------------------------------------------------
+   نوار پیمایش
+   نوار پیش‌فرض ویندوز پهن و خاکستری است و کنار منوی سرمه‌ای زشت می‌افتد.
+   اینجا باریک، گرد و هم‌رنگ پوسته می‌شود؛ روی فایرفاکس با scrollbar-width و
+   روی مرورگرهای وبکیت با ::-webkit-scrollbar. روی موبایل و مک نوار شناور است
+   و این قاعده‌ها بی‌اثرند، که اشکالی ندارد.
+--------------------------------------------------------------------------- */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--muted) 45%, transparent) transparent;
+}
+
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--muted) 40%, transparent);
+  border-radius: 999px;
+  /* حاشیه هم‌رنگ پس‌زمینه، دسته را باریک‌تر نشان می‌دهد بدون کوچک‌کردن ناحیه گرفتن با ماوس */
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--muted) 70%, transparent);
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-corner { background: transparent; }
+
+/* منوی کنار، سرمه‌ای تیره است: دسته روشن لازم دارد تا دیده شود */
+.scroll-on-dark { scrollbar-color: rgba(255, 255, 255, .28) transparent; }
+.scroll-on-dark::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, .28);
+  background-clip: content-box;
+}
+.scroll-on-dark::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, .5);
+  background-clip: content-box;
+}

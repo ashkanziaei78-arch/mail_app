@@ -137,7 +137,7 @@ export default function AppShell({
         </span>
       </div>
 
-      <nav className="flex-1 space-y-5 overflow-y-auto" aria-label="ناوبری اصلی">
+      <nav className="scroll-on-dark flex-1 space-y-5 overflow-y-auto pl-1" aria-label="ناوبری اصلی">
         {visibleSections.map((section) => (
           <div key={section.group}>
             <p className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-wide text-brand-200/80">{section.group}</p>
