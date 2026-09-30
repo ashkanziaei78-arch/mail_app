@@ -245,22 +245,29 @@ function contrastRatio(a: string, b: string): number {
 }
 
 function checkThemes() {
-  const LIGHT_SURFACE = "#ffffff";
-  const LIGHT_SURFACE_2 = "#eff3f8";
-  const DARK_SURFACE = "#101a29";
-  const DARK_SURFACE_2 = "#16223a";
+  // متن و متن کم‌رنگ ثابت‌اند؛ سطح‌ها با رنگ هر تم مایل می‌شوند، پس کنتراست را
+  // روی سطح‌های خودِ همان تم می‌سنجیم نه سطح پیش‌فرض.
+  const LIGHT_TEXT = "#111c2e";
+  const LIGHT_MUTED = "#4e5d74";
+  const DARK_TEXT = "#e7eef8";
+  const DARK_MUTED = "#a3b4cc";
 
   for (const theme of THEMES) {
     const checks: Array<[string, number]> = [
       ["متن روی دکمه (روشن)", contrastRatio(theme.light.primaryText, theme.light.primary)],
-      ["لینک روی سطح", contrastRatio(theme.light.link, LIGHT_SURFACE)],
-      ["لینک روی سطح دوم", contrastRatio(theme.light.link, LIGHT_SURFACE_2)],
+      ["لینک روی سطح", contrastRatio(theme.light.link, theme.light.surface)],
+      ["لینک روی سطح دوم", contrastRatio(theme.light.link, theme.light.surface2)],
+      ["متن روی پس‌زمینه", contrastRatio(LIGHT_TEXT, theme.light.bg)],
+      ["متن کم‌رنگ روی سطح دوم", contrastRatio(LIGHT_MUTED, theme.light.surface2)],
       ["لهجه روی پس‌زمینه‌اش", contrastRatio(theme.light.accent, theme.light.accentBg)],
       ["متن سفید روی منو", contrastRatio("#ffffff", theme.light.sidebar)],
       ["متن روی دکمه (تیره)", contrastRatio(theme.dark.primaryText, theme.dark.primary)],
-      ["رنگ اصلی تیره روی سطح", contrastRatio(theme.dark.primary, DARK_SURFACE)],
-      ["لینک تیره روی سطح دوم", contrastRatio(theme.dark.link, DARK_SURFACE_2)],
+      ["رنگ اصلی تیره روی سطح", contrastRatio(theme.dark.primary, theme.dark.surface)],
+      ["لینک تیره روی سطح دوم", contrastRatio(theme.dark.link, theme.dark.surface2)],
+      ["متن تیره روی پس‌زمینه", contrastRatio(DARK_TEXT, theme.dark.bg)],
+      ["متن کم‌رنگ تیره روی سطح دوم", contrastRatio(DARK_MUTED, theme.dark.surface2)],
       ["لهجه تیره روی پس‌زمینه‌اش", contrastRatio(theme.dark.accent, theme.dark.accentBg)],
+      ["متن سفید روی منوی تیره", contrastRatio("#ffffff", theme.dark.sidebar)],
     ];
     for (const [label, ratio] of checks) {
       assert.ok(ratio >= 4.5, `تم «${theme.label}» — ${label}: ${ratio.toFixed(2)}:1 (کمینه ۴٫۵)`);
