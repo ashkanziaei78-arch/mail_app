@@ -8,6 +8,7 @@ import {
   MessageSquare, BarChart3, Users, ShieldCheck, Moon, Sun, LogOut, Menu, X, KeyRound, ChevronLeft, GitBranch,
 } from "lucide-react";
 import type { PermissionCode } from "@/lib/rbac";
+import InboxWatcher from "./inbox-watcher";
 
 export type NavItem = {
   href: string;
@@ -45,7 +46,9 @@ export const NAV: Array<{ group: string; items: NavItem[] }> = [
   {
     group: "ابزارها",
     items: [
-      { href: "/tools/short-links", label: "کوتاه‌کننده لینک", icon: "Link2", permission: "campaigns.read" },
+      // کوتاه‌کننده لینک از منو برداشته شد: کوتاه‌سازی هنگام ارسال پیامک خودکار
+      // انجام می‌شود و کسی لازم نیست دستی این کار را بکند. صفحه‌اش سر جایش
+      // مانده (/tools/short-links) برای دیدن آمار کلیک لینک‌های ساخته‌شده.
       { href: "/reports", label: "گزارش‌ها", icon: "BarChart3", permission: "reports.read" },
     ],
   },
@@ -208,6 +211,7 @@ export default function AppShell({
             ))}
           </nav>
           <div className="ms-auto flex items-center gap-2">
+            {allowed.includes("campaigns.approve") && <InboxWatcher />}
             <ThemeToggle />
           </div>
         </header>

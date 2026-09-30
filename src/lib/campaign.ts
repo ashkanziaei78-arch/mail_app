@@ -7,6 +7,7 @@ import { resolveProvider } from "./sms-server";
 import type { CurrentUser } from "./auth";
 import { contactScope } from "./scope";
 import { shortenLongUrls } from "./shorten";
+import { appBaseUrl } from "./base-url";
 import { audit } from "./audit";
 
 export type RecipientSelection = {
@@ -211,7 +212,7 @@ export async function sendCampaign(campaignId: string, user: CurrentUser) {
   });
   const provider = resolveProvider(config);
   const sender = config?.senderNumber ?? "10008663";
-  const baseUrl = (process.env.APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
+  const baseUrl = appBaseUrl();
   let smsBody =
     campaign.smsBodyText ??
     "{{عنوان}} {{نام_کامل}} گرامی، نامه‌ای از {{سازمان_فرستنده}} برای شما صادر شد: {{لینک}}\nلغو: {{لغو_اشتراک}}";

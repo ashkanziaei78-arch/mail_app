@@ -7,6 +7,7 @@ import { Badge, EmptyState, Field, PageHeader } from "@/components/ui/primitives
 import Modal from "@/components/ui/modal";
 import { useConfirm, useToast } from "@/components/ui/toast";
 import { VISIBILITY } from "@/lib/labels";
+import { FORMAL_TITLES } from "@/lib/titles";
 import { faDate } from "@/lib/jalali";
 
 export type ContactRow = {
@@ -253,7 +254,10 @@ function ContactDialog({ contact, tags, onClose, onSaved, canManagePublic }: {
     <Modal title={isNew ? "مخاطب جدید" : "ویرایش مخاطب"} onClose={onClose}>
       <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2">
         <Field label="عنوان خطاب"><select className="select" value={form.formalTitle ?? ""} onChange={(e) => set("formalTitle", e.target.value)}>
-          <option value="">—</option><option>جناب آقای</option><option>سرکار خانم</option><option>جناب آقای دکتر</option><option>سرکار خانم دکتر</option><option>جناب آقای مهندس</option><option>سرکار خانم مهندس</option>
+          <option value="">—</option>
+          {FORMAL_TITLES.map((title) => <option key={title}>{title}</option>)}
+          {/* عنوانی که قبلاً از اکسل آمده و در فهرست نیست، نباید هنگام ویرایش پاک شود */}
+          {form.formalTitle && !FORMAL_TITLES.includes(form.formalTitle) && <option>{form.formalTitle}</option>}
         </select></Field>
         <Field
           label="دفترچه"

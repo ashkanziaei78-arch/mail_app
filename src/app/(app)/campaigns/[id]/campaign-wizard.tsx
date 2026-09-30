@@ -542,7 +542,7 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
               {!locked && (
                 <div className="flex flex-wrap justify-end gap-2">
                   <button className="btn" disabled={busy} onClick={saveLetter}>ذخیره پیش‌نویس</button>
-                  {permissions.write && campaign.status === "DRAFT" && permissions.approve && (
+                  {permissions.write && campaign.status === "DRAFT" && permissions.isOrgAdmin && (
                     <button className="btn" disabled={busy || recipients.length === 0}
                             onClick={async () => {
                               const ok = await confirm({

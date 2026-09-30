@@ -104,7 +104,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         // میان‌بر مدیر سازمان: نامه آزمایشی بدون عبور از گردش تأیید آماده ارسال
         // می‌شود. برای بقیه نقش‌ها باز است تا کسی تأیید سازمان را دور نزند.
         if (body.skipApproval) {
-          if (!can(user.role, "campaigns.approve")) throw new ApiError(403, "رد کردن گردش تأیید فقط با اجازه تأیید نامه ممکن است.");
+          // فقط مدیر کل سازمان؛ تأییدکننده‌ها هم باید از گردش رد شوند تا مسیر
+          // رسمی نامه دور زده نشود.
+          if (user.role !== "ORG_ADMIN" && user.role !== "SUPER_ADMIN") {
+            throw new ApiError(403, "رد کردن گردش تأیید فقط با مدیر کل سازمان است.");
+          }
           await prisma.campaignApproval.deleteMany({ where: { campaignId: id } });
           await prisma.campaign.update({
             where: { id },

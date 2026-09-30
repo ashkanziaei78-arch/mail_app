@@ -121,6 +121,8 @@ model Organization {
   slug        String       @unique
   description String?
   status      EntityStatus @default(ACTIVE)
+  /** توکن ربات بله (رمزنگاری‌شده) برای خبر دادن نامه تازه به تأییدکننده‌ها */
+  baleBotTokenEncrypted String?
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   deletedAt   DateTime?
@@ -244,6 +246,8 @@ model User {
   signatureImagePath  String?
   /** عکس پروفایل: یا آپلود خودش، یا یکی از طرح‌های آماده گالری (avatar:<id>) */
   avatarPath          String?
+  /** شناسه گفت‌وگوی کاربر با ربات بله؛ برای خبر دادن نامه تازه در کارتابل */
+  baleChatId          String?
   createdAt           DateTime     @default(now())
   updatedAt           DateTime     @updatedAt
   deletedAt           DateTime?

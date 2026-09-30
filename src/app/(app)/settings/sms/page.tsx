@@ -8,13 +8,15 @@ export const dynamic = "force-dynamic";
 
 export default async function SmsSettingsPage() {
   const user = await requirePage("sms.settings");
-  const config = await prisma.smsProviderConfig.findFirst({
-    where: { organizationId: user.organizationId, isDefault: true },
-  });
+  const [config, organization] = await Promise.all([
+    prisma.smsProviderConfig.findFirst({ where: { organizationId: user.organizationId, isDefault: true } }),
+    prisma.organization.findUniqueOrThrow({ where: { id: user.organizationId }, select: { baleBotTokenEncrypted: true } }),
+  ]);
   // کلید API هرگز به کلاینت فرستاده نمی‌شود؛ فقط «تنظیم‌شده / نشده» را می‌فرستیم.
   return (
     <SmsSettingsClient
       current={config ? { providerName: config.providerName, senderNumber: config.senderNumber, hasKey: config.apiKeyEncrypted.length > 40 } : null}
+      baleConnected={Boolean(organization.baleBotTokenEncrypted)}
     />
   );
 }

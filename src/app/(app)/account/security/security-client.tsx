@@ -11,13 +11,14 @@ import { useToast } from "@/components/ui/toast";
 import { faDateTime, faNumber } from "@/lib/jalali";
 import { AVATAR_STYLES, avatarDataUrl, avatarSrc } from "@/lib/avatars";
 
-export default function SecurityClient({ email, totpEnabled, backupCodesLeft, mobilePhone, passwordChangedAt, signatureImagePath, avatarPath }: {
+export default function SecurityClient({ email, totpEnabled, backupCodesLeft, mobilePhone, passwordChangedAt, signatureImagePath, avatarPath, baleChatId }: {
   email: string;
   totpEnabled: boolean;
   backupCodesLeft: number;
   mobilePhone: string | null;
   passwordChangedAt: string;
   signatureImagePath: string | null;
+  baleChatId: string | null;
   avatarPath: string | null;
 }) {
   const router = useRouter();
@@ -71,6 +72,8 @@ export default function SecurityClient({ email, totpEnabled, backupCodesLeft, mo
         <AvatarCard current={avatarPath} />
 
         <SignatureCard current={signatureImagePath} />
+
+        <BaleCard current={baleChatId} />
 
         <section className="card p-5">
           <h2 className="mb-1 flex items-center gap-2 font-bold"><KeyRound className="h-5 w-5" />گذرواژه</h2>
@@ -387,6 +390,46 @@ function AvatarCard({ current }: { current: string | null }) {
           })}
         </ul>
       </fieldset>
+    </section>
+  );
+}
+
+/**
+ * شناسه گفت‌وگوی بله.
+ *
+ * ربات بله فقط به کسی می‌تواند پیام بدهد که خودش اول به ربات پیام داده باشد؛
+ * برای همین این عدد را کاربر از ربات می‌گیرد و اینجا ثبت می‌کند.
+ */
+function BaleCard({ current }: { current: string | null }) {
+  const router = useRouter();
+  const toast = useToast();
+  const [value, setValue] = useState(current ?? "");
+  const [busy, setBusy] = useState(false);
+
+  async function save() {
+    setBusy(true);
+    const res = await fetch("/api/account/bale", {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ baleChatId: value.trim() }),
+    });
+    const json = await res.json();
+    setBusy(false);
+    if (!json.ok) { toast("error", json.error); return; }
+    toast("success", value.trim() ? "شناسه بله ذخیره شد." : "شناسه بله حذف شد.");
+    router.refresh();
+  }
+
+  return (
+    <section className="card p-5">
+      <h2 className="mb-1 font-bold">اعلان در بله</h2>
+      <p className="mb-4 text-sm leading-7" style={{ color: "var(--muted)" }}>
+        اگر می‌خواهید نامه‌های کارتابل را در بله هم خبردار شوید: در بله به ربات سازمان پیام بدهید،
+        شناسه گفت‌وگویی که به شما می‌دهد را اینجا بگذارید. خالی گذاشتن یعنی اعلان بله نمی‌خواهید.
+      </p>
+      <Field label="شناسه گفت‌وگوی بله" hint="یک عدد است، مثل ۱۲۳۴۵۶۷۸۹">
+        <input className="input tnum" dir="ltr" inputMode="numeric" value={value} onChange={(e) => setValue(e.target.value)} />
+      </Field>
+      <button className="btn mt-3" onClick={save} disabled={busy}>ذخیره</button>
     </section>
   );
 }

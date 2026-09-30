@@ -4,6 +4,9 @@ import type { CurrentUser } from "./auth";
 import { audit } from "./audit";
 import { normalizeMobile } from "./sms";
 import { resolveProvider } from "./sms-server";
+import { appBaseUrl } from "./base-url";
+import { sendBale } from "./bale";
+import { decrypt } from "./crypto";
 
 /**
  * گردش تأیید نامه بر اساس سمت سازمانی.
@@ -150,25 +153,38 @@ export async function notifyPendingApprover(campaignId: string, organizationId: 
 
     const approvers = await prisma.user.findMany({
       where: { organizationId, positionId: step.positionId, status: "ACTIVE", deletedAt: null },
-      select: { mobilePhone: true },
+      select: { mobilePhone: true, baleChatId: true },
     });
-    const numbers = approvers
-      .map((u) => normalizeMobile(u.mobilePhone))
-      .filter((n): n is string => Boolean(n));
-    if (numbers.length === 0) return;
+    if (approvers.length === 0) return;
 
     const campaign = await prisma.campaign.findUniqueOrThrow({
       where: { id: campaignId },
       select: { name: true },
     });
-    const baseUrl = (process.env.APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
-    const config = await prisma.smsProviderConfig.findFirst({ where: { organizationId, isDefault: true } });
-    const provider = resolveProvider(config);
-    const sender = config?.senderNumber ?? "10008663";
+    const baseUrl = appBaseUrl();
     const text = `نامه «${campaign.name}» منتظر تأیید شماست: ${baseUrl}/approvals`;
 
-    for (const to of numbers) {
-      await provider.send(to, text, sender);
+    const numbers = approvers
+      .map((u) => normalizeMobile(u.mobilePhone))
+      .filter((n): n is string => Boolean(n));
+    if (numbers.length > 0) {
+      const config = await prisma.smsProviderConfig.findFirst({ where: { organizationId, isDefault: true } });
+      const provider = resolveProvider(config);
+      const sender = config?.senderNumber ?? "10008663";
+      for (const to of numbers) await provider.send(to, text, sender);
+    }
+
+    // بله: فقط برای کسانی که شناسه گفت‌وگویشان ثبت شده و سازمان ربات دارد
+    const chatIds = approvers.map((u) => u.baleChatId).filter((c): c is string => Boolean(c));
+    if (chatIds.length > 0) {
+      const org = await prisma.organization.findUniqueOrThrow({
+        where: { id: organizationId },
+        select: { baleBotTokenEncrypted: true },
+      });
+      if (org.baleBotTokenEncrypted) {
+        const token = decrypt(org.baleBotTokenEncrypted);
+        for (const chatId of chatIds) await sendBale(token, chatId, text);
+      }
     }
   } catch {
     // خطای اطلاع‌رسانی نباید جلوی گردش تأیید را بگیرد
