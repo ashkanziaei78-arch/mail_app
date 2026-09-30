@@ -11,6 +11,7 @@ export function toCsv(rows: Array<Record<string, unknown>>, columns: string[]): 
 
 /** پارسر CSV با پشتیبانی از فیلد نقل‌قولی چندخطی. */
 export function parseCsv(input: string): string[][] {
+  // eslint-disable-next-line no-irregular-whitespace -- BOM واقعی اکسل همین‌جاست و باید حذف شود
   const text = input.replace(/^﻿/, "");
   const rows: string[][] = [];
   let row: string[] = [];

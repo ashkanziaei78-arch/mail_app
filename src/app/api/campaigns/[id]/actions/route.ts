@@ -2,7 +2,6 @@ import { allows } from "@/lib/auth";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { handle, readBody, requireApi, ApiError } from "@/lib/api";
-import { can } from "@/lib/rbac";
 import { generateDocuments, resolveRecipients, sendCampaign } from "@/lib/campaign";
 import { decide, hasApprovalDuty, initApprovals, notifyPendingApprover } from "@/lib/workflow";
 import { sanitizeHtml } from "@/lib/render";

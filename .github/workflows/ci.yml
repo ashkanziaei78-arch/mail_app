@@ -41,6 +41,7 @@ jobs:
       - run: npx prisma generate
       - run: npx prisma migrate deploy
       - run: npx tsc --noEmit
+      - run: npx eslint src   # خطاها CI را قرمز می‌کنند؛ هشدارها فقط گزارش می‌شوند
       - run: npm test           # بررسی‌های واحد (تقویم، رمزنگاری، قرارداد sms.ir)
       - run: npx tsx prisma/seed.ts
       - run: npx next build

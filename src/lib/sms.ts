@@ -171,6 +171,7 @@ export const PROVIDER_HELP: Record<string, { apiKey: string; sender: string; doc
 
 /** شمارش بخش‌های پیامک؛ متن فارسی یونیکد است: ۷۰ کاراکتر تک‌بخشی، ۶۷ در چندبخشی. */
 export function countSegments(text: string): { unicode: boolean; length: number; segments: number } {
+  // eslint-disable-next-line no-control-regex -- محدوده ASCII عمداً از صفر شروع می‌شود
   const unicode = /[^\u0000-\u007F]/.test(text);
   const length = [...text].length;
   const single = unicode ? 70 : 160;

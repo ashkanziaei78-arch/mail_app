@@ -190,6 +190,12 @@ function GroupDialog({ tags, contacts, onClose, onSaved }: {
   return (
     <Modal title="گروه جدید" description="گروه دستی فهرست ثابتی است؛ گروه هوشمند هر بار از روی برچسب‌ها تازه می‌شود." onClose={onClose}>
       <form onSubmit={submit} className="space-y-4">
+        {error && (
+          <p role="alert" className="rounded-xl px-3 py-2 text-sm font-semibold"
+             style={{ background: "var(--danger-bg)", color: "var(--danger)" }}>
+            {error}
+          </p>
+        )}
 
         <Field label="نام گروه" required><input className="input" required value={name} onChange={(e) => setName(e.target.value)} /></Field>
 

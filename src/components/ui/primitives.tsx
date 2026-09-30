@@ -43,6 +43,13 @@ export function StatCard({ label, value, hint, href }: { label: string; value: s
 export function EmptyState({ title, description, action }: { title: string; description: string; action?: ReactNode }) {
   return (
     <div className="card flex flex-col items-center gap-2 p-10 text-center">
+      {/* تصویر کوچک به‌جای کادر خالیِ خشک؛ درون‌خطی است تا درخواست شبکه اضافه نکند */}
+      <svg viewBox="0 0 96 64" className="mb-1 h-14 w-auto" aria-hidden="true">
+        <rect x="8" y="14" width="80" height="44" rx="6" fill="var(--surface-2)" stroke="var(--border)" strokeWidth="2" />
+        <path d="M10 18 48 42 86 18" fill="none" stroke="var(--primary)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity=".7" />
+        <circle cx="78" cy="16" r="9" fill="var(--surface)" stroke="var(--primary)" strokeWidth="2" />
+        <path d="M74.5 16h7M78 12.5v7" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round" />
+      </svg>
       <p className="font-bold">{title}</p>
       <p className="max-w-md text-sm" style={{ color: "var(--muted)" }}>{description}</p>
       {action && <div className="mt-3">{action}</div>}

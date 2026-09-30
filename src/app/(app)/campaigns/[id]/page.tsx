@@ -4,7 +4,6 @@ import { toFieldDefinition } from "@/lib/letterhead";
 import { prisma } from "@/lib/db";
 import { allows, requirePage } from "@/lib/auth";
 import { hasApprovalDuty } from "@/lib/workflow";
-import { can } from "@/lib/rbac";
 import { contactScope } from "@/lib/scope";
 import CampaignWizard from "./campaign-wizard";
 
@@ -151,6 +150,9 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
           id: l.id,
           name: l.name,
           fileUrl: l.fileUrl,
+          marginTopMm: l.marginTopMm,
+          marginBottomMm: l.marginBottomMm,
+          marginSideMm: l.marginSideMm,
           fields: l.fields.map(toFieldDefinition),
         })),
       }}

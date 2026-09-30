@@ -3,7 +3,6 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { allows, requirePage } from "@/lib/auth";
 import { contactScope } from "@/lib/scope";
-import { can } from "@/lib/rbac";
 import ContactsClient from "./contacts-client";
 
 export const metadata: Metadata = { title: "دفترچه مخاطبین" };

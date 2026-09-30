@@ -5,6 +5,9 @@ import { handle, readBody, requireApi, ApiError } from "@/lib/api";
 const schema = z.object({
   status: z.enum(["ACTIVE", "INACTIVE"]).optional(),
   isDefault: z.boolean().optional(),
+  marginTopMm: z.number().int().min(0).max(120).optional(),
+  marginBottomMm: z.number().int().min(0).max(120).optional(),
+  marginSideMm: z.number().int().min(0).max(60).optional(),
 });
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -18,6 +21,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (input.isDefault) {
       await prisma.letterhead.updateMany({ where: { organizationId: user.organizationId }, data: { isDefault: false } });
     }
-    return prisma.letterhead.update({ where: { id }, data: { status: input.status, isDefault: input.isDefault } });
+    return prisma.letterhead.update({
+      where: { id },
+      data: {
+        status: input.status,
+        isDefault: input.isDefault,
+        marginTopMm: input.marginTopMm,
+        marginBottomMm: input.marginBottomMm,
+        marginSideMm: input.marginSideMm,
+      },
+    });
   });
 }

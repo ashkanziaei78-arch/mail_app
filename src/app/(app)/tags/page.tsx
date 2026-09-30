@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
 import { allows, requirePage } from "@/lib/auth";
-import { can } from "@/lib/rbac";
 import { contactScope } from "@/lib/scope";
 import TagsClient from "./tags-client";
 

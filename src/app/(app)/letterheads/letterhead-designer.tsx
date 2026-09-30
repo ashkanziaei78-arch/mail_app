@@ -8,7 +8,10 @@ import LetterheadCanvas, { type BoxGeometry } from "@/components/ui/letterhead-c
 import type { FieldDefinition } from "@/components/ui/dynamic-field";
 import { ALIGN_LABELS, FIELD_AREAS, FIELD_TYPES, LETTERHEAD_FONTS } from "@/lib/validators";
 
-type Letterhead = { id: string; name: string; fileUrl: string; fields: FieldDefinition[] };
+type Letterhead = {
+  id: string; name: string; fileUrl: string; fields: FieldDefinition[];
+  marginTopMm: number; marginBottomMm: number; marginSideMm: number;
+};
 
 const WEIGHTS = [
   { value: "300", label: "نازک" },
@@ -38,6 +41,24 @@ export default function LetterheadDesigner({
   const [selectedId, setSelectedId] = useState<string | null>(letterhead.fields[0]?.id ?? null);
   /** حالت آزمایش: کادرها با داده نمونه پر می‌شوند تا نتیجه واقعی دیده شود. */
   const [testing, setTesting] = useState(false);
+  /** حاشیه متن روی برگه — تعیین می‌کند متن از کجای سربرگ شروع شود */
+  const [margins, setMargins] = useState({
+    top: letterhead.marginTopMm,
+    bottom: letterhead.marginBottomMm,
+    side: letterhead.marginSideMm,
+  });
+
+  async function saveMargins(next: typeof margins) {
+    setMargins(next);
+    const res = await fetch(`/api/letterheads/${letterhead.id}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ marginTopMm: next.top, marginBottomMm: next.bottom, marginSideMm: next.side }),
+    });
+    const json = await res.json();
+    if (!json.ok) notify("error", json.error);
+    else onChanged();
+  }
   const [adding, setAdding] = useState(false);
   const [busy, setBusy] = useState(false);
   const [dirty, setDirty] = useState<Set<string>>(new Set());
@@ -164,6 +185,32 @@ export default function LetterheadDesigner({
           <p className="hint">
             کشیدن با ماوس یا انگشت؛ با صفحه‌کلید: کلیدهای جهت برای جابه‌جایی، Alt + جهت برای تغییر اندازه، Shift برای گام بزرگ‌تر.
           </p>
+
+          <div className="mt-3 rounded-xl border p-3">
+            <p className="mb-1 text-sm font-bold">حاشیه متن نامه روی این سربرگ</p>
+            <p className="mb-3 text-xs" style={{ color: "var(--muted)" }}>
+              متن نامه روی همین تصویر چاپ می‌شود. اگر طرح سربرگ بالای برگه جا می‌گیرد، حاشیه بالا را زیاد کنید تا متن روی طرح نیفتد.
+            </p>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {([
+                ["top", "حاشیه بالا"],
+                ["bottom", "حاشیه پایین"],
+                ["side", "حاشیه چپ و راست"],
+              ] as const).map(([key, label]) => (
+                <label key={key} className="block text-xs">
+                  <span className="mb-1 block font-semibold">{label}: {margins[key]} میلی‌متر</span>
+                  <input
+                    type="range" min={0} max={key === "side" ? 60 : 120} step={1}
+                    value={margins[key]} className="w-full"
+                    onChange={(e) => setMargins((m) => ({ ...m, [key]: Number(e.target.value) }))}
+                    onMouseUp={() => saveMargins(margins)}
+                    onTouchEnd={() => saveMargins(margins)}
+                    onKeyUp={() => saveMargins(margins)}
+                  />
+                </label>
+              ))}
+            </div>
+          </div>
         </div>
 
         <aside className="space-y-3">

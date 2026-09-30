@@ -13,6 +13,7 @@ import LetterheadDesigner from "./letterhead-designer";
 
 type Letterhead = {
   id: string; name: string; fileUrl: string; isDefault: boolean; status: string; version: number;
+  marginTopMm: number; marginBottomMm: number; marginSideMm: number;
   fields: FieldDefinition[];
 };
 type Template = { id: string; name: string; bodyHtml: string };
@@ -161,6 +162,12 @@ function LetterheadDialog({ onClose, onSaved }: { onClose: () => void; onSaved: 
   return (
     <Modal title="افزودن سربرگ جدید" description="تصویر سربرگ بالای همه نامه‌های این سازمان چاپ می‌شود." size="sm" onClose={onClose}>
       <form onSubmit={submit} className="space-y-4">
+        {error && (
+          <p role="alert" className="rounded-xl px-3 py-2 text-sm font-semibold"
+             style={{ background: "var(--danger-bg)", color: "var(--danger)" }}>
+            {error}
+          </p>
+        )}
         <Field label="نام سربرگ" required><input className="input" name="name" required placeholder="سربرگ رسمی — دفتر مرکزی" /></Field>
         <Field label="تصویر سربرگ (بالای نامه)" required hint="PNG، JPG یا WEBP — حداکثر ۴ مگابایت. عرض پیشنهادی ۱۶۰۰ پیکسل.">
           <input className="input" type="file" name="file" accept="image/png,image/jpeg,image/webp" required />
@@ -203,6 +210,12 @@ function TemplateDialog({ onClose, onSaved }: { onClose: () => void; onSaved: ()
   return (
     <Modal title="قالب نامه جدید" description="متغیرها هنگام ساخت نامه با اطلاعات هر مخاطب جایگزین می‌شوند." size="lg" onClose={onClose}>
       <form onSubmit={submit} className="space-y-4">
+        {error && (
+          <p role="alert" className="rounded-xl px-3 py-2 text-sm font-semibold"
+             style={{ background: "var(--danger-bg)", color: "var(--danger)" }}>
+            {error}
+          </p>
+        )}
         <Field label="نام قالب" required><input className="input" required value={name} onChange={(e) => setName(e.target.value)} placeholder="قالب دعوت‌نامه رسمی" /></Field>
 
         <Field label="متن قالب" required hint="می‌توانید از تگ‌های ساده HTML مانند <p>، <strong> و <ul> استفاده کنید.">

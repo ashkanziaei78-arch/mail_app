@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/db";
 import { allows, requirePage } from "@/lib/auth";
-import { can } from "@/lib/rbac";
 import ShortLinksClient from "./short-links-client";
 
 export const metadata = { title: "کوتاه‌کننده لینک" };

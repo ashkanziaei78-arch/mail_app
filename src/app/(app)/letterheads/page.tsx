@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { toFieldDefinition } from "@/lib/letterhead";
 import { prisma } from "@/lib/db";
 import { allows, requirePage } from "@/lib/auth";
-import { can } from "@/lib/rbac";
 import LetterheadsClient from "./letterheads-client";
 
 export const metadata: Metadata = { title: "سربرگ و قالب نامه" };
@@ -23,6 +22,7 @@ export default async function LetterheadsPage() {
     <LetterheadsClient
       letterheads={letterheads.map((l) => ({
         id: l.id, name: l.name, fileUrl: l.fileUrl, isDefault: l.isDefault, status: l.status, version: l.version,
+        marginTopMm: l.marginTopMm, marginBottomMm: l.marginBottomMm, marginSideMm: l.marginSideMm,
         fields: l.fields.map(toFieldDefinition),
       }))}
       templates={templates.map((t) => ({ id: t.id, name: t.name, bodyHtml: t.bodyHtml }))}

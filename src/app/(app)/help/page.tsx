@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { allows, requirePage } from "@/lib/auth";
-import { can, type PermissionCode } from "@/lib/rbac";
+import { type PermissionCode } from "@/lib/rbac";
 import { TUTORIALS } from "@/lib/tutorials";
 import HelpClient from "./help-client";
 

@@ -546,6 +546,14 @@ model Letterhead {
   name           String
   fileUrl        String // مسیر تصویر سربرگ
   footerFileUrl  String? // تصویر پاورقی (اختیاری)
+  /**
+   * حاشیه متن روی سربرگ (میلی‌متر). تصویر سربرگ پس‌زمینه برگه است و متن روی آن
+   * می‌نشیند؛ این حاشیه‌ها تعیین می‌کنند متن از کجای برگه شروع و کجا تمام شود تا
+   * روی طرح سربرگ و پاورقی نیفتد.
+   */
+  marginTopMm    Int          @default(45)
+  marginBottomMm Int          @default(30)
+  marginSideMm   Int          @default(20)
   isDefault      Boolean      @default(false)
   status         EntityStatus @default(ACTIVE)
   version        Int          @default(1)

@@ -88,6 +88,13 @@ export default async function LetterPage({ params }: { params: Promise<{ code: s
 
   // QR روی سرور ساخته می‌شود تا صفحه به هیچ اسکریپت یا سرویس بیرونی نیاز نداشته
   // باشد؛ در چاپ هم همان SVG برداری چاپ می‌شود.
+  // حاشیه متن از تنظیمات همان سربرگ می‌آید
+  const letterMargins = {
+    "--letter-margin-top": `${letter?.letterhead?.marginTopMm ?? 18}mm`,
+    "--letter-margin-bottom": `${letter?.letterhead?.marginBottomMm ?? 18}mm`,
+    "--letter-margin-side": `${letter?.letterhead?.marginSideMm ?? 20}mm`,
+  } as React.CSSProperties;
+
   const qrSvg = await QRCode.toString(`${appBaseUrl()}/l/${link.code}`, {
     type: "svg",
     margin: 0,
@@ -111,8 +118,14 @@ export default async function LetterPage({ params }: { params: Promise<{ code: s
       {/* نامه بلند چند صفحه می‌شود: هر صفحه سربرگ خودش را دارد و در چاپ از
           همان‌جا می‌شکند. صفحه‌ها را کاربر با «صفحه بعد» تعیین می‌کند. */}
       {splitPages(document.renderedHtml).map((page, index, all) => (
-        <article key={index} className="letter-sheet">
-          {letter?.letterhead?.fileUrl && <img src={letter.letterhead.fileUrl} alt="" className="w-full" />}
+        <article
+          key={index}
+          className={`letter-sheet${letter?.letterhead?.fileUrl ? " letter-sheet--bg" : ""}`}
+          style={{
+            ...(letter?.letterhead?.fileUrl ? { backgroundImage: `url(${letter.letterhead.fileUrl})` } : {}),
+            ...letterMargins,
+          }}
+        >
           <div className="letter-body">
             {index === 0 && (letter?.letterNumber || letter?.letterDate) && (
               <p className="tnum mb-6 flex justify-between text-sm">

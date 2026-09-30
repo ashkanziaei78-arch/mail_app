@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Clock, Copy, ExternalLink, Eye, MessageSquare, Paperclip, Send, Trash2 } from "lucide-react";
+import { Copy, ExternalLink, Eye, Paperclip, Send, Trash2 } from "lucide-react";
 import Stepper from "@/components/ui/stepper";
 import FlowGraph from "@/components/ui/flow-graph";
 import LetterToolbar from "@/components/ui/letter-toolbar";
@@ -65,7 +65,7 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
     contacts: Array<{ id: string; name: string; organizationName: string; mobilePhone: string }>;
     groups: Array<{ id: string; name: string; count: number }>;
     tags: Array<{ id: string; name: string; count: number }>;
-    letterheads: Array<{ id: string; name: string; fileUrl: string; fields: FieldDefinition[] }>;
+    letterheads: Array<{ id: string; name: string; fileUrl: string; marginTopMm: number; marginBottomMm: number; marginSideMm: number; fields: FieldDefinition[] }>;
   };
   permissions: { write: boolean; approve: boolean; send: boolean; positionId: string | null; isOrgAdmin: boolean };
   /** امضای کاربر جاری — در کادر امضای سربرگ نشان داده می‌شود. */
@@ -134,7 +134,14 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
     return json.data;
   }
 
-  const activeFields = options.letterheads.find((l) => l.id === letterheadId)?.fields ?? [];
+  const activeLetterheadRow = options.letterheads.find((l) => l.id === letterheadId);
+  const activeFields = activeLetterheadRow?.fields ?? [];
+  /** حاشیه متن روی برگه، از تنظیمات همان سربرگ */
+  const letterMargins = {
+    "--letter-margin-top": `${activeLetterheadRow?.marginTopMm ?? 18}mm`,
+    "--letter-margin-bottom": `${activeLetterheadRow?.marginBottomMm ?? 18}mm`,
+    "--letter-margin-side": `${activeLetterheadRow?.marginSideMm ?? 20}mm`,
+  } as React.CSSProperties;
   /** کادر متن اصلی: اولین کادرِ چندخطی. اگر سربرگ چنین کادری داشته باشد، همان بدنهٔ نامه است. */
   const bodyField = activeFields.find((f) => f.type === "RICH_TEXT" || f.type === "TEXTAREA") ?? null;
   const signatureFields = activeFields.filter((f) => f.type === "SIGNATURE");
@@ -547,8 +554,13 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
             </div>
 
             <div className="overflow-x-auto pb-4">
-              <div className="letter-sheet">
-                {activeLetterhead && <img src={activeLetterhead} alt="" className="w-full" />}
+              <div
+                className={`letter-sheet${activeLetterhead ? " letter-sheet--bg" : ""}`}
+                style={{
+                  ...(activeLetterhead ? { backgroundImage: `url(${activeLetterhead})` } : {}),
+                  ...letterMargins,
+                }}
+              >
                 <div className="letter-body" dangerouslySetInnerHTML={{
                   __html: applyVariables(previewRecipient?.overrideHtml ?? body, previewContextWithFields),
                 }} />

@@ -230,6 +230,12 @@
   .nav-item svg { opacity: .85; }
   .nav-item[aria-current="page"] svg { opacity: 1; }
 
+  /* تیترها: وزن بیشتر و فاصله حروف جمع‌تر؛ متن فارسی در وزن‌های بالا کشیده
+     به نظر می‌رسد و این فاصله منفی کوچک آن را جمع می‌کند. */
+  h1, h2 { letter-spacing: -0.01em; }
+  h1 { font-weight: 800; line-height: 1.5; }
+  h2 { font-weight: 700; }
+
   /* برگه نامه — همین استایل هم روی صفحه و هم در چاپ/PDF استفاده می‌شود */
   .letter-sheet {
     background: #fff; color: #111827;
@@ -237,7 +243,16 @@
     padding: 0; position: relative;
     box-shadow: 0 10px 40px rgb(15 23 42 / .15);
   }
-  .letter-body { padding: 18mm 20mm; font-size: 12pt; line-height: 2.1; text-align: justify; }
+  /*
+   * تصویر سربرگ پس‌زمینه برگه است، نه یک تصویر بالای متن. قبلاً <img> بالای
+   * متن می‌نشست و اگر طرح سربرگ تمام‌صفحه بود، متن می‌افتاد پایین صفحه.
+   * حاشیه‌ها از خود سربرگ می‌آیند تا متن روی طرح ننشیند.
+   */
+  .letter-sheet--bg { background-size: 100% 100%; background-repeat: no-repeat; background-position: center; }
+  .letter-body {
+    padding: var(--letter-margin-top, 18mm) var(--letter-margin-side, 20mm) var(--letter-margin-bottom, 18mm);
+    font-size: 12pt; line-height: 2.1; text-align: justify;
+  }
   .letter-body p { margin-bottom: 1em; }
   .letter-body table { width: 100%; border-collapse: collapse; margin: 1em 0; }
   .letter-body td, .letter-body th { border: 1px solid #cbd5e1; padding: .4em .6em; }
