@@ -662,7 +662,8 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
                   <p className="mb-2 text-sm font-bold">ارسال زمان‌بندی‌شده (اختیاری)</p>
                   <p className="mb-3 text-xs" style={{ color: "var(--muted)" }}>
                     اگر تاریخ و ساعت بگذارید، سامانه خودش در همان زمان می‌فرستد و لازم نیست پای سیستم باشید.
-                    بررسی هر ربع ساعت انجام می‌شود، پس ارسال تا ۱۵ دقیقه بعد از زمان تعیین‌شده انجام می‌گردد.
+                    روی پلن فعلی ورسل، بررسی خودکار روزی یک بار (۶:۰۷ صبح) انجام می‌شود؛ یعنی نامه‌های سررسیده صبح روز بعد می‌روند.
+                    برای ارسال دقیقاً سر ساعت، یا همین‌جا دستی بفرستید یا پلن ورسل را ارتقا دهید.
                   </p>
                   <div className="flex flex-wrap items-end gap-2">
                     <div className="min-w-48">
