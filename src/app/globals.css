@@ -230,12 +230,18 @@
   .letter-body ul { list-style: disc; }
   .letter-body ol { list-style: decimal; }
   .letter-body h1, .letter-body h2, .letter-body h3 { margin: .8em 0 .4em; }
+  .letter-body img { max-width: 100%; height: auto; }
+  /* چند برگه پشت‌سرهم، با فاصله روی صفحه (در چاپ فاصله حذف می‌شود) */
+  .letter-sheet + .letter-sheet { margin-top: 1.5rem; }
 }
 
 @media print {
   .no-print { display: none !important; }
   body { background: #fff; }
   .letter-sheet { box-shadow: none; width: auto; min-height: auto; margin: 0; }
+  /* هر برگه یک صفحه چاپ؛ برگه آخر صفحه خالی اضافه نکند */
+  .letter-sheet { break-after: page; page-break-after: always; }
+  .letter-sheet:last-of-type { break-after: auto; page-break-after: auto; }
   @page { size: A4; margin: 0; }
 }
 

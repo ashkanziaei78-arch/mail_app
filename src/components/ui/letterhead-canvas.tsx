@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { FieldDefinition } from "./dynamic-field";
+import { faDate } from "@/lib/jalali";
 
 export type BoxGeometry = { x: number; y: number; width: number; height: number };
 
@@ -154,7 +155,10 @@ export default function LetterheadCanvas({
       {fields.map((field) => {
         const active = field.id === selectedId;
         const scale = surfaceWidth / 800; // اندازه فونت نسبت به عرض مرجع
-        const content = values?.[field.key] ?? "";
+        const raw = values?.[field.key] ?? "";
+        // تاریخ در داده ISO میلادی است ولی روی سربرگ باید شمسی دیده شود —
+        // همان تبدیلی که هنگام تولید نامه نهایی هم انجام می‌شود.
+        const content = field.type === "DATE" && raw ? faDate(raw) : raw;
         return (
           <div
             key={field.id}

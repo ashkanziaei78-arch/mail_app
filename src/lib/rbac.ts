@@ -21,9 +21,10 @@ const MATRIX: Record<UserRole, PermissionCode[] | "*"> = {
     "campaigns.read", "campaigns.write", "campaigns.approve", "campaigns.send",
     "sms.settings", "reports.read", "users.manage",
   ],
-  // مدیر واحد نامه می‌سازد و می‌فرستد، ولی برچسب و دفترچه عمومی سازمان را تغییر نمی‌دهد.
+  // مدیر واحد نامه می‌سازد و می‌فرستد، ولی برچسب و دفترچه عمومی سازمان را تغییر
+  // نمی‌دهد و حق حذف مخاطب هم ندارد — حذف فقط با مدیر سازمان است.
   DEPT_ADMIN: [
-    "contacts.read", "contacts.write", "contacts.delete",
+    "contacts.read", "contacts.write",
     "campaigns.read", "campaigns.write", "campaigns.send", "reports.read",
   ],
   APPROVER: ["contacts.read", "campaigns.read", "campaigns.approve", "reports.read"],

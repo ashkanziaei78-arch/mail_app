@@ -4,7 +4,8 @@ import { Download, Paperclip } from "lucide-react";
 import { cookies, headers } from "next/headers";
 import { prisma } from "@/lib/db";
 import { verifySigned } from "@/lib/crypto";
-import { faDate, faDateTime } from "@/lib/jalali";
+import { faDate, faDateTime, faNumber } from "@/lib/jalali";
+import { splitPages } from "@/lib/letter-pages";
 import AccessCodeForm from "./access-code-form";
 import { verifyAccessCode } from "./actions";
 import PrintButton from "./print-button";
@@ -96,20 +97,31 @@ export default async function LetterPage({ params }: { params: Promise<{ code: s
         <PrintButton />
       </div>
 
-      <article className="letter-sheet">
-        {letter?.letterhead?.fileUrl && <img src={letter.letterhead.fileUrl} alt="" className="w-full" />}
-        <div className="letter-body">
-          {(letter?.letterNumber || letter?.letterDate) && (
-            <p className="tnum mb-6 flex justify-between text-sm">
-              {letter?.letterNumber && <span>شماره: {letter.letterNumber}</span>}
-              {letter?.letterDate && <span>تاریخ: {faDate(letter.letterDate)}</span>}
-            </p>
-          )}
-          {letter?.subject && <p className="mb-4 font-bold">موضوع: {letter.subject}</p>}
-          <div dangerouslySetInnerHTML={{ __html: document.renderedHtml }} />
-          {letter?.senderName && <p className="mt-10 text-left font-bold">{letter.senderName}</p>}
-        </div>
-      </article>
+      {/* نامه بلند چند صفحه می‌شود: هر صفحه سربرگ خودش را دارد و در چاپ از
+          همان‌جا می‌شکند. صفحه‌ها را کاربر با «صفحه بعد» تعیین می‌کند. */}
+      {splitPages(document.renderedHtml).map((page, index, all) => (
+        <article key={index} className="letter-sheet">
+          {letter?.letterhead?.fileUrl && <img src={letter.letterhead.fileUrl} alt="" className="w-full" />}
+          <div className="letter-body">
+            {index === 0 && (letter?.letterNumber || letter?.letterDate) && (
+              <p className="tnum mb-6 flex justify-between text-sm">
+                {letter?.letterNumber && <span>شماره: {letter.letterNumber}</span>}
+                {letter?.letterDate && <span>تاریخ: {faDate(letter.letterDate)}</span>}
+              </p>
+            )}
+            {index === 0 && letter?.subject && <p className="mb-4 font-bold">موضوع: {letter.subject}</p>}
+            <div dangerouslySetInnerHTML={{ __html: page }} />
+            {index === all.length - 1 && letter?.senderName && (
+              <p className="mt-10 text-left font-bold">{letter.senderName}</p>
+            )}
+            {all.length > 1 && (
+              <p className="tnum mt-6 text-center text-xs" style={{ color: "var(--muted)" }}>
+                صفحه {faNumber(index + 1)} از {faNumber(all.length)}
+              </p>
+            )}
+          </div>
+        </article>
+      ))}
 
       {attachments.length > 0 && (
         <section className="no-print mx-auto mt-4 max-w-[210mm]">

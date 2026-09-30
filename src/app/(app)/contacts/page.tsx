@@ -78,7 +78,7 @@ export default async function ContactsPage({ searchParams }: {
       }))}
       tags={tags.map((t) => ({ id: t.id, name: t.name }))}
       canWrite={allows(user, "contacts.write")}
-      canDelete={allows(user, "contacts.delete")}
+      canDelete={allows(user, "contacts.delete") && (user.role === "ORG_ADMIN" || user.role === "SUPER_ADMIN")}
       canManagePublic={allows(user, "contacts.manage_public")}
     />
   );

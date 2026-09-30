@@ -78,6 +78,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   return handle(async () => {
     const user = await requireApi("contacts.delete");
+    // حذف مخاطب — چه عمومی چه خصوصیِ بقیه — فقط با مدیر سازمان. مجوز
+    // contacts.delete تنهایی کافی نیست تا کسی دفترچه دیگران را خالی نکند.
+    if (user.role !== "ORG_ADMIN" && user.role !== "SUPER_ADMIN") {
+      throw new ApiError(403, "حذف مخاطب فقط با مدیر سازمان است.");
+    }
     const { id } = await params;
     await load(id, user);
     await prisma.contact.update({

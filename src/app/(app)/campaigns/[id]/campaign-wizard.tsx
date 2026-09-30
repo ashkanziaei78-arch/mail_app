@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { CheckCircle2, Clock, Copy, ExternalLink, Eye, MessageSquare, Paperclip, Send, Trash2 } from "lucide-react";
 import Stepper from "@/components/ui/stepper";
 import FlowGraph from "@/components/ui/flow-graph";
+import LetterToolbar from "@/components/ui/letter-toolbar";
 import { campaignFlow } from "@/lib/flow";
 import { Badge, Field, PageHeader } from "@/components/ui/primitives";
 import Modal from "@/components/ui/modal";
@@ -454,10 +455,11 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
               </p>
             ) : (
               <>
-                <Field label="متن نامه" required hint="تگ‌های ساده HTML مجازند.">
+                <Field label="متن نامه" required hint="تگ‌های ساده HTML مجازند. با «صفحه بعد» نامه بلند به صفحه تازه می‌رود.">
                   <textarea ref={bodyRef} className="textarea h-64 font-mono text-xs" value={body}
                             onChange={(e) => setBody(e.target.value)} disabled={locked} />
                 </Field>
+                {!locked && <LetterToolbar value={body} onChange={setBody} targetRef={bodyRef} />}
                 {!locked && (
                   <VariableInserter
                     variables={[...LETTER_VARIABLES, ...fieldVariables]}

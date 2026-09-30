@@ -144,11 +144,14 @@ const OPTIONS: sanitize.IOptions = {
   ],
   allowedAttributes: {
     a: ["href", "title", "dir", "style", "target", "rel"],
+    // تنها کلاس مجاز: نشانه شکست صفحه که نامه را چندصفحه‌ای می‌کند
+    hr: ["class"],
     img: ["src", "alt", "title", "width", "height"],
     td: ["colspan", "rowspan", "dir", "style"],
     th: ["colspan", "rowspan", "dir", "style"],
     "*": ["dir", "style"],
   },
+  allowedClasses: { hr: ["page-break"] },
   allowedSchemes: ["http", "https", "mailto"],
   allowedSchemesByTag: { img: ["http", "https", "data"] },
   allowProtocolRelative: false,

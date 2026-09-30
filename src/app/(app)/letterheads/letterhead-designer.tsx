@@ -36,6 +36,8 @@ export default function LetterheadDesigner({
 }) {
   const [fields, setFields] = useState<FieldDefinition[]>(letterhead.fields);
   const [selectedId, setSelectedId] = useState<string | null>(letterhead.fields[0]?.id ?? null);
+  /** حالت آزمایش: کادرها با داده نمونه پر می‌شوند تا نتیجه واقعی دیده شود. */
+  const [testing, setTesting] = useState(false);
   const [adding, setAdding] = useState(false);
   const [busy, setBusy] = useState(false);
   const [dirty, setDirty] = useState<Set<string>>(new Set());
@@ -111,6 +113,20 @@ export default function LetterheadDesigner({
     onChanged();
   }
 
+  /** داده نمونه هر کادر بر اساس نوعش؛ فقط برای پیش‌نمایش است و ذخیره نمی‌شود. */
+  const sampleValues: Record<string, string> = Object.fromEntries(
+    fields.map((field) => {
+      if (field.type === "DATE") return [field.key, new Date().toISOString().slice(0, 10)];
+      if (field.type === "NUMBER") return [field.key, "۱۴۰۴/۱۲۳"];
+      if (field.type === "SELECT") return [field.key, field.options[0] ?? field.label];
+      if (field.type === "SIGNATURE") return [field.key, ""];
+      if (field.type === "RICH_TEXT" || field.type === "TEXTAREA") {
+        return [field.key, "با سلام و احترام، بدین‌وسیله به استحضار می‌رساند نمونه متن نامه برای آزمایش چیدمان کادرهای سربرگ در این قسمت نمایش داده می‌شود."];
+      }
+      return [field.key, `نمونه ${field.label}`];
+    }),
+  );
+
   return (
     <Modal
       title={`طراحی سربرگ «${letterhead.name}»`}
@@ -126,9 +142,21 @@ export default function LetterheadDesigner({
     >
       <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
         <div>
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <button className="btn btn-sm" onClick={() => setTesting((v) => !v)}>
+              {testing ? "پایان آزمایش" : "آزمایش سربرگ"}
+            </button>
+            {testing && (
+              <span className="text-xs" style={{ color: "var(--muted)" }}>
+                کادرها با داده نمونه پر شده‌اند تا ببینید نامه واقعی چطور درمی‌آید. چیزی ذخیره نمی‌شود.
+              </span>
+            )}
+          </div>
+
           <LetterheadCanvas
             imageUrl={letterhead.fileUrl}
             fields={fields}
+            values={testing ? sampleValues : undefined}
             selectedId={selectedId}
             onSelect={setSelectedId}
             onGeometryChange={onGeometryChange}
