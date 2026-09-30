@@ -59,7 +59,7 @@ export default async function ReportsPage({ searchParams }: {
     ...(from || to ? { createdAt: { ...(from ? { gte: from } : {}), ...(to ? { lte: to } : {}) } } : {}),
   };
 
-  const [messages, totals, links, campaignStats, recipientStats, trend, responses, uniqueContacts] = await Promise.all([
+  const [messages, totals, links, campaignStats, recipientStats, trend, responses, openedStats, uniqueContacts] = await Promise.all([
     prisma.smsMessage.findMany({
       where,
       include: { campaignRecipient: { include: { campaign: { select: { name: true } }, contact: { select: { firstName: true, lastName: true } } } } },
@@ -91,6 +91,9 @@ export default async function ReportsPage({ searchParams }: {
     prisma.letterResponse.count({
       where: { campaignRecipient: { campaign: { organizationId: user.organizationId } } },
     }),
+    prisma.campaignRecipient.count({
+      where: { campaign: { organizationId: user.organizationId }, viewCount: { gt: 0 } },
+    }),
     prisma.campaignRecipient
       .findMany({
         where: { campaign: { organizationId: user.organizationId } },
@@ -107,6 +110,7 @@ export default async function ReportsPage({ searchParams }: {
   const views = links._sum.viewCount ?? 0;
   const recipients = recipientStats._count._all;
   const completedCampaigns = campaignStats.find((c) => c.status === "COMPLETED")?._count._all ?? 0;
+  const openedRecipients = openedStats;
 
   // ۳۰ روز اخیر، حتی روزهایی که پیامکی نداشته‌اند (خالی‌ها هم داستان دارند)
   const days: Array<{ key: string; label: string; value: number }> = [];
@@ -206,13 +210,16 @@ export default async function ReportsPage({ searchParams }: {
         />
         <RankedBars rows={statusRows} title="وضعیت پیامک‌ها" hint="در بازه فیلترشده" unit="پیامک" />
         <RankedBars rows={campaignRows} title="نامه‌ها بر اساس وضعیت" hint="کل نامه‌های سازمان" unit="نامه" />
+        {/* قیف: هر پله زیرمجموعه پله قبلی است، پس مقایسه‌شان معنا دارد */}
         <RankedBars
           rows={[
-            { label: "بازدیدشده", value: views, color: "var(--info)" },
-            { label: "بدون بازدید", value: Math.max(0, recipients - (recipientStats._sum.viewCount ?? 0)), color: "var(--muted)" },
+            { label: "پیامک موفق", value: successful, color: "var(--primary)" },
+            { label: "نامه باز شد", value: openedRecipients, color: "var(--info)", note: rate(openedRecipients, successful) },
+            { label: "پاسخ داد", value: responses, color: "var(--success)", note: rate(responses, successful) },
           ]}
-          title="بازکردن نامه"
-          hint="نامه‌هایی که مخاطب لینکشان را باز کرده است"
+          title="قیف نامه"
+          hint="از پیامک تا پاسخ مخاطب"
+          unit="نفر"
         />
       </div>
 

@@ -7,6 +7,7 @@ import { CheckCircle2, Clock, Copy, ExternalLink, Eye, MessageSquare, Paperclip,
 import Stepper from "@/components/ui/stepper";
 import FlowGraph from "@/components/ui/flow-graph";
 import LetterToolbar from "@/components/ui/letter-toolbar";
+import JalaliDateInput from "@/components/ui/jalali-date-input";
 import { campaignFlow } from "@/lib/flow";
 import { Badge, Field, PageHeader } from "@/components/ui/primitives";
 import Modal from "@/components/ui/modal";
@@ -52,7 +53,7 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
   campaign: {
     id: string; name: string; subject: string | null; status: keyof typeof CAMPAIGN_STATUS;
     confidentiality: string; smsBodyText: string | null; rejectionReason: string | null;
-    approvedBy: string | null; workflowName: string | null; approvals: Approval[];
+    approvedBy: string | null; workflowName: string | null; approvals: Approval[]; scheduledAt: string | null;
   };
   letter: {
     title: string; letterNumber: string; subject: string; bodyHtml: string; senderName: string; senderSignatureUrl: string | null;
@@ -90,6 +91,14 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
   const [body, setBody] = useState(letter.bodyHtml);
   const [letterheadId, setLetterheadId] = useState(letter.letterheadId);
   const [senderName, setSenderName] = useState(letter.senderName);
+  const [letterNumber, setLetterNumber] = useState(letter.letterNumber);
+  /** ارسال زمان‌بندی‌شده: تاریخ شمسی + ساعت؛ خالی یعنی ارسال دستی */
+  const [scheduleDate, setScheduleDate] = useState<string | null>(
+    campaign.scheduledAt ? campaign.scheduledAt.slice(0, 10) : null,
+  );
+  const [scheduleTime, setScheduleTime] = useState(
+    campaign.scheduledAt ? new Date(campaign.scheduledAt).toTimeString().slice(0, 5) : "09:00",
+  );
   const [signature, setSignature] = useState<string>(letter.senderSignatureUrl ?? signatureUrl ?? "");
   const [smsText, setSmsText] = useState(campaign.smsBodyText ?? DEFAULT_SMS);
   const smsRef = useRef<HTMLTextAreaElement>(null);
@@ -179,7 +188,7 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
         city: previewRecipient.city,
         mobilePhone: previewRecipient.mobilePhone,
         senderOrganization: organizationName,
-        letterNumber: letter.letterNumber,
+        letterNumber,
         shortLink: previewRecipient.shortCode ? `${location.origin}/l/${previewRecipient.shortCode}` : "https://…/l/xxxxxxxxxx",
         accessCode: previewRecipient.accessCode ?? "",
       })
@@ -394,6 +403,21 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
           <section className="card space-y-4 p-5">
             <h2 className="font-bold">متن نامه</h2>
             <div className="grid gap-4 md:grid-cols-2">
+              <Field label="شماره نامه" hint="شماره اندیکاتور سازمان. «شماره خودکار» بزرگ‌ترین شماره امسال را یکی جلو می‌برد.">
+                <div className="flex gap-2">
+                  <input className="input tnum" dir="ltr" value={letterNumber}
+                         onChange={(e) => setLetterNumber(e.target.value)} disabled={locked} placeholder="۱۴۰۴/۰۰۱۲" />
+                  {!locked && (
+                    <button type="button" className="btn" disabled={busy} onClick={async () => {
+                      const res = await fetch("/api/letters/next-number");
+                      const json = await res.json();
+                      if (json.ok) setLetterNumber(json.data.letterNumber);
+                      else toast("error", json.error);
+                    }}>شماره خودکار</button>
+                  )}
+                </div>
+              </Field>
+
               <Field label="سربرگ" hint="کادرهای هر سربرگ را مدیر سازمان تعریف کرده؛ با تغییر سربرگ، فیلدهای پر کردنی هم عوض می‌شوند.">
                 <select className="select" value={letterheadId} onChange={(e) => setLetterheadId(e.target.value)} disabled={locked}>
                   <option value="">بدون سربرگ</option>
@@ -617,6 +641,53 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
                             }}>
                       <Send className="h-4 w-4" />ارسال پیامک به {faNumber(recipients.length)} مخاطب
                     </button>
+                  )}
+                </div>
+              )}
+
+              {permissions.send && campaign.status === "APPROVED" && (
+                <div className="rounded-xl border p-3">
+                  <p className="mb-2 text-sm font-bold">ارسال زمان‌بندی‌شده (اختیاری)</p>
+                  <p className="mb-3 text-xs" style={{ color: "var(--muted)" }}>
+                    اگر تاریخ و ساعت بگذارید، سامانه خودش در همان زمان می‌فرستد و لازم نیست پای سیستم باشید.
+                    بررسی هر ربع ساعت انجام می‌شود، پس ارسال تا ۱۵ دقیقه بعد از زمان تعیین‌شده انجام می‌گردد.
+                  </p>
+                  <div className="flex flex-wrap items-end gap-2">
+                    <div className="min-w-48">
+                      <label className="label">تاریخ ارسال</label>
+                      <JalaliDateInput value={scheduleDate} onChange={setScheduleDate} />
+                    </div>
+                    <div>
+                      <label className="label" htmlFor="schedule-time">ساعت</label>
+                      <input id="schedule-time" type="time" className="input tnum" dir="ltr"
+                             value={scheduleTime} onChange={(e) => setScheduleTime(e.target.value)} />
+                    </div>
+                    <button className="btn" disabled={busy || !scheduleDate} onClick={async () => {
+                      const iso = scheduleDate ? new Date(`${scheduleDate}T${scheduleTime || "09:00"}:00`).toISOString() : null;
+                      const res = await fetch(`/api/campaigns/${campaign.id}`, {
+                        method: "PATCH", headers: { "content-type": "application/json" },
+                        body: JSON.stringify({ scheduledAt: iso }),
+                      });
+                      const json = await res.json();
+                      toast(json.ok ? "success" : "error", json.ok ? "زمان ارسال ثبت شد." : json.error);
+                      if (json.ok) router.refresh();
+                    }}>ثبت زمان ارسال</button>
+                    {campaign.scheduledAt && (
+                      <button className="btn btn-danger" disabled={busy} onClick={async () => {
+                        await fetch(`/api/campaigns/${campaign.id}`, {
+                          method: "PATCH", headers: { "content-type": "application/json" },
+                          body: JSON.stringify({ scheduledAt: null }),
+                        });
+                        setScheduleDate(null);
+                        toast("success", "زمان‌بندی لغو شد.");
+                        router.refresh();
+                      }}>لغو زمان‌بندی</button>
+                    )}
+                  </div>
+                  {campaign.scheduledAt && (
+                    <p className="tnum mt-2 text-xs" style={{ color: "var(--info)" }}>
+                      زمان ثبت‌شده: {faDateTime(campaign.scheduledAt)}
+                    </p>
                   )}
                 </div>
               )}

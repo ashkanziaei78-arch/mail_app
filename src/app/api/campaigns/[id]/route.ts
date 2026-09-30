@@ -8,6 +8,8 @@ const schema = z.object({
   subject: z.string().trim().max(200).optional().nullable(),
   confidentiality: z.enum(["NORMAL", "CONFIDENTIAL"]).optional(),
   smsBodyText: z.string().trim().max(1000).optional().nullable(),
+  /** زمان ارسال خودکار (ISO)؛ null یعنی ارسال دستی */
+  scheduledAt: z.string().datetime().nullable().optional(),
   letter: z.object({
     title: z.string().trim().max(200).optional(),
     letterNumber: z.string().trim().max(60).optional().nullable(),
@@ -45,6 +47,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         subject: input.subject,
         confidentiality: input.confidentiality,
         smsBodyText: input.smsBodyText,
+        scheduledAt: input.scheduledAt === undefined ? undefined : input.scheduledAt ? new Date(input.scheduledAt) : null,
         // ویرایش متن ⇒ بازگشت به پیش‌نویس تا دوباره تأیید شود
         status: input.letter?.bodyHtml && campaign.status !== "DRAFT" ? "DRAFT" : undefined,
       },

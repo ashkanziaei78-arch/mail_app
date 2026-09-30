@@ -86,6 +86,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
         status: campaign.status,
         confidentiality: campaign.confidentiality,
         smsBodyText: campaign.smsBodyText,
+        scheduledAt: campaign.scheduledAt?.toISOString() ?? null,
         rejectionReason: campaign.rejectionReason,
         approvedBy: campaign.approvedBy?.fullName ?? null,
         workflowName: campaign.workflow?.name ?? null,
