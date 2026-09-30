@@ -1,5 +1,6 @@
 /* بررسی سریع منطق‌های غیربدیهی — اجرا: npm test */
 import assert from "node:assert/strict";
+import { THEMES } from "./themes";
 import { createServer } from "node:http";
 
 process.env.APP_SECRET ??= "selftest-secret-selftest-secret-0123456789";
@@ -221,6 +222,53 @@ async function checkSmsIr() {
   globalThis.fetch = realFetch;
   server.close();
 }
+
+/**
+ * کنتراست تم‌ها.
+ *
+ * تم رنگی را مدیر سازمان از فهرست آماده انتخاب می‌کند؛ این آزمون تضمین می‌کند
+ * هیچ‌کدام از آن پالت‌ها متن ناخوانا نسازد — نه در حالت روشن، نه تیره. اگر تمی
+ * اضافه شد که WCAG AA را رد کند، همین‌جا قرمز می‌شود نه روی صفحه کاربر.
+ */
+function contrastRatio(a: string, b: string): number {
+  const channels = (hex: string) =>
+    (hex.replace("#", "").match(/../g) ?? []).map((part) => {
+      const value = parseInt(part, 16) / 255;
+      return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+    });
+  const luminance = (hex: string) => {
+    const [r, g, bl] = channels(hex);
+    return 0.2126 * r + 0.7152 * g + 0.0722 * bl;
+  };
+  const [high, low] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (high + 0.05) / (low + 0.05);
+}
+
+function checkThemes() {
+  const LIGHT_SURFACE = "#ffffff";
+  const LIGHT_SURFACE_2 = "#eff3f8";
+  const DARK_SURFACE = "#101a29";
+  const DARK_SURFACE_2 = "#16223a";
+
+  for (const theme of THEMES) {
+    const checks: Array<[string, number]> = [
+      ["متن روی دکمه (روشن)", contrastRatio(theme.light.primaryText, theme.light.primary)],
+      ["لینک روی سطح", contrastRatio(theme.light.link, LIGHT_SURFACE)],
+      ["لینک روی سطح دوم", contrastRatio(theme.light.link, LIGHT_SURFACE_2)],
+      ["لهجه روی پس‌زمینه‌اش", contrastRatio(theme.light.accent, theme.light.accentBg)],
+      ["متن سفید روی منو", contrastRatio("#ffffff", theme.light.sidebar)],
+      ["متن روی دکمه (تیره)", contrastRatio(theme.dark.primaryText, theme.dark.primary)],
+      ["رنگ اصلی تیره روی سطح", contrastRatio(theme.dark.primary, DARK_SURFACE)],
+      ["لینک تیره روی سطح دوم", contrastRatio(theme.dark.link, DARK_SURFACE_2)],
+      ["لهجه تیره روی پس‌زمینه‌اش", contrastRatio(theme.dark.accent, theme.dark.accentBg)],
+    ];
+    for (const [label, ratio] of checks) {
+      assert.ok(ratio >= 4.5, `تم «${theme.label}» — ${label}: ${ratio.toFixed(2)}:1 (کمینه ۴٫۵)`);
+    }
+  }
+}
+
+checkThemes();
 
 checkSmsIr().then(() => {
   console.log("✓ همه بررسی‌ها موفق بود");

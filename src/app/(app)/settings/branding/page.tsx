@@ -11,7 +11,7 @@ export default async function BrandingPage() {
   const user = await requirePage("users.manage");
   const organization = await prisma.organization.findUniqueOrThrow({
     where: { id: user.organizationId },
-    select: { logoPath: true, faviconPath: true, bannersJson: true },
+    select: { logoPath: true, faviconPath: true, bannersJson: true, themeId: true },
   });
 
   return (
@@ -19,6 +19,7 @@ export default async function BrandingPage() {
       logoPath={organization.logoPath}
       faviconPath={organization.faviconPath}
       banners={parseBanners(organization.bannersJson)}
+      themeId={organization.themeId}
     />
   );
 }

@@ -127,6 +127,8 @@ model Organization {
   status      EntityStatus @default(ACTIVE)
   /** توکن ربات بله (رمزنگاری‌شده) برای خبر دادن نامه تازه به تأییدکننده‌ها */
   baleBotTokenEncrypted String?
+  /** شناسه تم رنگی سامانه (src/lib/themes.ts)؛ خالی یعنی تم پیش‌فرض */
+  themeId               String?
   /** نشان سازمان در منو و نشان کوچک تب مرورگر */
   logoPath              String?
   faviconPath           String?

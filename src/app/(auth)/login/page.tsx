@@ -4,6 +4,7 @@ import { currentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { parseBanners } from "@/lib/banners";
 import LoginClient, { type Slide } from "./login-client";
+import ThemeStyle from "@/components/ui/theme-style";
 
 export const metadata: Metadata = { title: "ورود" };
 
@@ -13,7 +14,7 @@ export default async function LoginPage() {
   // پیش‌فرض از Unsplash نشان داده می‌شود تا صفحه خام نماند.
   const organization = await prisma.organization.findFirst({
     where: { status: "ACTIVE" },
-    select: { bannersJson: true },
+    select: { bannersJson: true, themeId: true },
   });
   const settings = parseBanners(organization?.bannersJson);
 
@@ -26,5 +27,10 @@ export default async function LoginPage() {
         caption: "یک نامه، هزار مخاطب — هرکدام با نام خودش.",
       }];
 
-  return <LoginClient slides={slides} overlay={settings.overlay} seconds={settings.seconds} />;
+  return (
+    <>
+      <ThemeStyle themeId={organization?.themeId} />
+      <LoginClient slides={slides} overlay={settings.overlay} seconds={settings.seconds} />
+    </>
+  );
 }

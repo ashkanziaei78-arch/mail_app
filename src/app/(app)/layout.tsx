@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import AppShell from "@/components/ui/app-shell";
+import ThemeStyle from "@/components/ui/theme-style";
 import { ToastProvider } from "@/components/ui/toast";
 import { prisma } from "@/lib/db";
 import { requirePage } from "@/lib/auth";
@@ -24,7 +25,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const [{ avatarPath }, organization] = await Promise.all([
     prisma.user.findUniqueOrThrow({ where: { id: user.id }, select: { avatarPath: true } }),
-    prisma.organization.findUniqueOrThrow({ where: { id: user.organizationId }, select: { logoPath: true } }),
+    prisma.organization.findUniqueOrThrow({ where: { id: user.organizationId }, select: { logoPath: true, themeId: true } }),
   ]);
 
   // کارتابل و زنگ اعلان به «سمتِ دارای حق تأیید» هم باز می‌شود، نه فقط نقش‌هایی
@@ -34,6 +35,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     ? [...user.permissions, "campaigns.approve" as const]
     : user.permissions;
   return (
+    <>
+    <ThemeStyle themeId={organization.themeId} />
     <AppShell
       user={{
         fullName: user.fullName,
@@ -46,5 +49,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     >
       <ToastProvider>{children}</ToastProvider>
     </AppShell>
+    </>
   );
 }

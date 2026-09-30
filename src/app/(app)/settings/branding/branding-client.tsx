@@ -7,6 +7,7 @@ import { Field, PageHeader } from "@/components/ui/primitives";
 import { useToast } from "@/components/ui/toast";
 
 import { BANNER_DEFAULTS, type Banner, type BannerSettings } from "@/lib/banners";
+import { DEFAULT_THEME_ID, THEMES } from "@/lib/themes";
 
 /**
  * نشان سازمان، نشان تب مرورگر و بنرهای صفحه ورود.
@@ -14,10 +15,11 @@ import { BANNER_DEFAULTS, type Banner, type BannerSettings } from "@/lib/banners
  * بنرها اسلایدی نمایش داده می‌شوند؛ هر بنر یک تصویر است و یک متن که زیرش
  * می‌نشیند. ترتیب همین فهرست، ترتیب نمایش است.
  */
-export default function BrandingClient({ logoPath, faviconPath, banners: initial }: {
+export default function BrandingClient({ logoPath, faviconPath, banners: initial, themeId }: {
   logoPath: string | null;
   faviconPath: string | null;
   banners: BannerSettings;
+  themeId: string | null;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -26,6 +28,7 @@ export default function BrandingClient({ logoPath, faviconPath, banners: initial
   const [overlay, setOverlay] = useState(initial.overlay ?? BANNER_DEFAULTS.overlay);
   const [seconds, setSeconds] = useState(initial.seconds ?? BANNER_DEFAULTS.seconds);
   const [busy, setBusy] = useState(false);
+  const [theme, setTheme] = useState(themeId ?? DEFAULT_THEME_ID);
 
   async function upload(file: File, kind: "logo" | "favicon" | "banner") {
     setBusy(true);
@@ -46,7 +49,7 @@ export default function BrandingClient({ logoPath, faviconPath, banners: initial
     const res = await fetch("/api/settings/branding", {
       method: "PATCH",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ banners, overlay, seconds, ...extra }),
+      body: JSON.stringify({ banners, overlay, seconds, themeId: theme, ...extra }),
     });
     const json = await res.json();
     setBusy(false);
@@ -63,6 +66,65 @@ export default function BrandingClient({ logoPath, faviconPath, banners: initial
       />
 
       <div className="grid gap-4 lg:grid-cols-2">
+        <section className="card space-y-4 p-5 lg:col-span-2">
+          <div>
+            <h2 className="font-bold">تم رنگی سامانه</h2>
+            <p className="mt-1 text-sm" style={{ color: "var(--muted)" }}>
+              رنگ دکمه‌ها، لینک‌ها و منوی سامانه را تعیین می‌کند و برای همه کاربران اعمال می‌شود.
+              هر تم در حالت روشن و تیره جداگانه سنجیده شده تا متن‌ها خوانا بمانند.
+              بعد از ذخیره، یک بار صفحه را تازه کنید.
+            </p>
+          </div>
+
+          <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {THEMES.map((t) => (
+              <li key={t.id}>
+                <button
+                  type="button"
+                  onClick={() => setTheme(t.id)}
+                  className="choice-card w-full text-right"
+                  data-selected={t.id === theme}
+                  aria-pressed={t.id === theme}
+                >
+                  <span className="flex shrink-0 gap-1" aria-hidden="true">
+                    {[t.light.sidebar, t.light.primary, t.light.accent].map((color) => (
+                      <span key={color} className="h-9 w-4 rounded-md" style={{ background: color }} />
+                    ))}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-bold">{t.label}</span>
+                    <span className="mt-0.5 block text-xs leading-6" style={{ color: "var(--muted)" }}>
+                      {t.description}
+                    </span>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+
+          {/* پیش‌نمایش: همان رنگ‌ها روی چند عنصر واقعی، پیش از ذخیره */}
+          <div className="rounded-xl border p-4" style={{ background: THEMES.find((t) => t.id === theme)?.light.sidebar }}>
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="rounded-lg px-3 py-1.5 text-xs font-bold"
+                    style={{ background: THEMES.find((t) => t.id === theme)?.light.primary, color: "#fff" }}>
+                دکمه اصلی
+              </span>
+              <span className="text-xs font-semibold" style={{ color: "#fff" }}>منوی سامانه</span>
+              <span className="rounded-md px-2 py-1 text-[11px] font-bold"
+                    style={{
+                      background: THEMES.find((t) => t.id === theme)?.light.accentBg,
+                      color: THEMES.find((t) => t.id === theme)?.light.accent,
+                    }}>
+                نشانه رسمی
+              </span>
+            </div>
+          </div>
+
+          <div className="flex justify-end">
+            <button className="btn btn-primary" disabled={busy} onClick={() => save()}>ذخیره تم</button>
+          </div>
+        </section>
+
         <section className="card space-y-3 p-5">
           <h2 className="font-bold">نشان سازمان (منو)</h2>
           <p className="text-sm" style={{ color: "var(--muted)" }}>

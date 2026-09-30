@@ -2,6 +2,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { handle, readBody, requireApi, ApiError } from "@/lib/api";
 import { storeUpload } from "@/lib/uploads";
+import { themeById } from "@/lib/themes";
 import { audit } from "@/lib/audit";
 
 /** متن و ترتیب بنرها؛ خود تصویرها با POST جدا آپلود می‌شوند. */
@@ -13,6 +14,7 @@ const schema = z.object({
   /** درصد تیرگی روی تصویر بنر و مدت نمایش هر بنر */
   overlay: z.number().int().min(0).max(100).default(45),
   seconds: z.number().int().min(3).max(120).default(10),
+  themeId: z.string().trim().max(40).optional(),
   removeLogo: z.boolean().default(false),
   removeFavicon: z.boolean().default(false),
 });
@@ -25,6 +27,7 @@ export async function PATCH(request: Request) {
       where: { id: user.organizationId },
       data: {
         bannersJson: { items: input.banners, overlay: input.overlay, seconds: input.seconds },
+        ...(input.themeId ? { themeId: themeById(input.themeId).id } : {}),
         ...(input.removeLogo ? { logoPath: null } : {}),
         ...(input.removeFavicon ? { faviconPath: null } : {}),
       },
