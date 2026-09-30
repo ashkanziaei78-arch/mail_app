@@ -46,7 +46,7 @@ const RESPONSE_LABELS: Record<string, { label: string; tone: "success" | "danger
 
 const DEFAULT_SMS = "{{عنوان}} {{نام_کامل}} گرامی، با سلام و احترام، نامه‌ای از سوی {{سازمان_فرستنده}} برای شما صادر شده است.\nمشاهده نامه: {{لینک}}\nلغو: {{لغو_اشتراک}}";
 
-export default function CampaignWizard({ organizationName, campaign, letter, recipients, options, permissions, signatureUrl }: {
+export default function CampaignWizard({ organizationName, campaign, letter, recipients, options, permissions, signatureUrl, signatures }: {
   organizationName: string;
   campaign: {
     id: string; name: string; subject: string | null; status: keyof typeof CAMPAIGN_STATUS;
@@ -54,7 +54,7 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
     approvedBy: string | null; workflowName: string | null; approvals: Approval[];
   };
   letter: {
-    title: string; letterNumber: string; subject: string; bodyHtml: string; senderName: string;
+    title: string; letterNumber: string; subject: string; bodyHtml: string; senderName: string; senderSignatureUrl: string | null;
     letterheadId: string; letterheadUrl: string | null; fieldValues: Record<string, string>;
     attachments: Attachment[];
   };
@@ -68,6 +68,8 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
   permissions: { write: boolean; approve: boolean; send: boolean; positionId: string | null; isOrgAdmin: boolean };
   /** امضای کاربر جاری — در کادر امضای سربرگ نشان داده می‌شود. */
   signatureUrl: string | null;
+  /** امضاهای ثبت‌شده کاربران سازمان، برای انتخاب امضای پای نامه */
+  signatures: Array<{ id: string; name: string; positionName: string | null; src: string }>;
 }) {
   const router = useRouter();
   const locked = ["PROCESSING", "COMPLETED", "CANCELLED"].includes(campaign.status);
@@ -87,6 +89,7 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
   const [body, setBody] = useState(letter.bodyHtml);
   const [letterheadId, setLetterheadId] = useState(letter.letterheadId);
   const [senderName, setSenderName] = useState(letter.senderName);
+  const [signature, setSignature] = useState<string>(letter.senderSignatureUrl ?? signatureUrl ?? "");
   const [smsText, setSmsText] = useState(campaign.smsBodyText ?? DEFAULT_SMS);
   const smsRef = useRef<HTMLTextAreaElement>(null);
   const [fieldValues, setFieldValues] = useState<Record<string, string>>(letter.fieldValues ?? {});
@@ -132,7 +135,7 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
   /** مقدارهای فعلی برای پیش‌نمایش روی بوم؛ امضا تصویر پروفایل کاربر است. */
   const canvasValues: Record<string, string> = Object.fromEntries([
     ...activeFields.map((f) => [f.key, fieldValues[f.key] ?? f.defaultValue ?? ""]),
-    ...signatureFields.map((f) => [f.key, signatureUrl ?? ""]),
+    ...signatureFields.map((f) => [f.key, signature]),
   ]);
 
   async function saveLetter() {
@@ -146,6 +149,7 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
           // جای دومی برای تایپ متن نمی‌بیند؛ پس مقدارش را به‌عنوان bodyHtml می‌فرستیم.
           bodyHtml: bodyField ? (fieldValues[bodyField.key] || body) : body,
           senderName,
+          senderSignatureUrl: signature || null,
           letterheadId: letterheadId || null,
           fieldValues,
         },
@@ -392,6 +396,28 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
                 </select>
               </Field>
               <Field label="نام و سمت امضاکننده"><input className="input" value={senderName} onChange={(e) => setSenderName(e.target.value)} disabled={locked} placeholder="رضا احمدی — مدیر روابط عمومی" /></Field>
+
+              <Field
+                label="امضای پای نامه"
+                hint={signatures.length === 0
+                  ? "هنوز هیچ کاربری امضایش را آپلود نکرده است. از «حساب و امضای من» امضا را اضافه کنید."
+                  : "امضای انتخابی هم در کادر امضای سربرگ می‌نشیند و هم پای نامه‌ای که مخاطب می‌بیند."}
+              >
+                <select className="select" value={signature} onChange={(e) => setSignature(e.target.value)} disabled={locked || signatures.length === 0}>
+                  <option value="">بدون امضا</option>
+                  {signatures.map((s) => (
+                    <option key={s.id} value={s.src}>{s.name}{s.positionName ? ` — ${s.positionName}` : ""}</option>
+                  ))}
+                </select>
+              </Field>
+
+              {signature && (
+                <div className="rounded-xl border p-3">
+                  <p className="mb-2 text-xs" style={{ color: "var(--muted)" }}>پیش‌نمایش امضا:</p>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={signature} alt="امضای انتخاب‌شده" className="max-h-24" />
+                </div>
+              )}
             </div>
 
             {activeFields.length > 0 && (
@@ -415,7 +441,7 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
                   ))}
                   {signatureFields.map((field) => (
                     <div key={field.id}>
-                      <DynamicField field={field} value={signatureUrl ?? ""} onChange={() => undefined} disabled />
+                      <DynamicField field={field} value={signature} onChange={() => undefined} disabled />
                     </div>
                   ))}
                 </div>
@@ -497,6 +523,10 @@ export default function CampaignWizard({ organizationName, campaign, letter, rec
                   __html: applyVariables(previewRecipient?.overrideHtml ?? body, previewContextWithFields),
                 }} />
                 {senderName && <div className="letter-body pt-0 text-left font-bold">{senderName}</div>}
+                {signature && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={signature} alt="امضا" className="letter-body max-h-24 pt-0" style={{ marginInlineStart: "auto" }} />
+                )}
               </div>
             </div>
 

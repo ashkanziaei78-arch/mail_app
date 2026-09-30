@@ -60,6 +60,7 @@ export const NAV: Array<{ group: string; items: NavItem[] }> = [
       { href: "/settings/users", label: "کاربران", icon: "Users", permission: "users.manage" },
       { href: "/settings/workflow", label: "سمت و گردش تأیید", icon: "GitBranch", permission: "users.manage" },
       { href: "/settings/access", label: "دسترسی‌ها", icon: "ShieldCheck", permission: "users.manage" },
+      { href: "/settings/branding", label: "نشان و بنرها", icon: "FileImage", permission: "users.manage" },
       { href: "/settings/sms", label: "درگاه پیامک", icon: "MessageSquare", permission: "sms.settings" },
     ],
   },
@@ -99,7 +100,7 @@ function useBreadcrumb(pathname: string) {
 export default function AppShell({
   user, allowed, children,
 }: {
-  user: { fullName: string; roleLabel: string; organizationName: string; avatarSrc?: string | null };
+  user: { fullName: string; roleLabel: string; organizationName: string; avatarSrc?: string | null; logoSrc?: string | null };
   allowed: string[];
   children: React.ReactNode;
 }) {
@@ -126,7 +127,10 @@ export default function AppShell({
   const sidebar = (
     <div className="flex h-full flex-col gap-4 bg-brand-900 p-3 text-white">
       <div className="flex items-center gap-3 px-2 pt-2">
-        <span className="grid h-10 w-10 place-items-center rounded-xl bg-brand-600 text-lg font-bold">م</span>
+        <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-brand-600 text-lg font-bold">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          {user.logoSrc ? <img src={user.logoSrc} alt="" className="h-full w-full object-contain" /> : "م"}
+        </span>
         <span className="min-w-0">
           <span className="block truncate font-bold leading-tight">میلینگ سازمانی</span>
           <span className="block truncate text-[11px] text-brand-200">{user.organizationName}</span>

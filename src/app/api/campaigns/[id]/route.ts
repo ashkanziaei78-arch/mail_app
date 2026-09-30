@@ -14,6 +14,8 @@ const schema = z.object({
     subject: z.string().trim().max(200).optional().nullable(),
     bodyHtml: z.string().trim().min(1, "متن نامه خالی است.").optional(),
     senderName: z.string().trim().max(120).optional().nullable(),
+    /** مسیر تصویر امضایی که پای نامه می‌نشیند؛ باید امضای یکی از کاربران همین سازمان باشد */
+    senderSignatureUrl: z.string().trim().max(500).optional().nullable(),
     letterheadId: z.string().uuid().optional().nullable(),
     /** مقدار فیلدهای تعریف‌شده روی سربرگ: { key: value } */
     fieldValues: z.record(z.string(), z.string().max(5000)).optional(),
@@ -62,6 +64,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         }
       }
 
+      // امضا را از فهرست امضاهای همین سازمان می‌پذیریم؛ وگرنه می‌شد هر نشانی
+      // دلخواهی را پای نامه رسمی نشاند.
+      if (input.letter.senderSignatureUrl) {
+        const owner = await prisma.user.findFirst({
+          where: { organizationId: user.organizationId, signatureImagePath: input.letter.senderSignatureUrl, deletedAt: null },
+          select: { id: true },
+        });
+        if (!owner) throw new ApiError(422, "این امضا متعلق به کاربران سازمان نیست.");
+      }
+
       await prisma.letter.update({
         where: { id: letter.id },
         data: {
@@ -69,6 +81,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           letterNumber: input.letter.letterNumber,
           subject: input.letter.subject,
           senderName: input.letter.senderName,
+          senderSignatureUrl: input.letter.senderSignatureUrl,
           letterheadId: input.letter.letterheadId,
           bodyHtml: input.letter.bodyHtml ? sanitizeHtml(input.letter.bodyHtml) : undefined,
           fieldValuesJson: input.letter.fieldValues ? (input.letter.fieldValues as object) : undefined,

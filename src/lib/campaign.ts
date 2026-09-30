@@ -53,6 +53,23 @@ export async function resolveRecipients(user: CurrentUser, selection: RecipientS
   return [...ids];
 }
 
+/** بلوک امضای پای نامه — فقط وقتی نامه امضا دارد. */
+function signatureBlock(letter: { senderSignatureUrl: string | null; senderName: string | null }): string {
+  if (!letter.senderSignatureUrl) return "";
+  const src = escapeAttribute(letter.senderSignatureUrl);
+  const name = letter.senderName ? escapeAttribute(letter.senderName) : "";
+  return (
+    `<div style="margin-top:2rem;text-align:left">` +
+    (name ? `<div style="font-weight:700;margin-bottom:.25rem">${name}</div>` : "") +
+    `<img src="${src}" alt="امضا" style="max-height:120px;max-width:260px" />` +
+    `</div>`
+  );
+}
+
+function escapeAttribute(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
 function documentNumber(campaignSeq: number, index: number): string {
   const year = new Intl.DateTimeFormat("fa-IR-u-ca-persian-nu-latn", { year: "numeric" }).format(new Date());
   return `MS-${year}-${String(campaignSeq).padStart(4, "0")}-${String(index).padStart(4, "0")}`;
@@ -124,7 +141,9 @@ export async function generateDocuments(campaignId: string) {
     );
 
     const source = recipient.letterOverrideHtml ?? letter.bodyHtml;
-    const renderedHtml = sanitizeHtml(applyVariables(source, context));
+    // امضا بعد از پاک‌سازی اضافه می‌شود: مسیرش را خودمان از فهرست کاربران سازمان
+    // تأیید کرده‌ایم و sanitize تگ img را دور می‌ریزد.
+    const renderedHtml = sanitizeHtml(applyVariables(source, context)) + signatureBlock(letter);
     const fileHash = crypto
       .createHash("sha256")
       .update(`${campaign.id}:${contact.id}:${letter.version}:${renderedHtml}`)

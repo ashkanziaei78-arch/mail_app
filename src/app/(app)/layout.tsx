@@ -21,10 +21,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     if (mustChangePassword) redirect("/account/password?first=1");
   }
 
-  const { avatarPath } = await prisma.user.findUniqueOrThrow({
-    where: { id: user.id },
-    select: { avatarPath: true },
-  });
+  const [{ avatarPath }, organization] = await Promise.all([
+    prisma.user.findUniqueOrThrow({ where: { id: user.id }, select: { avatarPath: true } }),
+    prisma.organization.findUniqueOrThrow({ where: { id: user.organizationId }, select: { logoPath: true } }),
+  ]);
 
   const allowed = user.permissions;
   return (
@@ -34,6 +34,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         roleLabel: ROLE_LABELS[user.role],
         organizationName: user.organizationName,
         avatarSrc: avatarSrc(avatarPath),
+        logoSrc: organization.logoPath,
       }}
       allowed={allowed}
     >

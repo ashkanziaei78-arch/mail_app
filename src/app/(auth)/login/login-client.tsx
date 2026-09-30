@@ -1,11 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SignInPage } from "@/components/ui/sign-in";
 
-export default function LoginClient({ heroImageSrc }: { heroImageSrc: string }) {
+export type Slide = { src: string; caption: string };
+
+export default function LoginClient({ slides }: { slides: Slide[] }) {
   const router = useRouter();
+  /**
+   * اسلاید بنرها: هر ۱۰ ثانیه تصویر و متن بعدی. اگر فقط یک بنر باشد، تایمری
+   * روشن نمی‌شود. برای کسی که در تنظیمات سیستمش «کاهش حرکت» را زده، تصویر ثابت
+   * می‌ماند.
+   */
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (slides.length < 2) return;
+    if (typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const timer = setInterval(() => setIndex((i) => (i + 1) % slides.length), 10_000);
+    return () => clearInterval(timer);
+  }, [slides.length]);
+
+  const slide = slides[Math.min(index, slides.length - 1)];
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   /** گذرواژه درست بوده ولی حساب ۲FA دارد و منتظر کد است */
@@ -98,7 +115,7 @@ export default function LoginClient({ heroImageSrc }: { heroImageSrc: string }) 
   return (
     <main id="main">
       <SignInPage
-        heroImageSrc={heroImageSrc}
+        heroImageSrc={slide.src}
         errorMessage={error}
         pending={pending}
         onSignIn={handleSignIn}
@@ -111,8 +128,22 @@ export default function LoginClient({ heroImageSrc }: { heroImageSrc: string }) 
         description="مکاتبات سازمانی خود را بسازید، مخاطبین هدف را انتخاب کنید و نامه را با پیامک برای آن‌ها بفرستید."
         heroCaption={
           <>
-            <p className="text-2xl font-bold leading-relaxed">یک نامه، هزار مخاطب — هرکدام با نام خودش.</p>
-            <p className="mt-2 text-white/80">تولید نامه اختصاصی، لینک کوتاه امن و ارسال پیامک شخصی‌سازی‌شده.</p>
+            <p className="text-2xl font-bold leading-relaxed">{slide.caption}</p>
+            {slides.length > 1 && (
+              <div className="mt-4 flex gap-2" role="tablist" aria-label="بنرها">
+                {slides.map((s, i) => (
+                  <button
+                    key={`${s.src}-${i}`}
+                    role="tab"
+                    aria-selected={i === index}
+                    aria-label={`بنر ${i + 1}`}
+                    onClick={() => setIndex(i)}
+                    className="h-2 rounded-full transition-all"
+                    style={{ width: i === index ? "1.5rem" : ".5rem", background: i === index ? "#fff" : "rgba(255,255,255,.45)" }}
+                  />
+                ))}
+              </div>
+            )}
           </>
         }
         onResetPassword={() => router.push("/reset")}

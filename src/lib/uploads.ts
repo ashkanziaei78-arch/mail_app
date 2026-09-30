@@ -50,7 +50,7 @@ export function sniffImage(bytes: Uint8Array): string | null {
 export async function storeUpload(
   file: File,
   organizationId: string,
-  kind: "letterhead" | "footer" | "signature",
+  kind: "letterhead" | "footer" | "signature" | "logo" | "favicon" | "banner",
 ): Promise<string> {
   if (file.size > MAX_BYTES) throw new ApiError(413, "حجم تصویر بیش از ۴ مگابایت است.");
   if (file.size === 0) throw new ApiError(422, "فایل خالی است.");

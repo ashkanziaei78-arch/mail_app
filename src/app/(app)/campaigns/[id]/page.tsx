@@ -62,6 +62,12 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
     }),
   ]);
 
+  const signatureOwners = await prisma.user.findMany({
+    where: { organizationId: user.organizationId, deletedAt: null, signatureImagePath: { not: null } },
+    select: { id: true, fullName: true, signatureImagePath: true, position: { select: { name: true } } },
+    orderBy: { fullName: "asc" },
+  });
+
   const currentUserPosition = await prisma.user.findUniqueOrThrow({
     where: { id: user.id },
     select: { positionId: true, signatureImagePath: true },
@@ -99,6 +105,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
         subject: letter?.subject ?? "",
         bodyHtml: letter?.bodyHtml ?? "",
         senderName: letter?.senderName ?? "",
+        senderSignatureUrl: letter?.senderSignatureUrl ?? null,
         letterheadId: letter?.letterheadId ?? "",
         letterheadUrl: letter?.letterhead?.fileUrl ?? null,
         fieldValues: (letter?.fieldValuesJson as Record<string, string> | null) ?? {},
@@ -146,6 +153,9 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
         })),
       }}
       signatureUrl={currentUserPosition.signatureImagePath}
+      signatures={signatureOwners.map((u) => ({
+        id: u.id, name: u.fullName, positionName: u.position?.name ?? null, src: u.signatureImagePath!,
+      }))}
       permissions={{
         write: allows(user, "campaigns.write"),
         approve: allows(user, "campaigns.approve"),

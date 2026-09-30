@@ -2,8 +2,31 @@ import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import "./globals.css";
 import RegisterSW from "@/components/ui/register-sw";
+import { prisma } from "@/lib/db";
 
-export const metadata: Metadata = {
+/**
+ * نشان تب مرورگر از تنظیمات سازمان خوانده می‌شود؛ اگر سازمان نشان نگذاشته باشد،
+ * همان نشان پیش‌فرض سامانه می‌ماند. خطای پایگاه داده نباید صفحه را بشکند، پس
+ * بی‌سروصدا به پیش‌فرض برمی‌گردیم.
+ */
+async function organizationFavicon(): Promise<string | null> {
+  try {
+    const organization = await prisma.organization.findFirst({
+      where: { status: "ACTIVE", faviconPath: { not: null } },
+      select: { faviconPath: true },
+    });
+    return organization?.faviconPath ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const favicon = await organizationFavicon();
+  return favicon ? { ...metadata, icons: { icon: favicon, apple: favicon } } : metadata;
+}
+
+const metadata: Metadata = {
   title: { default: "میلینگ سازمانی", template: "%s — میلینگ سازمانی" },
   description: "سامانه مکاتبات سازمانی و ارتباط با مخاطبین",
   manifest: "/manifest.webmanifest",

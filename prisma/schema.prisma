@@ -123,6 +123,11 @@ model Organization {
   status      EntityStatus @default(ACTIVE)
   /** توکن ربات بله (رمزنگاری‌شده) برای خبر دادن نامه تازه به تأییدکننده‌ها */
   baleBotTokenEncrypted String?
+  /** نشان سازمان در منو و نشان کوچک تب مرورگر */
+  logoPath              String?
+  faviconPath           String?
+  /** بنرهای صفحه ورود: [{ src, caption }] — اسلایدی نمایش داده می‌شوند */
+  bannersJson           Json?
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   deletedAt   DateTime?
