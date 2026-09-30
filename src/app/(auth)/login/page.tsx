@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { currentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { parseBanners } from "@/lib/banners";
 import LoginClient, { type Slide } from "./login-client";
 
 export const metadata: Metadata = { title: "ورود" };
@@ -14,10 +15,10 @@ export default async function LoginPage() {
     where: { status: "ACTIVE" },
     select: { bannersJson: true },
   });
-  const banners = ((organization?.bannersJson as Slide[] | null) ?? []).filter((b) => b?.src);
+  const settings = parseBanners(organization?.bannersJson);
 
-  const slides: Slide[] = banners.length
-    ? banners.map((b) => ({ src: b.src, caption: b.caption || "سامانه میلینگ سازمانی" }))
+  const slides: Slide[] = settings.items.length
+    ? settings.items.map((b) => ({ src: b.src, caption: b.caption || "سامانه میلینگ سازمانی" }))
     : [{
         src:
           process.env.NEXT_PUBLIC_HERO_IMAGE ||
@@ -25,5 +26,5 @@ export default async function LoginPage() {
         caption: "یک نامه، هزار مخاطب — هرکدام با نام خودش.",
       }];
 
-  return <LoginClient slides={slides} />;
+  return <LoginClient slides={slides} overlay={settings.overlay} seconds={settings.seconds} />;
 }

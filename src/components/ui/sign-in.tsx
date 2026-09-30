@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 // --- آیکون‌ها ---
@@ -27,6 +27,11 @@ interface SignInPageProps {
   heroImageSrc?: string;
   /** متنی که روی تصویر سمت چپ نمایش داده می‌شود (وقتی testimonial نداریم) */
   heroCaption?: React.ReactNode;
+  /** درصد تیرگی روی تصویر: هرچه کمتر، عکس واضح‌تر دیده می‌شود */
+  heroOverlay?: number;
+  /** جابه‌جایی دستی بنرها؛ اگر داده شود، دکمه‌های پیمایش و کشیدن با ماوس فعال می‌شود */
+  onPrevSlide?: () => void;
+  onNextSlide?: () => void;
   testimonials?: Testimonial[];
   /** خطای سرور؛ زیر فرم و با role="alert" نمایش داده می‌شود */
   errorMessage?: string | null;
@@ -61,6 +66,9 @@ export const SignInPage: React.FC<SignInPageProps> = ({
   description = "برای ورود به سامانه، ایمیل سازمانی و گذرواژه خود را وارد کنید.",
   heroImageSrc,
   heroCaption,
+  heroOverlay = 45,
+  onPrevSlide,
+  onNextSlide,
   testimonials = [],
   errorMessage = null,
   pending = false,
@@ -70,6 +78,8 @@ export const SignInPage: React.FC<SignInPageProps> = ({
   onCreateAccount,
 }) => {
   const [showPassword, setShowPassword] = useState(false);
+  /** نقطه شروع کشیدن با ماوس/انگشت روی بنر */
+  const dragStart = useRef<number | null>(null);
 
   return (
     <div className="flex min-h-dvh w-full flex-col-reverse md:flex-row">
@@ -179,16 +189,55 @@ export const SignInPage: React.FC<SignInPageProps> = ({
           {/* پشت تصویر یک پس‌زمینه طراحی‌شده هست: اگر عکس بیرونی بالا نیاید
               (فیلتر شبکه، اینترنت کند) صفحه باز هم عمدی و کامل دیده می‌شود. */}
           <div
-            className="animate-slide-right animate-delay-300 absolute inset-3 rounded-3xl bg-cover bg-center md:inset-4"
+            className="animate-slide-right animate-delay-300 absolute inset-3 touch-pan-y rounded-3xl bg-cover bg-center md:inset-4"
             style={{
+              // تیرگی از تنظیمات می‌آید: کم که باشد خود عکس دیده می‌شود، زیاد که
+              // باشد متن روی عکس خواناتر است.
               backgroundImage:
-                `linear-gradient(140deg, rgba(10,26,51,.86), rgba(37,99,235,.55)), url(${heroImageSrc}), ` +
+                `linear-gradient(140deg, rgba(10,26,51,${(heroOverlay / 100).toFixed(2)}), rgba(37,99,235,${(heroOverlay / 160).toFixed(2)})), url(${heroImageSrc}), ` +
                 "radial-gradient(120% 90% at 20% 0%, #1d4ed8 0%, #0b1a33 55%, #060d1b 100%)",
+              cursor: onNextSlide ? "grab" : undefined,
             }}
             role="img"
             aria-label="تصویر سازمانی سامانه"
+            onPointerDown={(event) => { dragStart.current = event.clientX; }}
+            onPointerUp={(event) => {
+              const start = dragStart.current;
+              dragStart.current = null;
+              if (start === null || !onNextSlide || !onPrevSlide) return;
+              const delta = event.clientX - start;
+              // آستانه ۴۰ پیکسل تا کلیک ساده، بنر را عوض نکند
+              if (delta < -40) onNextSlide();
+              else if (delta > 40) onPrevSlide();
+            }}
           />
-          <div className="animate-slide-right animate-delay-300 absolute inset-3 rounded-3xl bg-gradient-to-t from-black/70 via-black/20 to-transparent md:inset-4" />
+          <div
+            className="animate-slide-right animate-delay-300 pointer-events-none absolute inset-3 rounded-3xl md:inset-4"
+            style={{ background: `linear-gradient(to top, rgba(0,0,0,${(heroOverlay / 100 * 0.8).toFixed(2)}), transparent 60%)` }}
+          />
+
+          {onPrevSlide && onNextSlide && (
+            <>
+              <button
+                type="button"
+                onClick={onPrevSlide}
+                aria-label="بنر قبلی"
+                className="absolute top-1/2 right-6 z-10 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full text-white backdrop-blur md:right-8"
+                style={{ background: "rgba(0,0,0,.35)" }}
+              >
+                ›
+              </button>
+              <button
+                type="button"
+                onClick={onNextSlide}
+                aria-label="بنر بعدی"
+                className="absolute top-1/2 left-6 z-10 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full text-white backdrop-blur md:left-8"
+                style={{ background: "rgba(0,0,0,.35)" }}
+              >
+                ‹
+              </button>
+            </>
+          )}
 
           {heroCaption && testimonials.length === 0 && (
             <div className="animate-element animate-delay-1000 absolute bottom-6 right-6 left-6 text-white md:bottom-12 md:right-12 md:left-12">

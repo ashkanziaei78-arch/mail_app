@@ -6,7 +6,7 @@ import { SignInPage } from "@/components/ui/sign-in";
 
 export type Slide = { src: string; caption: string };
 
-export default function LoginClient({ slides }: { slides: Slide[] }) {
+export default function LoginClient({ slides, overlay = 45, seconds = 10 }: { slides: Slide[]; overlay?: number; seconds?: number }) {
   const router = useRouter();
   /**
    * اسلاید بنرها: هر ۱۰ ثانیه تصویر و متن بعدی. اگر فقط یک بنر باشد، تایمری
@@ -18,9 +18,9 @@ export default function LoginClient({ slides }: { slides: Slide[] }) {
   useEffect(() => {
     if (slides.length < 2) return;
     if (typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const timer = setInterval(() => setIndex((i) => (i + 1) % slides.length), 10_000);
+    const timer = setInterval(() => setIndex((i) => (i + 1) % slides.length), seconds * 1000);
     return () => clearInterval(timer);
-  }, [slides.length]);
+  }, [slides.length, seconds]);
 
   const slide = slides[Math.min(index, slides.length - 1)];
   const [error, setError] = useState<string | null>(null);
@@ -116,6 +116,9 @@ export default function LoginClient({ slides }: { slides: Slide[] }) {
     <main id="main">
       <SignInPage
         heroImageSrc={slide.src}
+        heroOverlay={overlay}
+        onPrevSlide={slides.length > 1 ? () => setIndex((i) => (i - 1 + slides.length) % slides.length) : undefined}
+        onNextSlide={slides.length > 1 ? () => setIndex((i) => (i + 1) % slides.length) : undefined}
         errorMessage={error}
         pending={pending}
         onSignIn={handleSignIn}

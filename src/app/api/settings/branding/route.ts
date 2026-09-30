@@ -10,6 +10,9 @@ const schema = z.object({
     src: z.string().trim().max(300),
     caption: z.string().trim().max(200).default(""),
   })).max(8),
+  /** درصد تیرگی روی تصویر بنر و مدت نمایش هر بنر */
+  overlay: z.number().int().min(0).max(100).default(45),
+  seconds: z.number().int().min(3).max(120).default(10),
   removeLogo: z.boolean().default(false),
   removeFavicon: z.boolean().default(false),
 });
@@ -21,7 +24,7 @@ export async function PATCH(request: Request) {
     await prisma.organization.update({
       where: { id: user.organizationId },
       data: {
-        bannersJson: input.banners,
+        bannersJson: { items: input.banners, overlay: input.overlay, seconds: input.seconds },
         ...(input.removeLogo ? { logoPath: null } : {}),
         ...(input.removeFavicon ? { faviconPath: null } : {}),
       },

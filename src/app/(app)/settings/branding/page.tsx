@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
 import { requirePage } from "@/lib/auth";
-import BrandingClient, { type Banner } from "./branding-client";
+import { parseBanners } from "@/lib/banners";
+import BrandingClient from "./branding-client";
 
 export const metadata: Metadata = { title: "نشان و بنرها" };
 export const dynamic = "force-dynamic";
@@ -17,7 +18,7 @@ export default async function BrandingPage() {
     <BrandingClient
       logoPath={organization.logoPath}
       faviconPath={organization.faviconPath}
-      banners={(organization.bannersJson as Banner[] | null) ?? []}
+      banners={parseBanners(organization.bannersJson)}
     />
   );
 }

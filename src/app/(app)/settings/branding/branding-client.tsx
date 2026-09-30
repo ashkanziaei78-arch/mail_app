@@ -6,7 +6,7 @@ import { Image as ImageIcon, Plus, Trash2, Upload } from "lucide-react";
 import { Field, PageHeader } from "@/components/ui/primitives";
 import { useToast } from "@/components/ui/toast";
 
-export type Banner = { src: string; caption: string };
+import { BANNER_DEFAULTS, type Banner, type BannerSettings } from "@/lib/banners";
 
 /**
  * نشان سازمان، نشان تب مرورگر و بنرهای صفحه ورود.
@@ -17,11 +17,14 @@ export type Banner = { src: string; caption: string };
 export default function BrandingClient({ logoPath, faviconPath, banners: initial }: {
   logoPath: string | null;
   faviconPath: string | null;
-  banners: Banner[];
+  banners: BannerSettings;
 }) {
   const router = useRouter();
   const toast = useToast();
-  const [banners, setBanners] = useState<Banner[]>(initial);
+  const [banners, setBanners] = useState<Banner[]>(initial.items);
+  /** تیرگی روی تصویر و مدت نمایش هر بنر — همان‌ها که صفحه ورود می‌خواند */
+  const [overlay, setOverlay] = useState(initial.overlay ?? BANNER_DEFAULTS.overlay);
+  const [seconds, setSeconds] = useState(initial.seconds ?? BANNER_DEFAULTS.seconds);
   const [busy, setBusy] = useState(false);
 
   async function upload(file: File, kind: "logo" | "favicon" | "banner") {
@@ -43,7 +46,7 @@ export default function BrandingClient({ logoPath, faviconPath, banners: initial
     const res = await fetch("/api/settings/branding", {
       method: "PATCH",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ banners, ...extra }),
+      body: JSON.stringify({ banners, overlay, seconds, ...extra }),
     });
     const json = await res.json();
     setBusy(false);
@@ -115,8 +118,45 @@ export default function BrandingClient({ logoPath, faviconPath, banners: initial
           </div>
 
           <p className="text-sm" style={{ color: "var(--muted)" }}>
-            بنرها هر ۱۰ ثانیه یکی‌یکی عوض می‌شوند و متن هر کدام زیرش نوشته می‌شود. اگر بنری نگذارید، تصویر پیش‌فرض نشان داده می‌شود.
+            بنرها یکی‌یکی عوض می‌شوند و متن هر کدام زیرش نوشته می‌شود. کاربر هم می‌تواند با دکمه‌های کناری یا کشیدن تصویر، بنر را جلو و عقب ببرد.
+            اگر بنری نگذارید، تصویر پیش‌فرض نشان داده می‌شود.
           </p>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field
+              label={`تیرگی روی تصویر: ${overlay}٪`}
+              hint="هرچه کمتر، عکس واضح‌تر؛ هرچه بیشتر، متن روی عکس خواناتر. پیشنهاد: بین ۲۰ تا ۵۰."
+            >
+              <input
+                type="range" min={0} max={100} step={5} value={overlay}
+                onChange={(e) => setOverlay(Number(e.target.value))}
+                className="w-full"
+              />
+            </Field>
+
+            <Field label="مدت نمایش هر بنر (ثانیه)" hint="بین ۳ تا ۱۲۰ ثانیه.">
+              <input
+                type="number" min={3} max={120} className="input tnum" dir="ltr"
+                value={seconds}
+                onChange={(e) => setSeconds(Number(e.target.value))}
+              />
+            </Field>
+          </div>
+
+          {banners[0] && (
+            <div className="overflow-hidden rounded-xl">
+              <p className="mb-2 text-xs" style={{ color: "var(--muted)" }}>پیش‌نمایش با تیرگی فعلی:</p>
+              <div
+                className="grid h-40 place-items-center bg-cover bg-center p-4 text-center text-white"
+                style={{
+                  backgroundImage:
+                    `linear-gradient(140deg, rgba(10,26,51,${(overlay / 100).toFixed(2)}), rgba(37,99,235,${(overlay / 160).toFixed(2)})), url(${banners[0].src})`,
+                }}
+              >
+                <span className="text-lg font-bold">{banners[0].caption || "متن بنر"}</span>
+              </div>
+            </div>
+          )}
 
           {banners.length === 0 ? (
             <p className="rounded-xl p-3 text-sm" style={{ background: "var(--surface-2)" }}>هنوز بنری اضافه نشده است.</p>
