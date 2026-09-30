@@ -6,6 +6,8 @@ import { prisma } from "@/lib/db";
 import { verifySigned } from "@/lib/crypto";
 import { faDate, faDateTime, faNumber } from "@/lib/jalali";
 import { splitPages } from "@/lib/letter-pages";
+import QRCode from "qrcode";
+import { appBaseUrl } from "@/lib/base-url";
 import AccessCodeForm from "./access-code-form";
 import { verifyAccessCode } from "./actions";
 import PrintButton from "./print-button";
@@ -84,6 +86,15 @@ export default async function LetterPage({ params }: { params: Promise<{ code: s
   const contact = document.campaignRecipient.contact;
   const response = document.campaignRecipient.response;
 
+  // QR روی سرور ساخته می‌شود تا صفحه به هیچ اسکریپت یا سرویس بیرونی نیاز نداشته
+  // باشد؛ در چاپ هم همان SVG برداری چاپ می‌شود.
+  const qrSvg = await QRCode.toString(`${appBaseUrl()}/l/${link.code}`, {
+    type: "svg",
+    margin: 0,
+    width: 76,
+    color: { dark: "#0a2233", light: "#ffffff" },
+  });
+
   return (
     <main id="main" className="min-h-dvh p-4">
       <div className="no-print mx-auto mb-4 flex max-w-[210mm] flex-wrap items-center justify-between gap-3 rounded-xl border p-3"
@@ -113,6 +124,19 @@ export default async function LetterPage({ params }: { params: Promise<{ code: s
             <div dangerouslySetInnerHTML={{ __html: page }} />
             {index === all.length - 1 && letter?.senderName && (
               <p className="mt-10 text-left font-bold">{letter.senderName}</p>
+            )}
+
+            {/* مهر اصالت: نسخه چاپی با همین QR به نسخه آنلاین برمی‌گردد و
+                گیرنده می‌تواند اصل نامه را راستی‌آزمایی کند. */}
+            {index === all.length - 1 && (
+              <div className="mt-8 flex items-center gap-3 border-t pt-4 text-[10px]" style={{ color: "#475569" }}>
+                <span dangerouslySetInnerHTML={{ __html: qrSvg }} />
+                <span>
+                  <span className="block font-bold">راستی‌آزمایی نامه</span>
+                  <span className="block">این تصویر را با دوربین گوشی بخوانید تا نسخه رسمی همین نامه باز شود.</span>
+                  <span className="tnum block" dir="ltr">{document.documentNumber}</span>
+                </span>
+              </div>
             )}
             {all.length > 1 && (
               <p className="tnum mt-6 text-center text-xs" style={{ color: "var(--muted)" }}>

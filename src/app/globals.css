@@ -19,28 +19,41 @@
 @theme {
   --font-sans: Vazirmatn, "Segoe UI", Tahoma, system-ui, sans-serif;
 
-  --color-brand-50: #eef4ff;
-  --color-brand-100: #dbe6ff;
-  --color-brand-200: #bdd0ff;
-  --color-brand-400: #5b86e8;
-  --color-brand-600: #1d4ed8;
-  --color-brand-700: #1a40ad;
-  --color-brand-900: #0f2547;
-  --color-brand-950: #091730;
+  /*
+   * پالت «سرمه‌ای دیپلماتیک»: آبی-فیروزه‌ای عمیق به‌جای آبی سلطنتی عمومی.
+   * برای کار اداری/دولتی انتخاب شد: رسمی و آرام، ولی نه سرد و کلیشه‌ای. لهجه
+   * طلایی کم‌رنگ (accent) فقط برای نشانه‌های رسمی و تأکید به کار می‌رود، نه
+   * برای سطح‌های بزرگ.
+   * همه ترکیب‌های متن/پس‌زمینه با WCAG AA سنجیده شده‌اند (پایین‌ترین: ۴٫۸۹:۱).
+   */
+  --color-brand-50: #eef6fa;
+  --color-brand-100: #d7eaf3;
+  --color-brand-200: #afd5e7;
+  --color-brand-400: #4fa3c7;
+  --color-brand-600: #0f5c7a;
+  --color-brand-700: #0c4a63;
+  --color-brand-900: #0a2233;
+  --color-brand-950: #06151f;
+
+  --color-accent-500: #a67c1a;
+  --color-accent-100: #fbf4e2;
 
   --radius-card: 0.75rem;
 }
 
 /* ---- توکن‌های معنایی: روشن / تاریک ---- */
 :root {
-  --bg: #f4f6fa;
+  --bg: #f5f7fa;
   --surface: #ffffff;
-  --surface-2: #f8fafc;
-  --border: #e2e8f0;
-  --text: #0f172a;
-  --muted: #4b5a70;
-  --primary: #1d4ed8;
+  --surface-2: #eff3f8;
+  --border: #c9d4e1;
+  --text: #111c2e;
+  --muted: #4e5d74;
+  --primary: #0f5c7a;
   --primary-text: #ffffff;
+  /* لهجه طلایی: مهر، نشان رسمی، تأکید کوچک — نه پس‌زمینه بزرگ */
+  --accent: #8a6412;
+  --accent-bg: #fbf4e2;
   --success: #15803d;
   --success-bg: #dcfce7;
   --danger: #b91c1c;
@@ -49,22 +62,24 @@
   --warn-bg: #fef3c7;
   --info: #0369a1;
   --info-bg: #e0f2fe;
-  --ring: #1d4ed8;
+  --ring: #0f5c7a;
   /* لینک از primary جداست: primary پس‌زمینه دکمه است، لینک روی سطح می‌نشیند
      و باید روی حالت hover جدول هم کنتراست AA بدهد. */
-  --link: #1d4ed8;
+  --link: #0d5a86;
   color-scheme: light;
 }
 
 [data-theme="dark"] {
-  --bg: #0b1220;
-  --surface: #121b2c;
-  --surface-2: #18233a;
-  --border: #27344d;
-  --text: #e8eef9;
-  --muted: #a5b6d2;
-  --primary: #5b86e8;
-  --primary-text: #08121f;
+  --bg: #0a121d;
+  --surface: #101a29;
+  --surface-2: #16223a;
+  --border: #26344b;
+  --text: #e7eef8;
+  --muted: #a3b4cc;
+  --primary: #5fc0e0;
+  --primary-text: #04141c;
+  --accent: #e3c06b;
+  --accent-bg: #2a2410;
   --success: #4ade80;
   --success-bg: #14361f;
   --danger: #fca5a5;
@@ -73,8 +88,8 @@
   --warn-bg: #3a2c0a;
   --info: #7dd3fc;
   --info-bg: #0b2e42;
-  --ring: #7ea6ff;
-  --link: #7da2f0; /* ۶٫۱۹:۱ روی surface-2 — #5b86e8 فقط ۴٫۴۹ می‌داد */
+  --ring: #7fd0ea;
+  --link: #7fd0ea; /* ۹٫۱۵:۱ روی surface-2 */
   color-scheme: dark;
 }
 

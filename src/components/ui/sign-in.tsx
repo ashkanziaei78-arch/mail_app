@@ -194,8 +194,8 @@ export const SignInPage: React.FC<SignInPageProps> = ({
               // تیرگی از تنظیمات می‌آید: کم که باشد خود عکس دیده می‌شود، زیاد که
               // باشد متن روی عکس خواناتر است.
               backgroundImage:
-                `linear-gradient(140deg, rgba(10,26,51,${(heroOverlay / 100).toFixed(2)}), rgba(37,99,235,${(heroOverlay / 160).toFixed(2)})), url(${heroImageSrc}), ` +
-                "radial-gradient(120% 90% at 20% 0%, #1d4ed8 0%, #0b1a33 55%, #060d1b 100%)",
+                `linear-gradient(140deg, rgba(10,34,51,${(heroOverlay / 100).toFixed(2)}), rgba(15,92,122,${(heroOverlay / 160).toFixed(2)})), url(${heroImageSrc}), ` +
+                "radial-gradient(120% 90% at 20% 0%, #0f5c7a 0%, #0a2233 55%, #06151f 100%)",
               cursor: onNextSlide ? "grab" : undefined,
             }}
             role="img"

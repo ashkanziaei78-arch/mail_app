@@ -42,6 +42,33 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const totalSms = sent + failed;
   const successRate = totalSms ? ((sent / totalSms) * 100).toLocaleString("fa-IR", { maximumFractionDigits: 1 }) : "—";
 
+  /**
+   * چک‌لیست راه‌اندازی: فقط برای مدیر سازمان و فقط تا وقتی کاری مانده باشد.
+   * بدون این، کاربر تازه نمی‌داند اول سراغ کدام تنظیم برود و نامه اولش به بن‌بست
+   * «درگاه پیامک تنظیم نشده» می‌خورد.
+   */
+  const isAdmin = user.role === "ORG_ADMIN" || user.role === "SUPER_ADMIN";
+  const [letterheadCount, smsConfig, workflowCount, sentCount, signature] = isAdmin
+    ? await Promise.all([
+        prisma.letterhead.count({ where: { ...org, status: "ACTIVE" } }),
+        prisma.smsProviderConfig.findFirst({ where: { ...org, isDefault: true }, select: { providerName: true } }),
+        prisma.workflow.count({ where: org }),
+        prisma.campaign.count({ where: { ...org, status: "COMPLETED" } }),
+        prisma.user.findUnique({ where: { id: user.id }, select: { signatureImagePath: true } }),
+      ])
+    : [0, null, 0, 0, null];
+
+  const setupSteps = isAdmin
+    ? [
+        { label: "سربرگ سازمان را آپلود کنید", href: "/letterheads", done: letterheadCount > 0 },
+        { label: "درگاه پیامک را وصل کنید", href: "/settings/sms", done: Boolean(smsConfig) && smsConfig?.providerName !== "console" },
+        { label: "سمت‌ها و گردش تأیید را بچینید", href: "/settings/workflow", done: workflowCount > 0 },
+        { label: "امضای خود را ثبت کنید", href: "/account/security", done: Boolean(signature?.signatureImagePath) },
+        { label: "اولین نامه را بفرستید", href: "/campaigns/new", done: sentCount > 0 },
+      ]
+    : [];
+  const setupRemaining = setupSteps.filter((s) => !s.done);
+
   const departments = await prisma.department.findMany({ where: org });
   const deptRows = byDepartment
     .map((row) => ({
@@ -60,6 +87,39 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
            style={{ background: "var(--danger-bg)", color: "var(--danger)" }}>
           دسترسی لازم برای آن بخش را ندارید. در صورت نیاز از مدیر سازمان درخواست کنید.
         </p>
+      )}
+
+      {setupRemaining.length > 0 && (
+        <section className="card mb-4 p-4">
+          <h2 className="mb-1 font-bold">راه‌اندازی سامانه</h2>
+          <p className="mb-3 text-sm" style={{ color: "var(--muted)" }}>
+            {faNumber(setupSteps.length - setupRemaining.length)} از {faNumber(setupSteps.length)} مرحله انجام شده است.
+            وقتی همه انجام شوند، این بخش خودش پنهان می‌شود.
+          </p>
+          <ul className="grid gap-2 sm:grid-cols-2">
+            {setupSteps.map((step) => (
+              <li key={step.href}>
+                <Link
+                  href={step.href}
+                  className="flex items-center gap-2 rounded-xl border p-2.5 text-sm"
+                  style={step.done ? { opacity: 0.6 } : { borderColor: "var(--primary)" }}
+                >
+                  <span
+                    className="grid h-5 w-5 shrink-0 place-items-center rounded-full text-[10px] font-bold"
+                    style={{
+                      background: step.done ? "var(--success)" : "var(--surface-2)",
+                      color: step.done ? "#fff" : "var(--muted)",
+                    }}
+                    aria-hidden="true"
+                  >
+                    {step.done ? "✓" : "•"}
+                  </span>
+                  <span className={step.done ? "line-through" : "font-semibold"}>{step.label}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">

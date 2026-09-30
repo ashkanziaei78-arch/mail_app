@@ -86,7 +86,7 @@ export default function MultiPicker({
                           <span className="block truncate text-xs" style={{ color: "var(--muted)" }}>{option.note}</span>
                         )}
                       </span>
-                      {on && <Check className="h-4 w-4 shrink-0" aria-hidden="true" style={{ color: "var(--brand-600)" }} />}
+                      {on && <Check className="h-4 w-4 shrink-0" aria-hidden="true" style={{ color: "var(--primary)" }} />}
                     </label>
                   </li>
                 );

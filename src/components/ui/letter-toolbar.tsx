@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AlignCenter, AlignJustify, AlignRight, Bold, Image as ImageIcon, SeparatorHorizontal, Table } from "lucide-react";
 import { useToast } from "./toast";
 import { PAGE_BREAK_HTML } from "@/lib/letter-pages";
+import { LETTER_TEMPLATES } from "@/lib/letter-templates";
 
 /**
  * ابزار متن نامه: چینش، شکست صفحه، درج تصویر و درج جدول از اکسل.
@@ -53,8 +54,27 @@ export default function LetterToolbar({ value, onChange, targetRef, disabled }: 
     toast("success", kind === "media" ? "تصویر در متن درج شد." : "جدول در متن درج شد.");
   }
 
+  function applyTemplate(id: string) {
+    const template = LETTER_TEMPLATES.find((t) => t.id === id);
+    if (!template) return;
+    // متن موجود پاک نمی‌شود؛ قالب سر جای مکان‌نما می‌نشیند
+    insert(template.body);
+    toast("success", `قالب «${template.title}» درج شد. جاهای داخل [ ] را با اطلاعات نامه پر کنید.`);
+  }
+
   return (
     <div className="flex flex-wrap gap-1.5">
+      <select
+        className="select h-9 w-auto py-1 text-xs"
+        value=""
+        disabled={disabled}
+        aria-label="درج قالب آماده"
+        onChange={(e) => { applyTemplate(e.target.value); e.target.value = ""; }}
+      >
+        <option value="">قالب آماده…</option>
+        {LETTER_TEMPLATES.map((t) => <option key={t.id} value={t.id} title={t.summary}>{t.title}</option>)}
+      </select>
+
       <button type="button" className="btn btn-sm" disabled={disabled}
               onClick={() => apply('<div style="text-align: justify">', "</div>", "متن")}
               title="تراز از دو طرف">

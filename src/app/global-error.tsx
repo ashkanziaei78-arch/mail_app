@@ -12,7 +12,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
               صفحه را دوباره بارگذاری کنید. اگر تکرار شد، کد خطا را به پشتیبانی بدهید.
             </p>
             {error.digest && <p style={{ fontSize: 12, marginBottom: 16 }}>کد خطا: {error.digest}</p>}
-            <button onClick={reset} style={{ background: "#1d4ed8", color: "#fff", border: 0, borderRadius: 8, padding: "10px 18px", fontSize: 14, cursor: "pointer" }}>
+            <button onClick={reset} style={{ background: "#0f5c7a", color: "#fff", border: 0, borderRadius: 8, padding: "10px 18px", fontSize: 14, cursor: "pointer" }}>
               تلاش دوباره
             </button>
           </div>

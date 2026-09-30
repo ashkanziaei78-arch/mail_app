@@ -186,7 +186,7 @@ export default function LetterheadCanvas({
               width: `${field.width}%`,
               height: `${field.height}%`,
               cursor: readOnly ? "default" : "move",
-              outline: active ? "2px solid var(--brand-600)" : "1px dashed rgba(37,99,235,.55)",
+              outline: active ? "2px solid var(--primary)" : "1px dashed rgba(15,92,122,.55)",
               background: active ? "rgba(37,99,235,.08)" : "transparent",
               touchAction: "none",
             }}
@@ -228,7 +228,7 @@ export default function LetterheadCanvas({
                   });
                 }}
                 className="absolute h-2.5 w-2.5 rounded-full border-2 border-white"
-                style={{ ...handle.style, background: "var(--brand-600)", cursor: handle.cursor, touchAction: "none" }}
+                style={{ ...handle.style, background: "var(--primary)", cursor: handle.cursor, touchAction: "none" }}
               />
             ))}
           </div>
