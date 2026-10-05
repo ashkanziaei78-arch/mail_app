@@ -1,0 +1,88 @@
+@font-face{font-family:Vazirmatn;src:url("vazirmatn-variable.woff2") format("woff2-variations");font-weight:100 900;font-display:block}
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --paper:#F4F1EA; --paper-2:#EBE6DC; --ink:#111A22; --ink-soft:#4A5862;
+  --rule:#C9C2B4; --accent:#A8401F; --white:#FFFDF8;
+  --m:72px;                      /* حاشیهٔ شبکه */
+}
+html,body{background:#000;overflow:hidden}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden;
+  font-family:Vazirmatn,system-ui,sans-serif;direction:rtl;background:var(--ink)}
+#paper{position:absolute;inset:0;background:var(--paper);will-change:transform}
+#ink{position:absolute;inset:0;background:var(--ink);will-change:transform}
+#layers{position:absolute;inset:0}
+#grain{position:absolute;inset:0;pointer-events:none;z-index:900;opacity:.055;
+  background-image:url("grain.png");background-size:400px 400px;mix-blend-mode:multiply}
+
+.scene{position:absolute;inset:0;will-change:opacity}
+
+/* ---------- تایپ ---------- */
+.d1{position:absolute;right:var(--m);left:var(--m);font-weight:900;font-size:104px;line-height:1.14;
+  letter-spacing:-2.6px;color:var(--ink);text-align:right;will-change:clip-path,transform}
+.d2{position:absolute;right:var(--m);left:var(--m);font-weight:900;font-size:76px;line-height:1.22;
+  letter-spacing:-1.8px;color:var(--ink);text-align:right;will-change:clip-path,transform}
+.d3{position:absolute;right:var(--m);left:var(--m);font-weight:800;font-size:54px;line-height:1.35;
+  letter-spacing:-1px;color:var(--ink);text-align:right;will-change:clip-path,transform}
+.body{position:absolute;right:var(--m);left:var(--m);font-weight:500;font-size:38px;line-height:1.72;
+  color:var(--ink-soft);text-align:right;will-change:clip-path,transform}
+.onink .d1,.onink .d2,.onink .d3{color:var(--white)}
+.onink .body{color:#9FAEB8}
+.acc{color:var(--accent)}
+
+/* نشانگرِ فصل — داخل شبکه، نه گوشهٔ قاب */
+.idx{position:absolute;right:var(--m);display:flex;align-items:center;gap:18px;
+  font-weight:800;font-size:28px;color:var(--accent);letter-spacing:1px;will-change:clip-path}
+.idx u{display:block;width:120px;height:3px;background:var(--accent);text-decoration:none}
+
+.rule{position:absolute;right:var(--m);height:3px;background:var(--rule);will-change:transform}
+.rule.ink{background:rgba(255,253,248,.28)}
+.rule.acc{background:var(--accent)}
+
+/* ---------- کارت‌های منبعِ پراکنده ---------- */
+.src{position:absolute;background:var(--white);border:2px solid var(--rule);padding:26px 28px;
+  box-shadow:0 18px 34px rgba(17,26,34,.13);will-change:transform,clip-path}
+.src b{display:block;font-size:34px;font-weight:800;color:var(--ink)}
+.src i{display:block;font-style:normal;margin-top:10px;font-size:26px;color:var(--ink-soft)}
+.src .tag{position:absolute;top:-16px;right:22px;background:var(--accent);color:var(--white);
+  font-size:20px;font-weight:800;padding:5px 12px}
+
+/* ---------- رشتهٔ کاغذی ---------- */
+.step{position:absolute;right:var(--m);left:var(--m);height:104px;border-bottom:3px solid var(--rule);
+  display:flex;align-items:center;will-change:clip-path}
+.step b{font-size:46px;font-weight:800;color:var(--ink)}
+.step .no{width:74px;font-size:30px;font-weight:800;color:var(--ink-soft)}
+.step .mk{position:absolute;left:0;top:50%;width:62px;height:62px;margin-top:-31px;
+  border:3px solid var(--accent);border-radius:50%;color:var(--accent);font-size:26px;font-weight:800;
+  display:grid;place-items:center;will-change:transform,opacity}
+#ret{position:absolute;left:var(--m);width:4px;background:var(--accent);will-change:transform}
+#retHead{position:absolute;left:0;width:0;height:0;border-left:16px solid transparent;
+  border-right:16px solid transparent;border-bottom:22px solid var(--accent)}
+
+/* ---------- مُهر و نشان ---------- */
+.seal{position:absolute;width:300px;height:300px;border:9px solid var(--accent);border-radius:50%;
+  display:grid;place-items:center;will-change:transform,opacity}
+.seal span{font-size:56px;font-weight:900;color:var(--accent);letter-spacing:-1px}
+.sealRing{position:absolute;width:300px;height:300px;border:4px solid var(--accent);border-radius:50%;
+  will-change:transform,opacity}
+
+/* ---------- گوشی روی کاغذ ---------- */
+.ph{position:absolute;border-radius:76px;padding:9px;will-change:transform,opacity;
+  background:linear-gradient(145deg,#2A2F35,#6E747C 16%,#33383E 40%,#1E2328 68%,#5F666E 90%,#2A2F35);
+  box-shadow:0 46px 90px rgba(17,26,34,.34)}
+.ph .screen{position:absolute;inset:9px;border-radius:68px;overflow:hidden;background:#fff}
+.ph .vp{position:absolute;inset:0;overflow:hidden;background:#fff}
+.ph .vp img{position:absolute;left:0;top:76px;width:100%;display:block;will-change:transform}
+.ph .status{position:absolute;z-index:5;left:0;right:0;top:0;height:76px;background:#F2F5F7}
+.ph .status .t{position:absolute;left:44px;top:24px;font-size:24px;font-weight:700;color:#0B1A26}
+.ph .status .ic{position:absolute;right:40px;top:26px;display:flex;gap:8px}
+.ph .status .ic i{display:block;width:24px;height:15px;border-radius:3px;background:#0B1A26;opacity:.8}
+.ph .status .ic i.b{width:32px;border-radius:5px}
+.ph .island{position:absolute;z-index:6;left:50%;top:22px;width:112px;height:32px;margin-left:-56px;
+  border-radius:16px;background:#05090D}
+.tap{position:absolute;z-index:9;border-radius:50%;border:6px solid var(--accent);will-change:transform,opacity}
+
+/* ---------- ردیفِ کانال‌ها و تحویل ---------- */
+.chip{position:absolute;border:3px solid var(--ink);padding:14px 26px;font-size:34px;font-weight:800;
+  color:var(--ink);background:var(--white);will-change:transform,opacity}
+.chip.on{background:var(--ink);color:var(--white)}
+.strike{position:absolute;height:6px;background:var(--accent);will-change:transform}
