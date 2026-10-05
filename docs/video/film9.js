@@ -128,10 +128,10 @@ function band(list, t, node, write) {
 {
   const sc = scene(7.5, 13.1, 0.4, 0.45);
   const DEF = [
-    { t: "گوشی همکار", s: "سه شماره، یکی بی‌نام", r: ["حاج‌آقا رئیس", "۰۹۱۳ …"], x: 60, y: 500, dx: -320 },
-    { t: "اتوماسیون اداری", s: "آخرین به‌روزرسانی ۱۴۰۲", r: ["اداره کل", "۳۱ مخاطب"], x: 550, y: 500, dx: 320 },
-    { t: "زونکن کاغذی", s: "۲۱۰ برگ، دست‌نویس", r: ["شماره تماس", "روی کاغذ"], x: 60, y: 900, dx: -320 },
-    { t: "فایل اکسل", s: "مخاطبین_نهایی۳.xlsx", r: ["ردیف تکراری", "۴۷"], x: 550, y: 900, dx: 320 },
+    { t: "گوشی همکار", s: "سه شماره، یکی بی‌نام", r: ["حاج‌آقا رئیس", "۰۹۱۳ …"], x: 60, y: 700, dx: -320 },
+    { t: "اتوماسیون اداری", s: "آخرین به‌روزرسانی ۱۴۰۲", r: ["اداره کل", "۳۱ مخاطب"], x: 550, y: 700, dx: 320 },
+    { t: "زونکن کاغذی", s: "۲۱۰ برگ، دست‌نویس", r: ["شماره تماس", "روی کاغذ"], x: 60, y: 1100, dx: -320 },
+    { t: "فایل اکسل", s: "مخاطبین_نهایی۳.xlsx", r: ["ردیف تکراری", "۴۷"], x: 550, y: 1100, dx: 320 },
   ];
   const cards = DEF.map((d, i) => {
     const n = add(sc, "div", "isl");
@@ -139,7 +139,7 @@ function band(list, t, node, write) {
     n.innerHTML = `<b>${d.t}</b><i>${d.s}</i><span class="row"><span>${d.r[0]}</span><span dir="ltr">${d.r[1]}</span></span>`;
     n.__d = d; n.__at = 7.9 + i * 0.42; return n;
   });
-  const XS = [[502, 630], [502, 1030], [262, 828], [742, 828]];
+  const XS = [[502, 777], [502, 1177], [257, 977], [747, 977]];
   const xs = XS.map((p, i) => {
     const n = add(sc, "div", "xmark");
     n.style.left = px(p[0]); n.style.top = px(p[1]);
@@ -374,10 +374,17 @@ const FEATURES = [
    ========================================================================= */
 {
   const sc = scene(63.6, 136.4, 0.6, 0.6);
-  const PH = { x: 270, y: 440, w: 540, h: 900 };
+  const PH = { x: 200, y: 240, w: 680, h: 1471 };
+  const TOPBAR = 92;                 /* نوار وضعیت آیفون */
+  const VIS = PH.h - 22 - TOPBAR;    /* ارتفاعِ دیدهٔ صفحه، بدون قاب و نوار */
   const ph = add(sc, "div", "ph");
   ph.style.cssText = `left:${PH.x}px;top:${PH.y}px;width:${PH.w}px;height:${PH.h}px`;
-  ph.innerHTML = `<div class="vp"></div><div class="bar"></div><div class="notch"></div>`;
+  ph.innerHTML = `<div class="screen"><div class="vp"></div>
+      <div class="status"><span class="t">۹:۴۱</span><span class="ic"><i></i><i></i><i class="b"></i></span></div>
+      <div class="island"></div><div class="home"></div></div>
+    <div class="btn" style="right:-5px;top:300px;height:150px"></div>
+    <div class="btn" style="left:-5px;top:250px;height:80px"></div>
+    <div class="btn" style="left:-5px;top:370px;height:130px"></div>`;
   const vp = ph.querySelector(".vp");
   const imgs = [add(vp, "img"), add(vp, "img")];
 
@@ -400,18 +407,18 @@ const FEATURES = [
 
   /* ضربه روی «تأیید» (بند ۵) */
   const tap = add(sc, "div", "tapring");
-  tap.style.cssText += ";width:170px;height:170px";
+  tap.style.cssText += ";width:190px;height:190px";
   /* لنگرِ دکمه «تأیید» در مختصاتِ خودِ عکس (کسری از عرض و ارتفاع) */
   const TAP_ANCHOR = { px: 0.70, py: 0.185 };
   let shotBox = null;   /* {z, ty, natH} نمای فعلی، برای جای‌گذاری لنگر */
 
   /* نشان چهار کانال (بند ۶) */
-  const chans = add(sc, "div"); chans.id = "chans"; chans.style.top = "1382px";
+  const chans = add(sc, "div"); chans.id = "chans"; chans.style.top = "1430px";
   ["پیامک", "بله", "تلگرام", "ایتا"].forEach(x => add(chans, "div", null, x));
   const chanKids = [...chans.children];
 
   /* کارت پیامک (بند ۷) */
-  const smsCard = add(sc, "div"); smsCard.id = "smsCard"; smsCard.style.top = "1370px";
+  const smsCard = add(sc, "div"); smsCard.id = "smsCard"; smsCard.style.top = "1400px";
   smsCard.innerHTML = `<div class="from">میلینگ پرس</div>
     <p>نامه شماره ۱۴۰۴/۲۳۱ برای جنابعالی صادر شد.<br>
     لینک: mp.ir/l/FmMX3d — کد دسترسی: <b>۴۹۲۸۷۱</b></p>`;
@@ -430,8 +437,8 @@ const FEATURES = [
       if (!im.src.endsWith(src)) im.src = src;
       const p = eio(S(t, s.a, s.b));
       const z = lp(s.f[1], s.o[1], p);
-      const natH = im.naturalWidth ? PH.w * im.naturalHeight / im.naturalWidth : PH.h;
-      const range = Math.max(0, natH * z - PH.h);
+      const natH = im.naturalWidth ? (PH.w - 22) * im.naturalHeight / im.naturalWidth : VIS;
+      const range = Math.max(0, natH * z - VIS);
       const ty = -range * lp(s.f[0], s.o[0], p) / z;
       im.style.transformOrigin = "50% 0";
       im.style.transform = `scale(${z.toFixed(4)}) translateY(${ty.toFixed(1)}px)`;
@@ -445,9 +452,9 @@ const FEATURES = [
     const tp = S(t, 99.6, 100.5);
     tap.style.opacity = (tp > 0 && tp < 1 ? 1 - tp : 0).toFixed(3);
     if (shotBox) {
-      const cx = PH.x + PH.w / 2 + (TAP_ANCHOR.px * PH.w - PH.w / 2) * shotBox.z;
-      const cy = PH.y + 48 + (TAP_ANCHOR.py * shotBox.natH + shotBox.ty) * shotBox.z;
-      tap.style.left = px(cx - 85); tap.style.top = px(cy - 85);
+      const cx = PH.x + PH.w / 2 + (TAP_ANCHOR.px * (PH.w - 22) - (PH.w - 22) / 2) * shotBox.z;
+      const cy = PH.y + 11 + TOPBAR + (TAP_ANCHOR.py * shotBox.natH + shotBox.ty) * shotBox.z;
+      tap.style.left = px(cx - 95); tap.style.top = px(cy - 95);
     }
     tap.style.transform = `scale(${lp(0.3, 1.3, tp).toFixed(3)})`;
 

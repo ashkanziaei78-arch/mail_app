@@ -14,33 +14,45 @@ html,body{background:#000;overflow:hidden}
 .scene{position:absolute;inset:0;opacity:0;will-change:opacity}
 
 /* ---------- تیتر بالا ---------- */
-#head{position:absolute;z-index:800;right:62px;left:62px;top:150px;text-align:center;will-change:opacity,transform}
-#head .h{font-size:76px;font-weight:900;line-height:1.26;letter-spacing:-1.4px;text-shadow:0 4px 34px rgba(0,0,0,.6)}
+#head{position:absolute;z-index:800;right:56px;left:56px;top:86px;text-align:center;will-change:opacity,transform}
+#head .h{font-size:70px;font-weight:900;line-height:1.26;letter-spacing:-1.4px;text-shadow:0 4px 34px rgba(0,0,0,.6)}
 #head .h.sm{font-size:58px}
 #head .s{margin-top:20px;font-size:38px;font-weight:600;color:#9FC3D8;line-height:1.6}
 
 /* ---------- زیرنویس پایین ---------- */
-#cap{position:absolute;z-index:800;right:62px;left:62px;top:1570px;text-align:center;will-change:opacity,transform}
-#cap .c{font-size:46px;font-weight:700;line-height:1.62;color:#E8F2F8;text-shadow:0 3px 24px rgba(0,0,0,.7)}
-#scrim{position:absolute;z-index:790;left:0;right:0;bottom:0;height:560px;pointer-events:none;
+#cap{position:absolute;z-index:800;right:56px;left:56px;top:1752px;text-align:center;will-change:opacity,transform}
+#cap .c{font-size:42px;font-weight:700;line-height:1.5;color:#E8F2F8;text-shadow:0 3px 24px rgba(0,0,0,.7)}
+#scrim{position:absolute;z-index:790;left:0;right:0;bottom:0;height:330px;pointer-events:none;
   background:linear-gradient(180deg,rgba(5,15,24,0),rgba(5,15,24,.78) 46%,rgba(5,15,24,.96) 100%)}
-#scrimTop{position:absolute;z-index:789;left:0;right:0;top:0;height:420px;pointer-events:none;
+#scrimTop{position:absolute;z-index:789;left:0;right:0;top:0;height:300px;pointer-events:none;
   background:linear-gradient(180deg,rgba(5,15,24,.92),rgba(5,15,24,0))}
 
 /* ---------- نشان مرحله ---------- */
-#chip{position:absolute;z-index:810;left:0;right:0;top:58px;text-align:center;opacity:0}
-#chip span{display:inline-block;font-size:30px;font-weight:800;padding:12px 28px;border-radius:999px;
+#chip{position:absolute;z-index:810;left:0;right:0;top:18px;text-align:center;opacity:0}
+#chip span{display:inline-block;font-size:27px;font-weight:800;padding:12px 28px;border-radius:999px;
   background:rgba(201,162,39,.14);color:var(--gold-lt);border:1px solid rgba(201,162,39,.4)}
 
-/* ---------- گوشی ---------- */
-.ph{position:absolute;border-radius:54px;background:#081520;border:11px solid #1A3043;
-  box-shadow:0 60px 130px rgba(0,0,0,.7);overflow:hidden;will-change:transform,opacity}
-.ph .vp{position:absolute;inset:0;overflow:hidden;background:#0B1A26}
-.ph .vp img{position:absolute;left:0;top:0;width:100%;display:block;will-change:transform}
-.ph .bar{position:absolute;z-index:5;left:0;right:0;top:0;height:48px;background:#0B1A26}
-.ph .notch{position:absolute;z-index:6;left:50%;top:12px;width:150px;height:30px;margin-left:-75px;border-radius:17px;background:#081520}
-.ph .vp img{top:48px}
-.tapring{position:absolute;z-index:7;border-radius:50%;border:5px solid #8FE3C4;opacity:0;will-change:transform,opacity}
+/* ---------- گوشی (آیفون) ---------- */
+.ph{position:absolute;border-radius:94px;overflow:visible;will-change:transform,opacity;
+  background:linear-gradient(145deg,#31363C 0%,#767C84 13%,#3C4147 34%,#262A2F 60%,#6A7078 86%,#31363C 100%);
+  padding:11px;box-shadow:0 70px 150px rgba(0,0,0,.72), 0 0 0 1px rgba(255,255,255,.08)}
+.ph .screen{position:absolute;inset:11px;border-radius:84px;overflow:hidden;background:#0B1A26}
+.ph .vp{position:absolute;inset:0;overflow:hidden;background:#F2F5F7}
+.ph .vp img{position:absolute;left:0;top:92px;width:100%;display:block;will-change:transform}
+.ph .status{position:absolute;z-index:5;left:0;right:0;top:0;height:92px;background:#F2F5F7}
+.ph .status .t{position:absolute;left:52px;top:30px;font-size:26px;font-weight:700;color:#0B1A26}
+.ph .status .ic{position:absolute;right:48px;top:32px;display:flex;gap:9px;align-items:center}
+.ph .status .ic i{display:block;width:26px;height:16px;border-radius:3px;background:#0B1A26;opacity:.85}
+.ph .status .ic i.b{width:34px;border-radius:5px}
+.ph .island{position:absolute;z-index:7;left:50%;top:26px;width:124px;height:36px;margin-left:-62px;
+  border-radius:18px;background:#05090D;box-shadow:inset 0 0 0 1px rgba(255,255,255,.05)}
+.ph .island::after{content:"";position:absolute;right:16px;top:50%;width:11px;height:11px;margin-top:-5.5px;
+  border-radius:50%;background:#10212E}
+.ph .home{position:absolute;z-index:7;left:50%;bottom:16px;width:200px;height:7px;margin-left:-100px;
+  border-radius:4px;background:rgba(10,20,30,.34)}
+.ph .btn{position:absolute;width:6px;border-radius:3px;background:linear-gradient(180deg,#6A7078,#31363C)}
+.tapring{position:absolute;z-index:9;border-radius:50%;border:6px solid #2E8B6B;opacity:0;will-change:transform,opacity;
+  box-shadow:0 0 0 8px rgba(46,139,107,.18)}
 
 /* ---------- برگه نامه ---------- */
 .sheet{position:absolute;border-radius:7px;background:linear-gradient(170deg,#fff,#F4F0E6);

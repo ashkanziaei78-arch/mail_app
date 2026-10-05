@@ -1,8 +1,8 @@
 import { chromium } from "playwright"; import path from "node:path"; import fs from "node:fs";
-const BASE = "http://localhost:3100", PASS = "Mailing@1404";
+const BASE = "http://localhost:3102", PASS = "Mailing@1404";
 const OUT = path.resolve("shots9"); fs.mkdirSync(OUT, { recursive: true });
 const b = await chromium.launch({ args: ["--force-color-profile=srgb", "--font-render-hinting=none"] });
-const mobile = { viewport: { width: 420, height: 900 }, deviceScaleFactor: 3, locale: "fa-IR", isMobile: true, hasTouch: true };
+const mobile = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, locale: "fa-IR", isMobile: true, hasTouch: true };
 
 async function shots(email, pages) {
   const ctx = await b.newContext(mobile);
