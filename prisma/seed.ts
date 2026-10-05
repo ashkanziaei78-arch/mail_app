@@ -228,9 +228,14 @@ async function main() {
       data: {
         organizationId: organization.id,
         name: "سربرگ رسمی — دفتر مرکزی",
-        fileUrl: "/hero.png", // نمونه؛ در عمل مدیر تصویر واقعی را آپلود می‌کند
+        // طرح سربرگ نمونه: کاغذ روشن با نوار بالا و پایین، تا متن نامه رویش
+        // خوانا بماند. در عمل مدیر تصویر واقعی سازمان را آپلود می‌کند.
+        fileUrl: "/letterhead-sample.png",
         isDefault: true,
-        versions: { create: { fileUrl: "/hero.png", version: 1 } },
+        marginTopMm: 42,
+        marginBottomMm: 32,
+        marginSideMm: 22,
+        versions: { create: { fileUrl: "/letterhead-sample.png", version: 1 } },
         fields: {
           create: [
             { key: "letterNumber", label: "شماره نامه", type: "TEXT", area: "HEADER", required: true, placeholder: "۱۴۰۴/۱۲۳", sortOrder: 0 },
