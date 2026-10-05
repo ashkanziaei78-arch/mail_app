@@ -132,7 +132,7 @@ export default function AppShell({
           {user.logoSrc ? <img src={user.logoSrc} alt="" className="h-full w-full object-contain" /> : "م"}
         </span>
         <span className="min-w-0">
-          <span className="block truncate font-bold leading-tight">میلینگ سازمانی</span>
+          <span className="block truncate font-bold leading-tight">میلینگ پرس</span>
           <span className="block truncate text-[11px] text-brand-200">{user.organizationName}</span>
         </span>
       </div>

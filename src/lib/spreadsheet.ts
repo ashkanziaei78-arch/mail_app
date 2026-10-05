@@ -74,7 +74,7 @@ export const IMPORT_COLUMNS: Array<{ header: string; field: string; example: str
 /** ساخت فایل نمونه اکسل با سرستون‌های درست و یک سطر راهنما. */
 export async function buildTemplateWorkbook(): Promise<Buffer> {
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = "سامانه میلینگ سازمانی";
+  workbook.creator = "میلینگ پرس";
   workbook.created = new Date();
 
   const sheet = workbook.addWorksheet("مخاطبین", {
@@ -114,7 +114,7 @@ export async function buildTemplateWorkbook(): Promise<Buffer> {
 /** خروجی اکسل از مخاطبین — همان ستون‌هایی که ایمپورت می‌پذیرد، تا رفت‌وبرگشت بی‌دردسر باشد. */
 export async function buildContactsWorkbook(rows: Array<Record<string, string>>): Promise<Buffer> {
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = "سامانه میلینگ سازمانی";
+  workbook.creator = "میلینگ پرس";
   workbook.created = new Date();
 
   const sheet = workbook.addWorksheet("مخاطبین", {

@@ -5,7 +5,7 @@ import { audit } from "./audit";
 import { normalizeMobile } from "./sms";
 import { resolveProvider } from "./sms-server";
 import { appBaseUrl } from "./base-url";
-import { sendBale } from "./bale";
+import { MESSENGERS, sendMessenger } from "./messengers";
 import { decrypt } from "./crypto";
 
 /**
@@ -153,7 +153,7 @@ export async function notifyPendingApprover(campaignId: string, organizationId: 
 
     const approvers = await prisma.user.findMany({
       where: { organizationId, positionId: step.positionId, status: "ACTIVE", deletedAt: null },
-      select: { mobilePhone: true, baleChatId: true },
+      select: { mobilePhone: true, baleChatId: true, telegramChatId: true, eitaaChatId: true },
     });
     if (approvers.length === 0) return;
 
@@ -174,16 +174,28 @@ export async function notifyPendingApprover(campaignId: string, organizationId: 
       for (const to of numbers) await provider.send(to, text, sender);
     }
 
-    // بله: فقط برای کسانی که شناسه گفت‌وگویشان ثبت شده و سازمان ربات دارد
-    const chatIds = approvers.map((u) => u.baleChatId).filter((c): c is string => Boolean(c));
-    if (chatIds.length > 0) {
-      const org = await prisma.organization.findUniqueOrThrow({
-        where: { id: organizationId },
-        select: { baleBotTokenEncrypted: true },
-      });
-      if (org.baleBotTokenEncrypted) {
-        const token = decrypt(org.baleBotTokenEncrypted);
-        for (const chatId of chatIds) await sendBale(token, chatId, text);
+    // پیام‌رسان‌ها: هر کاربری که شناسه گفت‌وگویش را ثبت کرده و سازمان برای همان
+    // پیام‌رسان توکن دارد، پیام می‌گیرد. نبودن یکی، بقیه را نمی‌شکند.
+    const org = await prisma.organization.findUniqueOrThrow({
+      where: { id: organizationId },
+      select: { baleBotTokenEncrypted: true, telegramBotTokenEncrypted: true, eitaaTokenEncrypted: true },
+    });
+    const tokens: Record<string, string | null> = {
+      bale: org.baleBotTokenEncrypted,
+      telegram: org.telegramBotTokenEncrypted,
+      eitaa: org.eitaaTokenEncrypted,
+    };
+
+    for (const messenger of MESSENGERS) {
+      const encrypted = tokens[messenger.id];
+      if (!encrypted) continue;
+      const token = decrypt(encrypted);
+      for (const approver of approvers) {
+        const chatId =
+          messenger.id === "bale" ? approver.baleChatId
+          : messenger.id === "telegram" ? approver.telegramChatId
+          : approver.eitaaChatId;
+        if (chatId) await sendMessenger(messenger.id, token, chatId, text);
       }
     }
   } catch {

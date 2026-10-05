@@ -8,17 +8,18 @@ import { Badge, Field, PageHeader } from "@/components/ui/primitives";
 import Modal from "@/components/ui/modal";
 import PasswordInput from "@/components/ui/password-input";
 import { useToast } from "@/components/ui/toast";
+import { MESSENGERS } from "@/lib/messengers";
 import { faDateTime, faNumber } from "@/lib/jalali";
 import { AVATAR_STYLES, avatarDataUrl, avatarSrc } from "@/lib/avatars";
 
-export default function SecurityClient({ email, totpEnabled, backupCodesLeft, mobilePhone, passwordChangedAt, signatureImagePath, avatarPath, baleChatId }: {
+export default function SecurityClient({ email, totpEnabled, backupCodesLeft, mobilePhone, passwordChangedAt, signatureImagePath, avatarPath, chatIds }: {
   email: string;
   totpEnabled: boolean;
   backupCodesLeft: number;
   mobilePhone: string | null;
   passwordChangedAt: string;
   signatureImagePath: string | null;
-  baleChatId: string | null;
+  chatIds: Record<string, string | null>;
   avatarPath: string | null;
 }) {
   const router = useRouter();
@@ -73,7 +74,7 @@ export default function SecurityClient({ email, totpEnabled, backupCodesLeft, mo
 
         <SignatureCard current={signatureImagePath} />
 
-        <BaleCard current={baleChatId} />
+        <MessengerCard current={chatIds} />
 
         <section className="card p-5">
           <h2 className="mb-1 flex items-center gap-2 font-bold"><KeyRound className="h-5 w-5" />گذرواژه</h2>
@@ -400,36 +401,52 @@ function AvatarCard({ current }: { current: string | null }) {
  * ربات بله فقط به کسی می‌تواند پیام بدهد که خودش اول به ربات پیام داده باشد؛
  * برای همین این عدد را کاربر از ربات می‌گیرد و اینجا ثبت می‌کند.
  */
-function BaleCard({ current }: { current: string | null }) {
+function MessengerCard({ current }: { current: Record<string, string | null> }) {
   const router = useRouter();
   const toast = useToast();
-  const [value, setValue] = useState(current ?? "");
+  const [values, setValues] = useState<Record<string, string>>({
+    bale: current.bale ?? "",
+    telegram: current.telegram ?? "",
+    eitaa: current.eitaa ?? "",
+  });
   const [busy, setBusy] = useState(false);
 
-  async function save() {
+  async function save(messenger: string) {
     setBusy(true);
     const res = await fetch("/api/account/bale", {
       method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify({ baleChatId: value.trim() }),
+      body: JSON.stringify({ messenger, chatId: (values[messenger] ?? "").trim() }),
     });
     const json = await res.json();
     setBusy(false);
     if (!json.ok) { toast("error", json.error); return; }
-    toast("success", value.trim() ? "شناسه بله ذخیره شد." : "شناسه بله حذف شد.");
+    toast("success", (values[messenger] ?? "").trim() ? "شناسه ذخیره شد." : "شناسه حذف شد.");
     router.refresh();
   }
 
   return (
     <section className="card p-5">
-      <h2 className="mb-1 font-bold">اعلان در بله</h2>
+      <h2 className="mb-1 font-bold">اعلان در پیام‌رسان</h2>
       <p className="mb-4 text-sm leading-7" style={{ color: "var(--muted)" }}>
-        اگر می‌خواهید نامه‌های کارتابل را در بله هم خبردار شوید: در بله به ربات سازمان پیام بدهید،
-        شناسه گفت‌وگویی که به شما می‌دهد را اینجا بگذارید. خالی گذاشتن یعنی اعلان بله نمی‌خواهید.
+        اگر می‌خواهید نامه‌های کارتابل را در بله، تلگرام یا ایتا هم خبردار شوید: یک بار به ربات سازمان پیام بدهید و
+        شناسه گفت‌وگویی که می‌دهد را اینجا بگذارید. خالی گذاشتن یعنی از آن پیام‌رسان اعلان نمی‌خواهید.
       </p>
-      <Field label="شناسه گفت‌وگوی بله" hint="یک عدد است، مثل ۱۲۳۴۵۶۷۸۹">
-        <input className="input tnum" dir="ltr" inputMode="numeric" value={value} onChange={(e) => setValue(e.target.value)} />
-      </Field>
-      <button className="btn mt-3" onClick={save} disabled={busy}>ذخیره</button>
+      <div className="space-y-3">
+        {MESSENGERS.map((m) => (
+          <div key={m.id} className="flex flex-wrap items-end gap-2">
+            <div className="min-w-48 flex-1">
+              <Field label={`شناسه گفت‌وگوی ${m.label}`} hint="یک عدد است، مثل ۱۲۳۴۵۶۷۸۹">
+                <input
+                  className="input tnum" dir="ltr" inputMode="numeric"
+                  value={values[m.id] ?? ""}
+                  onChange={(e) => setValues((v) => ({ ...v, [m.id]: e.target.value }))}
+                />
+              </Field>
+            </div>
+            <button className="btn" onClick={() => save(m.id)} disabled={busy}>ذخیره</button>
+          </div>
+        ))}
+      </div>
     </section>
   );
 }

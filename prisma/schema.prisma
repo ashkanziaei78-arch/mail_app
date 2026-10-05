@@ -1,5 +1,5 @@
 // ==========================================================
-// مدل داده سامانه میلینگ سازمانی — Prisma Schema (PostgreSQL)
+// مدل داده میلینگ پرس — Prisma Schema (PostgreSQL)
 // ==========================================================
 
 generator client {
@@ -125,8 +125,10 @@ model Organization {
   slug        String       @unique
   description String?
   status      EntityStatus @default(ACTIVE)
-  /** توکن ربات بله (رمزنگاری‌شده) برای خبر دادن نامه تازه به تأییدکننده‌ها */
+  /** توکن ربات پیام‌رسان‌ها (رمزنگاری‌شده) برای خبر دادن نامه تازه به تأییدکننده‌ها */
   baleBotTokenEncrypted String?
+  telegramBotTokenEncrypted String?
+  eitaaTokenEncrypted       String?
   /** شناسه تم رنگی سامانه (src/lib/themes.ts)؛ خالی یعنی تم پیش‌فرض */
   themeId               String?
   /** نشان سازمان در منو و نشان کوچک تب مرورگر */
@@ -257,8 +259,10 @@ model User {
   signatureImagePath  String?
   /** عکس پروفایل: یا آپلود خودش، یا یکی از طرح‌های آماده گالری (avatar:<id>) */
   avatarPath          String?
-  /** شناسه گفت‌وگوی کاربر با ربات بله؛ برای خبر دادن نامه تازه در کارتابل */
+  /** شناسه گفت‌وگوی کاربر با ربات هر پیام‌رسان؛ برای خبر دادن نامه تازه در کارتابل */
   baleChatId          String?
+  telegramChatId      String?
+  eitaaChatId         String?
   createdAt           DateTime     @default(now())
   updatedAt           DateTime     @updatedAt
   deletedAt           DateTime?

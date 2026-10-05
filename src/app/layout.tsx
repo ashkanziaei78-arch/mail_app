@@ -27,10 +27,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 const metadata: Metadata = {
-  title: { default: "میلینگ سازمانی", template: "%s — میلینگ سازمانی" },
+  title: { default: "میلینگ پرس", template: "%s — میلینگ پرس" },
   description: "سامانه مکاتبات سازمانی و ارتباط با مخاطبین",
   manifest: "/manifest.webmanifest",
-  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "میلینگ" },
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "میلینگ پرس" },
   formatDetection: { telephone: false },
   icons: { icon: "/icon.svg", apple: "/icons/icon-192.png" },
 };

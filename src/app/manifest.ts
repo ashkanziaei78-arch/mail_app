@@ -3,7 +3,7 @@ import type { MetadataRoute } from "next";
 /** PWA — نصب روی اندروید/کروم و Add to Home Screen در iOS */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "سامانه میلینگ سازمانی",
+    name: "میلینگ پرس",
     short_name: "میلینگ",
     description: "سامانه مکاتبات سازمانی و ارتباط با مخاطبین",
     lang: "fa",

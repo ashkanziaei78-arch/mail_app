@@ -124,7 +124,7 @@ export default function LoginClient({ slides, overlay = 45, seconds = 10 }: { sl
         onSignIn={handleSignIn}
         title={
           <>
-            <span className="block text-base font-semibold text-primary">سامانه میلینگ سازمانی</span>
+            <span className="block text-base font-semibold text-primary">میلینگ پرس</span>
             <span className="font-light tracking-tight">ورود به حساب کاربری</span>
           </>
         }

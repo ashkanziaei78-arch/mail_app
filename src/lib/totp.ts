@@ -82,7 +82,7 @@ export function verifyCode(secret: string, token: string, at: Date = new Date(),
 }
 
 /** نشانی otpauth:// که برنامه‌های احراز هویت با QR یا دستی می‌خوانند. */
-export function otpauthUrl(secret: string, account: string, issuer = "میلینگ سازمانی"): string {
+export function otpauthUrl(secret: string, account: string, issuer = "میلینگ پرس"): string {
   const label = encodeURIComponent(`${issuer}:${account}`);
   const params = new URLSearchParams({
     secret,

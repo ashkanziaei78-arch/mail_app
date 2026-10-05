@@ -6,17 +6,19 @@ import { Field, PageHeader } from "@/components/ui/primitives";
 import PasswordInput from "@/components/ui/password-input";
 import { useToast } from "@/components/ui/toast";
 import { SUPPORTED_PROVIDERS } from "@/lib/sms";
+import { MESSENGERS } from "@/lib/messengers";
 
-export default function SmsSettingsClient({ current, baleConnected }: {
+export default function SmsSettingsClient({ current, connected }: {
   current: { providerName: string; senderNumber: string; hasKey: boolean } | null;
-  baleConnected: boolean;
+  /** کدام پیام‌رسان‌ها توکن ثبت‌شده دارند */
+  connected: Record<string, boolean>;
 }) {
   const router = useRouter();
   const [providerName, setProviderName] = useState(current?.providerName ?? "console");
   const [senderNumber, setSenderNumber] = useState(current?.senderNumber ?? "10008663");
   const [apiKey, setApiKey] = useState("");
   const [testPhone, setTestPhone] = useState("");
-  const [baleToken, setBaleToken] = useState("");
+  const [tokens, setTokens] = useState<Record<string, string>>({});
   const toast = useToast();
   const [busy, setBusy] = useState(false);
 
@@ -39,46 +41,49 @@ export default function SmsSettingsClient({ current, baleConnected }: {
     setBusy(true);
     const res = await fetch("/api/sms-settings", {
       method: "PUT", headers: { "content-type": "application/json" },
-      body: JSON.stringify({ phone: testPhone, text: "پیامک آزمایشی سامانه میلینگ سازمانی" }),
+      body: JSON.stringify({ phone: testPhone, text: "پیامک آزمایشی میلینگ پرس" }),
     });
     const json = await res.json();
     setBusy(false);
     toast(json.ok ? "success" : "error", json.ok ? "پیامک آزمایشی ارسال شد." : json.error);
   }
 
-  async function saveBale(event: React.FormEvent) {
+  async function saveMessenger(messenger: string, event: React.FormEvent) {
     event.preventDefault();
     setBusy(true);
     const res = await fetch("/api/settings/bale", {
       method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify({ token: baleToken }),
+      body: JSON.stringify({ messenger, token: tokens[messenger] ?? "" }),
     });
     const json = await res.json();
     setBusy(false);
     if (!json.ok) { toast("error", json.error); return; }
-    toast("success", "ربات بله متصل شد.");
-    setBaleToken("");
+    toast("success", "ربات متصل شد.");
+    setTokens((t) => ({ ...t, [messenger]: "" }));
     router.refresh();
   }
 
-  async function testBale() {
+  async function testMessenger(messenger: string) {
     setBusy(true);
-    const res = await fetch("/api/settings/bale", { method: "PUT" });
+    const res = await fetch("/api/settings/bale", {
+      method: "PUT", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ messenger }),
+    });
     const json = await res.json();
     setBusy(false);
-    toast(json.ok ? "success" : "error", json.ok ? "پیام آزمایشی بله ارسال شد." : json.error);
+    toast(json.ok ? "success" : "error", json.ok ? "پیام آزمایشی ارسال شد." : json.error);
   }
 
-  async function disconnectBale() {
+  async function disconnectMessenger(messenger: string) {
     setBusy(true);
     const res = await fetch("/api/settings/bale", {
       method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify({ disconnect: true }),
+      body: JSON.stringify({ messenger, disconnect: true }),
     });
     const json = await res.json();
     setBusy(false);
     if (!json.ok) { toast("error", json.error); return; }
-    toast("success", "اتصال بله قطع شد.");
+    toast("success", "اتصال قطع شد.");
     router.refresh();
   }
 
@@ -122,25 +127,39 @@ export default function SmsSettingsClient({ current, baleConnected }: {
           <button className="btn" onClick={sendTest} disabled={busy || !testPhone}>ارسال پیامک آزمایشی</button>
         </div>
 
-        <form onSubmit={saveBale} className="card space-y-4 p-5 lg:col-span-2">
-          <h2 className="font-bold">ربات بله {baleConnected && <span className="text-xs font-normal" style={{ color: "var(--success)" }}>— متصل است</span>}</h2>
+        <section className="card space-y-4 p-5 lg:col-span-2">
+          <h2 className="font-bold">پیام‌رسان‌ها</h2>
           <p className="text-sm leading-7" style={{ color: "var(--muted)" }}>
-            وقتی نامه‌ای وارد کارتابل تأیید کسی می‌شود، علاوه بر پیامک در بله هم به او خبر داده می‌شود.
-            ساخت ربات: در بله به <span dir="ltr">@BotFather</span> پیام بدهید، ربات بسازید و توکنی که می‌دهد را اینجا بگذارید.
-            بعد هر کاربر باید یک بار در بله به همان ربات پیام بدهد و «شناسه گفت‌وگو» را در «حساب و امضای من» ثبت کند.
+            وقتی نامه‌ای وارد کارتابل تأیید کسی می‌شود، علاوه بر پیامک، در پیام‌رسان هم به او خبر داده می‌شود.
+            برای هر پیام‌رسان یک ربات بسازید و توکنش را اینجا بگذارید. بعد هر کاربر یک بار به همان ربات پیام می‌دهد و
+            «شناسه گفت‌وگو» را در «حساب و امضای من» ثبت می‌کند.
           </p>
-          <Field
-            label="توکن ربات بله"
-            hint={baleConnected ? "توکنی ذخیره شده است. برای تغییر، توکن تازه را وارد کنید." : undefined}
-          >
-            <PasswordInput autoComplete="off" value={baleToken} onChange={(e) => setBaleToken(e.target.value)} placeholder={baleConnected ? "••••••••" : ""} />
-          </Field>
-          <div className="flex flex-wrap gap-2">
-            <button className="btn btn-primary" type="submit" disabled={busy || !baleToken}>ذخیره توکن بله</button>
-            {baleConnected && <button className="btn" type="button" onClick={testBale} disabled={busy}>پیام آزمایشی بله</button>}
-            {baleConnected && <button className="btn btn-danger" type="button" onClick={disconnectBale} disabled={busy}>قطع اتصال</button>}
+
+          <div className="grid gap-3 lg:grid-cols-3">
+            {MESSENGERS.map((m) => (
+              <form key={m.id} onSubmit={(e) => saveMessenger(m.id, e)} className="space-y-3 rounded-xl border p-4">
+                <h3 className="font-bold">
+                  {m.label}
+                  {connected[m.id] && <span className="ms-2 text-xs font-normal" style={{ color: "var(--success)" }}>متصل است</span>}
+                </h3>
+                <p className="text-xs leading-6" style={{ color: "var(--muted)" }}>{m.hint}</p>
+                <Field label="توکن ربات" hint={connected[m.id] ? "توکنی ذخیره شده؛ برای تغییر، توکن تازه را وارد کنید." : undefined}>
+                  <PasswordInput
+                    autoComplete="off"
+                    value={tokens[m.id] ?? ""}
+                    onChange={(e) => setTokens((t) => ({ ...t, [m.id]: e.target.value }))}
+                    placeholder={connected[m.id] ? "••••••••" : ""}
+                  />
+                </Field>
+                <div className="flex flex-wrap gap-2">
+                  <button className="btn btn-primary btn-sm" type="submit" disabled={busy || !tokens[m.id]}>ذخیره</button>
+                  {connected[m.id] && <button className="btn btn-sm" type="button" onClick={() => testMessenger(m.id)} disabled={busy}>پیام آزمایشی</button>}
+                  {connected[m.id] && <button className="btn btn-danger btn-sm" type="button" onClick={() => disconnectMessenger(m.id)} disabled={busy}>قطع</button>}
+                </div>
+              </form>
+            ))}
           </div>
-        </form>
+        </section>
       </div>
     </>
   );

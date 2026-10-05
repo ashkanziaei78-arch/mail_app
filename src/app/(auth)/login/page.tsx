@@ -19,7 +19,7 @@ export default async function LoginPage() {
   const settings = parseBanners(organization?.bannersJson);
 
   const slides: Slide[] = settings.items.length
-    ? settings.items.map((b) => ({ src: b.src, caption: b.caption || "سامانه میلینگ سازمانی" }))
+    ? settings.items.map((b) => ({ src: b.src, caption: b.caption || "میلینگ پرس" }))
     : [{
         src:
           process.env.NEXT_PUBLIC_HERO_IMAGE ||
