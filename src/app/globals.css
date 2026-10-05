@@ -239,9 +239,23 @@
   /* برگه نامه — همین استایل هم روی صفحه و هم در چاپ/PDF استفاده می‌شود */
   .letter-sheet {
     background: #fff; color: #111827;
-    width: 210mm; min-height: 297mm; margin-inline: auto;
+    width: 210mm; max-width: 100%; min-height: 297mm; margin-inline: auto;
     padding: 0; position: relative;
     box-shadow: 0 10px 40px rgb(15 23 42 / .15);
+  }
+  /*
+   * گیرنده لینک نامه را با پیامک می‌گیرد و معمولاً روی گوشی بازش می‌کند؛ برگه
+   * A4 با عرض ثابت روی صفحه کوچک از قاب بیرون می‌زد. روی صفحه‌های باریک برگه
+   * عرضِ صفحه را می‌گیرد و ارتفاعش را از خود متن.
+   */
+  @media (max-width: 820px) {
+    .letter-sheet { min-height: 0; }
+    .letter-body {
+      padding: var(--letter-margin-top, 18mm) max(16px, var(--letter-margin-side, 20mm)) var(--letter-margin-bottom, 18mm);
+      font-size: 11pt; line-height: 1.95;
+      /* ستون باریک + چینش هم‌تراز = فاصله‌های بدقواره بین کلمه‌ها */
+      text-align: right;
+    }
   }
   /*
    * تصویر سربرگ پس‌زمینه برگه است، نه یک تصویر بالای متن. قبلاً <img> بالای
