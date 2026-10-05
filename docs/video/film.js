@@ -2,7 +2,7 @@
    میلینگ پرس — فیلم معرفی. ۱۹۲۰×۱۰۸۰، ۳۰fps، ۱۷۰ ثانیه.
    هر حالت تصویر تابعِ محضِ زمان است: window.SEEK(t) هر فریم را بازتولید می‌کند.
    =========================================================================== */
-const DUR = 170, FPS = 30;
+const DUR = 236, FPS = 30;
 const layers = document.getElementById("layers");
 const capBox = document.getElementById("cap");
 const capBig = capBox.querySelector(".big");
@@ -45,13 +45,21 @@ const CAPS = [
   { a: 28.4, b: 35.6,  y: 92,  big: "چه کسی این نامه را دید؟", sub: "چه کسی فرستادش جلوتر؟", subAt: 31.2 },
   { a: 38.2, b: 45.6,  y: 92,  big: "محرمانه، یعنی فقط گیرنده.", sub: "نه هر کسی که پاکت دستش افتاد.", subAt: 41.0 },
   { a: 47.6, b: 54.6,  y: 92,  big: "نامه آماده است. فقط امضا مانده." },
-  { a: 70.2, b: 78.4,  y: 905, big: "یک دفترچه. برای کل سازمان." },
-  { a: 82.0, b: 90.4,  y: 905, big: "فارسی. شمسی. تمیز." },
-  { a: 94.0, b: 104.4, y: 905, big: "هر اقدام ثبت می‌شود. هر دسترسی تعیین‌شده است." },
-  { a: 107.5, b: 116.4, y: 905, big: "لینک شخصی، کد دسترسی، و ثبت اینکه چه کسی بازش کرد." },
-  { a: 119.6, b: 123.8, y: 905, big: "کارتابل، روی گوشیِ خودِ تأییدکننده." },
-  { a: 133.0, b: 140.4, y: 905, big: "و بالاخره معلوم است نامه به کجا رسید." },
-  { a: 144.0, b: 155.2, y: 905, big: "روی گوشی هم همین است.", sub: "بدون نصب، بدون کلاس آموزشی.", subAt: 147.5 },
+  { a: 66.6, b: 69.6,  y: 700, big: "راه‌حلِ هر پنج مشکل، یک سامانه است." },
+  { a: 70.6, b: 87.6,  y: 120, big: "یازده کار، در یک سامانه." },
+  { a: 88.4, b: 91.4,  y: 905, big: "حالا یکی‌یکی." },
+  { a: 93.6, b: 101.8, y: 905, big: "همه مخاطبان سازمان، در یک دفترچه." },
+  { a: 104.2, b: 111.6, y: 905, big: "سربرگ خودِ سازمان، با کادرهای دلخواه." },
+  { a: 114.6, b: 122.1, y: 905, big: "یک نامه؛ برای هر نفر با نام و سمت خودش." },
+  { a: 125.1, b: 132.6, y: 905, big: "مسیر تأیید را خودتان می‌چینید." },
+  { a: 135.6, b: 142.0, y: 905, big: "تأیید، روی گوشیِ خودِ تأییدکننده." },
+  { a: 146.1, b: 151.6, y: 905, big: "پیامک، بله، تلگرام، ایتا — در یک ارسال." },
+  { a: 156.6, b: 163.6, y: 905, big: "نامه محرمانه، با کد دسترسی شخصی." },
+  { a: 167.1, b: 174.6, y: 905, big: "هر نامه، شناسه و QR راستی‌آزمایی دارد." },
+  { a: 177.6, b: 185.1, y: 905, big: "دسترسی هر کاربر به هر منو، جداگانه." },
+  { a: 188.1, b: 195.6, y: 905, big: "گزارش، با تقویم شمسی و قیف تحویل." },
+  { a: 198.6, b: 206.1, y: 905, big: "تم رنگی، نشان و حالت تیرهٔ سازمان شما." },
+  { a: 210.0, b: 221.0, y: 905, big: "روی گوشی هم همین است.", sub: "بدون نصب، بدون کلاس آموزشی.", subAt: 213.5 },
 ];
 function renderCaps(t) {
   let active = null;
@@ -70,16 +78,23 @@ function renderCaps(t) {
 
 /* ---------- نشان مشکل / پاسخ ---------- */
 const CHIPS = [
-  { a: 5.4,  b: 15.8, tx: "مشکل ۱", side: "r" },
-  { a: 16.6, b: 25.8, tx: "مشکل ۲", side: "r" },
-  { a: 27.0, b: 35.8, tx: "مشکل ۳", side: "r" },
-  { a: 37.0, b: 45.8, tx: "مشکل ۴", side: "r" },
-  { a: 46.6, b: 54.8, tx: "مشکل ۵", side: "r" },
-  { a: 67.4, b: 78.8, tx: "پاسخِ مشکل ۱ — پراکندگی مخاطبان", side: "r" },
-  { a: 79.6, b: 90.8, tx: "پاسخِ مشکل ۲ — ظاهر و زبان", side: "r" },
-  { a: 91.6, b: 104.8, tx: "پاسخِ مشکل ۳ — امنیت", side: "r" },
-  { a: 105.6, b: 116.8, tx: "پاسخِ مشکل ۴ — محرمانگی", side: "r" },
-  { a: 117.6, b: 130.8, tx: "پاسخِ مشکل ۵ — صف امضا", side: "r" },
+  { a: 5.4,  b: 15.8, tx: "مشکل ۱ — مخاطب پخش است" },
+  { a: 16.6, b: 25.8, tx: "مشکل ۲ — ابزار زمخت" },
+  { a: 27.0, b: 35.8, tx: "مشکل ۳ — امنیت نامه" },
+  { a: 37.0, b: 45.8, tx: "مشکل ۴ — نامه محرمانه" },
+  { a: 46.6, b: 54.8, tx: "مشکل ۵ — صف امضا" },
+  { a: 70.4, b: 91.4, tx: "قابلیت‌ها در یک نگاه" },
+  { a: 92.4, b: 102.3, tx: "۱ از ۱۱ · دفترچه مخاطبان" },
+  { a: 102.9, b: 112.8, tx: "۲ از ۱۱ · سربرگ و قالب" },
+  { a: 113.4, b: 123.3, tx: "۳ از ۱۱ · نامه شخصی‌سازی‌شده" },
+  { a: 123.9, b: 133.8, tx: "۴ از ۱۱ · گردش تأیید" },
+  { a: 134.4, b: 144.3, tx: "۵ از ۱۱ · کارتابل موبایل" },
+  { a: 144.9, b: 154.8, tx: "۶ از ۱۱ · ابلاغ چندکاناله" },
+  { a: 155.4, b: 165.3, tx: "۷ از ۱۱ · نامه محرمانه" },
+  { a: 165.9, b: 175.8, tx: "۸ از ۱۱ · راستی‌آزمایی و QR" },
+  { a: 176.4, b: 186.3, tx: "۹ از ۱۱ · دسترسی و امنیت" },
+  { a: 186.9, b: 196.8, tx: "۱۰ از ۱۱ · گزارش و شاخص‌ها" },
+  { a: 197.4, b: 207.3, tx: "۱۱ از ۱۱ · تم و نشان سازمان" },
 ];
 const chipNode = add(layers, "div", "prob-chip");
 chipNode.style.right = "72px"; chipNode.style.top = "62px";
@@ -406,7 +421,7 @@ const MARK = `<svg viewBox="0 0 48 48" fill="none">
   <path d="M6.5 14.5 24 27 41.5 14.5" stroke="#9FD6EC" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
   <rect x="13" y="39.5" width="22" height="3.6" rx="1.8" fill="#E3C06B"/></svg>`;
 {
-  const sc = scene(56.5, 66.2, 0.4, 0.7);
+  const sc = scene(56.5, 70.2, 0.4, 0.7);
   const glow = add(sc, "div");
   glow.style.cssText = "position:absolute;left:50%;top:50%;width:1500px;height:1100px;margin:-550px 0 0 -750px;border-radius:50%;background:radial-gradient(circle,rgba(95,192,224,.16),rgba(95,192,224,0) 60%)";
   const lg = add(sc, "div", "logo");
@@ -416,8 +431,16 @@ const MARK = `<svg viewBox="0 0 48 48" fill="none">
   tag.style.cssText = "position:absolute;left:0;right:0;top:648px;text-align:center;font-size:38px;color:#BFD4E2;font-weight:500";
   tag.textContent = "نامه‌نگاری سازمانی — از نوشتن تا رسیدن";
   const mark = lg.querySelector(".mark"), wm = lg.querySelector(".wm");
+  const solve = add(sc, "div");
+  solve.style.cssText = "position:absolute;left:0;right:0;top:700px;text-align:center;font-size:46px;font-weight:800;color:#fff";
+  solve.textContent = "راه‌حلِ هر پنج مشکل، یک سامانه است.";
+  solve.style.display = "none";
   sc.__r = t => {
     glow.style.opacity = (S(t, 57.0, 60.0) * 0.9).toFixed(3);
+    /* نشان کمی بالا می‌رود تا جای جمله باز شود */
+    const lift = eio(S(t, 65.6, 67.0));
+    lg.style.marginTop = px(-70 * lift);
+    tag.style.marginTop = px(-70 * lift);
     const p = eo(S(t, 60.0, 61.2));
     lg.style.opacity = p.toFixed(3);
     mark.style.transform = `scale(${lp(0.55, 1, ob(S(t, 60.0, 61.4))).toFixed(3)}) rotate(${lp(-14, 0, eo(S(t, 60.0, 61.4))).toFixed(2)}deg)`;
@@ -429,14 +452,58 @@ const MARK = `<svg viewBox="0 0 48 48" fill="none">
   };
 }
 
+
 /* =========================================================================
-   پرده سوم — پاسخ، مشکل‌به‌مشکل (۶۶–۱۴۱)
-   یک پنجره ثابت است و محتوایش عوض می‌شود: همان «شیء حامل» بین صحنه‌ها.
+   پرده سوم — قابلیت‌ها در یک نگاه (۷۰–۹۲)
+   بیننده پیش از جزئیات، کل دامنه را یک‌جا می‌بیند.
+   ========================================================================= */
+const FEATURES = [
+  ["۱", "دفترچه مخاطبان", "یک دفترچه برای کل سازمان"],
+  ["۲", "سربرگ و قالب", "سربرگ خودتان، کادرهای دلخواه"],
+  ["۳", "نامه شخصی‌سازی‌شده", "هر نفر با نام و سمت خودش"],
+  ["۴", "گردش تأیید", "مسیر امضا را خودتان می‌چینید"],
+  ["۵", "کارتابل موبایل", "تأیید از روی گوشی"],
+  ["۶", "ابلاغ چندکاناله", "پیامک · بله · تلگرام · ایتا"],
+  ["۷", "نامه محرمانه", "لینک شخصی با کد دسترسی"],
+  ["۸", "راستی‌آزمایی و QR", "شناسه سند پای هر نامه"],
+  ["۹", "دسترسی و امنیت", "دسترسی هر کاربر، جداگانه"],
+  ["۱۰", "گزارش و شاخص‌ها", "تقویم شمسی و قیف تحویل"],
+  ["۱۱", "تم و نشان سازمان", "دوازده پالت، حالت تیره"],
+];
+{
+  const sc = scene(70.0, 92.2, 0.5, 0.7);
+  const CW = 372, CH = 118, GAP = 26;
+  const L0 = (1920 - (4 * CW + 3 * GAP)) / 2, T0 = 374;
+  const cards = FEATURES.map((f, i) => {
+    const row = Math.floor(i / 4), col = i % 4;
+    const n = add(sc, "div", "feat");
+    const lastRow = row === 2;
+    n.style.left = px(L0 + col * (CW + GAP) + (lastRow ? (CW + GAP) / 2 : 0));
+    n.style.top = px(T0 + row * (CH + GAP));
+    n.innerHTML = `<span class="num">${f[0]}</span>
+      <span class="tx"><b>${f[1]}</b><i>${f[2]}</i></span>`;
+    n.__at = 71.6 + i * 1.32;
+    return n;
+  });
+  sc.__r = t => {
+    /* کل تخته در پایان کمی عقب می‌رود و محو می‌شود */
+    const out = eio(S(t, 90.4, 92.2));
+    cards.forEach(n => {
+      const p = ob(S(t, n.__at, n.__at + 0.72));
+      n.style.opacity = (S(t, n.__at, n.__at + 0.4) * (1 - out)).toFixed(3);
+      n.style.transform = `translateY(${((1 - p) * 34).toFixed(1)}px) scale(${(lp(0.86, 1, p) * lp(1, 0.9, out)).toFixed(3)})`;
+    });
+  };
+}
+
+/* =========================================================================
+   پرده چهارم — بررسی یکی‌یکی (۹۲–۲۰۷٫۵)
+   یک پنجره ثابت است و محتوایش عوض می‌شود: همان «شیء حامل» بین بندها.
    ========================================================================= */
 {
-  const sc = scene(66.4, 141.4, 0.6, 0.6);
+  const sc = scene(90.6, 208.0, 0.6, 0.6);
 
-  /* --- جزیره‌های پرده اول که به هم می‌رسند --- */
+  /* جزیره‌های پرده اول که در بند اول به هم می‌رسند */
   const MERGE = [
     { x: -690, y: -330, t: "گوشی همکار" }, { x: 690, y: -330, t: "اتوماسیون" },
     { x: -690, y: 300, t: "زونکن کاغذی" }, { x: 690, y: 300, t: "فایل اکسل" },
@@ -448,62 +515,88 @@ const MARK = `<svg viewBox="0 0 48 48" fill="none">
     n.__d = d; return n;
   });
 
-  /* --- پنجره مرورگر --- */
   const fr = add(sc, "div", "frame");
   fr.innerHTML = `<div class="bar"><u></u><u></u><u></u><s>mailing-press.ir</s></div><div class="vp"></div>`;
   const vp = fr.querySelector(".vp");
   const imgs = [add(vp, "img"), add(vp, "img")];
 
+  const WIDE = [344, 150, 1232], SIDE = [96, 196, 936];
   const RECT = [
-    { t: 67.0, r: [344, 150, 1232] }, { t: 104.6, r: [344, 150, 1232] },
-    { t: 105.9, r: [96, 196, 936] }, { t: 116.9, r: [96, 196, 936] },
-    { t: 118.1, r: [344, 150, 1232] }, { t: 123.9, r: [344, 150, 1232] },
-    { t: 125.1, r: [96, 196, 936] }, { t: 130.9, r: [96, 196, 936] },
-    { t: 132.1, r: [344, 150, 1232] }, { t: 141.4, r: [344, 150, 1232] },
+    { t: 92.0, r: WIDE }, { t: 133.8, r: WIDE },
+    { t: 135.0, r: SIDE }, { t: 144.6, r: SIDE },   /* بند ۵ — گوشی کارتابل */
+    { t: 145.8, r: WIDE }, { t: 154.6, r: WIDE },
+    { t: 155.8, r: SIDE }, { t: 165.2, r: SIDE },   /* بند ۷ — گوشی پیامک */
+    { t: 166.4, r: WIDE }, { t: 208.0, r: WIDE },
   ];
+
+  /* هر بند ۱۰٫۵ ثانیه؛ مرزها ۰٫۶ ثانیه روی هم می‌افتند تا قاب سفید نماند */
   const SHOTS = [
-    { a: 67.2, b: 74.6, s: "contacts",  f: [1.00, .92, .22], o: [1.24, .86, .40] },
-    { a: 74.0, b: 80.3, s: "campaign",  f: [1.10, .88, .22], o: [1.30, .80, .34] },
-    { a: 79.7, b: 85.2, s: "dashboard", f: [1.16, .90, .24], o: [1.00, .92, .34] },
-    { a: 84.6, b: 88.0, s: "dashboard-dark", f: [1.02, .92, .30], o: [1.14, .88, .24] },
-    { a: 87.4, b: 92.3, s: "campaigns", f: [1.20, .88, .20], o: [1.04, .92, .32] },
-    { a: 91.7, b: 97.3, s: "access",    f: [1.04, .90, .24], o: [1.28, .84, .38] },
-    { a: 96.7, b: 100.9, s: "users",    f: [1.24, .86, .26], o: [1.04, .92, .34] },
-    { a: 100.3, b: 106.3, s: "sms",     f: [1.04, .90, .22], o: [1.26, .86, .30] },
-    { a: 105.7, b: 111.6, s: "gate",    f: [1.70, .50, .50], o: [2.15, .50, .52] },
-    { a: 111.0, b: 118.3, s: "letter",  f: [1.45, .50, .20], o: [1.08, .50, .40] },
-    { a: 117.7, b: 124.4, s: "workflow", f: [1.02, .90, .26], o: [1.26, .80, .46] },
-    { a: 123.8, b: 132.3, s: "approvals", f: [1.22, .86, .26], o: [1.02, .92, .32] },
-    { a: 131.7, b: 137.0, s: "reports",  f: [1.02, .90, .22], o: [1.24, .84, .32] },
-    { a: 136.4, b: 141.4, s: "reports2", f: [1.20, .86, .30], o: [1.02, .92, .38] },
+    { a: 92.0, b: 103.1, s: "contacts",   f: [1.00, .92, .22], o: [1.26, .86, .42] },
+    { a: 102.5, b: 113.6, s: "letterheads", f: [1.04, .90, .24], o: [1.30, .84, .40] },
+    { a: 113.0, b: 119.6, s: "compose",   f: [1.18, .88, .22], o: [1.02, .92, .32] },
+    { a: 119.0, b: 124.1, s: "campaign",  f: [1.06, .90, .24], o: [1.30, .82, .36] },
+    { a: 123.5, b: 134.6, s: "workflow",  f: [1.02, .90, .26], o: [1.28, .80, .48] },
+    { a: 134.0, b: 145.1, s: "approvals", f: [1.24, .86, .26], o: [1.02, .92, .32] },
+    { a: 144.5, b: 155.6, s: "sms",       f: [1.02, .90, .22], o: [1.26, .86, .32] },
+    { a: 155.0, b: 166.1, s: "gate",      f: [1.70, .50, .50], o: [2.15, .50, .52] },
+    { a: 165.5, b: 176.6, s: "letter",    f: [1.46, .50, .20], o: [1.06, .50, .42] },
+    { a: 176.0, b: 182.1, s: "access",    f: [1.04, .90, .24], o: [1.28, .84, .38] },
+    { a: 181.5, b: 187.1, s: "users",     f: [1.24, .86, .26], o: [1.04, .92, .34] },
+    { a: 186.5, b: 192.6, s: "reports",   f: [1.02, .90, .22], o: [1.24, .84, .32] },
+    { a: 192.0, b: 197.6, s: "reports2",  f: [1.20, .86, .30], o: [1.02, .92, .38] },
+    { a: 197.0, b: 202.1, s: "dashboard", f: [1.14, .90, .24], o: [1.00, .92, .36] },
+    { a: 201.5, b: 204.6, s: "dashboard-dark", f: [1.02, .92, .32], o: [1.14, .88, .24] },
+    { a: 204.0, b: 208.0, s: "branding",  f: [1.02, .90, .24], o: [1.22, .86, .34] },
   ];
   SHOTS.forEach((s, i) => { s.layer = i % 2; });
 
-  /* --- برچسب‌ها و حلقه‌های تأکید --- */
-  const CO = [
-    { a: 69.4, b: 74.0, i: 0, tx: "ورود گروهی از اکسل" },
-    { a: 70.8, b: 74.0, i: 1, tx: "#اتاق_بازرگانی — ۴۳ مخاطب", gold: 1 },
-    { a: 75.6, b: 79.0, i: 0, tx: "یک نامه، برای هرکس با نام خودش" },
-    { a: 81.4, b: 84.4, i: 0, tx: "راست‌به‌چپ، تاریخ شمسی" },
-    { a: 85.6, b: 87.4, i: 0, tx: "حالت تیره" },
-    { a: 88.4, b: 90.6, i: 0, tx: "ارسالی · دریافتی · در گردش" },
-    { a: 93.2, b: 96.6, i: 0, tx: "دسترسی هر کاربر به هر منو" },
-    { a: 97.8, b: 100.2, i: 0, tx: "ورود دومرحله‌ای و قفل حساب" },
-    { a: 101.6, b: 104.6, i: 0, tx: "کلید درگاه رمزنگاری‌شده ذخیره می‌شود", gold: 1 },
-    { a: 112.6, b: 116.6, i: 2, tx: "هر بازکردن ثبت می‌شود: چه کسی، چه زمانی" },
-    { a: 119.4, b: 123.6, i: 0, tx: "پیش‌نویس ← رئیس اداره ← معاون ← مدیرکل ← ارسال" },
-    { a: 133.4, b: 136.2, i: 0, tx: "تقویم شمسی، فیلترهای آماده" },
-    { a: 137.6, b: 140.6, i: 1, tx: "ارسال موفق ← باز شد ← پاسخ داد", gold: 1 },
-  ];
   const CO_Y = [250, 332, 884];
+  const CO = [
+    { a: 95.6, b: 101.6, i: 0, tx: "ورود گروهی از اکسل" },
+    { a: 97.4, b: 101.6, i: 1, tx: "#اتاق_بازرگانی — ۴۳ مخاطب", gold: 1 },
+    { a: 106.2, b: 112.2, i: 0, tx: "شماره · تاریخ · پیوست · امضا · جدول · تصویر" },
+    { a: 116.4, b: 122.4, i: 0, tx: "شش مرحله، از متن تا ارسال" },
+    { a: 119.8, b: 123.4, i: 1, tx: "متن اختصاصی برای هر گیرنده", gold: 1 },
+    { a: 127.0, b: 133.0, i: 0, tx: "رئیس اداره ← معاون ← مدیرکل" },
+    { a: 148.0, b: 153.8, i: 0, tx: "یک ربات برای هر پیام‌رسان" },
+    { a: 169.2, b: 175.2, i: 2, tx: "شناسه سند · امضای مدیرکل · QR راستی‌آزمایی" },
+    { a: 182.4, b: 185.6, i: 0, tx: "ورود دومرحله‌ای و قفل حساب" },
+    { a: 193.4, b: 196.4, i: 1, tx: "ارسال موفق ← باز شد ← پاسخ داد", gold: 1 },
+    { a: 205.0, b: 207.4, i: 0, tx: "دوازده پالت رنگی برای کل پوسته" },
+  ];
   const coNodes = CO.map(c => {
     const n = add(sc, "div", "callout" + (c.gold ? " gold" : ""));
     n.textContent = c.tx; n.__c = c;
-    n.style.left = "120px"; n.style.top = px(CO_Y[c.i]); return n;
+    n.style.left = "120px"; n.style.top = px(CO_Y[c.i]);
+    return n;
   });
 
-  /* --- گوشی: پیامک محرمانه --- */
-  const phS = add(sc, "div", "ph"); phS.id = "smsPhone";
+  /* گوشی کارتابل (بند ۵) */
+  const phU = add(sc, "div", "ph");
+  phU.style.cssText = "left:1256px;top:168px;width:392px;height:680px";
+  phU.innerHTML = `<div class="notch"></div><div class="vp"><img src="shots/m-approvals.png" alt=""></div>`;
+  const tap = add(phU, "div");
+  tap.style.cssText = "position:absolute;z-index:6;left:50%;top:400px;width:150px;height:150px;margin-left:-75px;border-radius:50%;border:4px solid #8FE3C4;opacity:0";
+
+  /* تقویم: ۳ روز ← ۳ دقیقه (بند ۵) */
+  const cal2 = add(sc, "div");
+  cal2.style.cssText = "position:absolute;z-index:700;left:150px;top:380px;width:440px;border-radius:20px;padding:26px 30px;text-align:center;background:rgba(7,20,32,.92);border:1px solid rgba(201,162,39,.45);opacity:0";
+  cal2.innerHTML = `<div style="font-size:26px;color:#9FB6C6">از آماده‌شدن تا امضا</div>
+    <div style="margin-top:12px"><span id="old3" style="font-size:52px;font-weight:900;color:#8FA9BA;position:relative">۳ روز</span></div>
+    <div id="new3" style="margin-top:8px;font-size:62px;font-weight:900;color:#E3C06B">۳ دقیقه</div>
+    <div style="font-size:20px;color:#8FA9BA;margin-top:6px">(نمونه)</div>`;
+  const old3 = cal2.querySelector("#old3"), new3 = cal2.querySelector("#new3");
+  const strike = add(old3, "span");
+  strike.style.cssText = "position:absolute;left:0;top:52%;height:4px;background:#B3303F;width:0;border-radius:2px";
+
+  /* نشان چهار کانال (بند ۶) */
+  const chan = add(sc, "div", "chan");
+  chan.style.cssText = "left:344px;width:1232px;top:236px;justify-content:center";
+  ["پیامک", "بله", "تلگرام", "ایتا"].forEach(x => add(chan, "div", null, x));
+  const chanKids = [...chan.children];
+
+  /* گوشی پیامک (بند ۷) */
+  const phS = add(sc, "div", "ph");
   phS.style.cssText = "left:1256px;top:168px;width:392px;height:680px";
   phS.innerHTML = `<div class="notch"></div>
     <div class="vp" style="background:linear-gradient(180deg,#F4F7F9,#E7EDF1);padding-top:64px"></div>`;
@@ -513,36 +606,21 @@ const MARK = `<svg viewBox="0 0 48 48" fill="none">
   bub.style.cssText += ";top:120px";
   bub.innerHTML = `<b>میلینگ پرس</b><br>نامه شماره ۱۴۰۴/۲۳۱ برای جنابعالی صادر شد.<br>
     لینک: mp.ir/l/FmMX3d<br>کد دسترسی: <b>۴۹۲۸۷۱</b>`;
-  const bub2 = add(smsVp, "div", "smsbub");
-  bub2.style.cssText += ";top:330px;background:#DDE4E9;color:#5B7384;font-size:17px";
-  bub2.innerHTML = "۱۰۰۰۸۶۶۳<br>پیام پیشین — ۱۴۰۴/۰۶/۳۰";
   const bubNote = add(smsVp, "div");
-  bubNote.style.cssText = "position:absolute;right:18px;left:18px;top:470px;text-align:center;font-size:19px;color:#44586A;font-weight:800";
+  bubNote.style.cssText = "position:absolute;right:18px;left:18px;top:400px;text-align:center;font-size:19px;color:#44586A;font-weight:800";
   bubNote.textContent = "یک پیامک — لینک و کد با هم";
 
-  /* --- گوشی: کارتابل تأیید --- */
-  const phU = add(sc, "div", "ph");
-  phU.style.cssText = "left:1256px;top:168px;width:392px;height:680px";
-  phU.innerHTML = `<div class="notch"></div><div class="vp"><img src="shots/m-approvals.png" alt=""></div>`;
-  const tap = add(phU, "div");
-  tap.style.cssText = "position:absolute;z-index:6;left:50%;top:430px;width:150px;height:150px;margin-left:-75px;border-radius:50%;border:4px solid #8FE3C4;opacity:0";
-
-  /* --- نشان کانال‌های ابلاغ --- */
-  const chan = add(sc, "div", "chan");
-  chan.style.cssText = "left:96px;width:936px;top:866px;justify-content:center";
-  ["پیامک", "بله", "تلگرام", "ایتا"].forEach(x => add(chan, "div", null, x));
-  const chanKids = [...chan.children];
-
-  /* --- تقویم: ۳ روز ← ۳ دقیقه --- */
-  const cal2 = add(sc, "div");
-  cal2.style.cssText = "position:absolute;z-index:700;left:150px;top:360px;width:440px;border-radius:20px;padding:26px 30px;text-align:center;background:rgba(7,20,32,.9);border:1px solid rgba(201,162,39,.45);opacity:0";
-  cal2.innerHTML = `<div style="font-size:26px;color:#9FB6C6">از آماده‌شدن تا امضا</div>
-    <div style="margin-top:12px"><span id="old3" style="font-size:52px;font-weight:900;color:#8FA9BA;position:relative">۳ روز</span></div>
-    <div id="new3" style="margin-top:8px;font-size:62px;font-weight:900;color:#E3C06B">۳ دقیقه</div>
-    <div style="font-size:20px;color:#8FA9BA;margin-top:6px">(نمونه)</div>`;
-  const old3 = cal2.querySelector("#old3"), new3 = cal2.querySelector("#new3");
-  const strike = add(old3, "span");
-  strike.style.cssText = "position:absolute;left:0;top:52%;height:4px;background:#B3303F;width:0;border-radius:2px";
+  /* کارت ثبت وقایع (بند ۹) */
+  const audit = add(sc, "div");
+  audit.style.cssText = "position:absolute;z-index:705;left:120px;top:470px;width:620px;border-radius:18px;padding:22px 26px;background:rgba(5,16,26,.93);border:1px solid rgba(95,192,224,.3);box-shadow:0 40px 90px rgba(0,0,0,.6);opacity:0";
+  audit.innerHTML = `<div style="font-size:24px;font-weight:800;color:#DCEBF5;margin-bottom:14px">ثبت وقایع</div>` +
+    [["۰۹:۱۲", "رضا احمدی", "نامه ۱۴۰۴/۲۳۱ را ساخت"],
+     ["۰۹:۴۰", "رئیس اداره", "نامه را تأیید کرد"],
+     ["۱۰:۰۳", "معاون", "نامه را تأیید کرد"],
+     ["۱۰:۱۱", "سامانه", "۴۵ پیامک به درگاه تحویل شد"]]
+      .map(r => `<div style="display:flex;gap:18px;font-size:21px;color:#A9C1D1;padding:9px 0;border-top:1px dashed rgba(255,255,255,.12)">
+        <span style="color:#E3C06B;font-variant-numeric:tabular-nums">${r[0]}</span>
+        <span style="font-weight:700;color:#DCEBF5;min-width:140px">${r[1]}</span><span>${r[2]}</span></div>`).join("");
 
   function rectAt(t) {
     let i = 0; while (i < RECT.length - 1 && t > RECT[i + 1].t) i++;
@@ -552,20 +630,18 @@ const MARK = `<svg viewBox="0 0 48 48" fill="none">
   }
 
   sc.__r = t => {
-    /* جزیره‌ها به مرکز می‌آیند و در پنجره حل می‌شوند */
-    const mp = eio(S(t, 66.6, 68.6));
+    const mp = eio(S(t, 90.8, 92.8));
     mini.forEach(n => {
       const d = n.__d;
-      n.style.opacity = ((1 - S(t, 67.6, 68.8)) * S(t, 66.5, 66.9)).toFixed(3);
+      n.style.opacity = ((1 - S(t, 91.8, 93.0)) * S(t, 90.7, 91.1)).toFixed(3);
       n.style.transform = `translate(${(d.x * (1 - mp)).toFixed(1)}px,${(d.y * (1 - mp)).toFixed(1)}px) scale(${lp(1, 0.35, mp).toFixed(3)})`;
     });
 
     const [L, T, Wd] = rectAt(t);
     fr.style.left = px(L); fr.style.top = px(T); fr.style.width = px(Wd);
     vp.style.height = px(Wd / 1.6);
-    const fo = Math.min(S(t, 67.0, 68.2), 1 - S(t, 141.0, 141.4));
-    fr.style.opacity = fo.toFixed(3);
-    fr.style.transform = `scale(${lp(0.93, 1, eo(S(t, 66.8, 68.4))).toFixed(4)})`;
+    fr.style.opacity = Math.min(S(t, 91.4, 92.6), 1 - S(t, 207.4, 208.0)).toFixed(3);
+    fr.style.transform = `scale(${lp(0.93, 1, eo(S(t, 91.2, 92.8))).toFixed(4)})`;
 
     const used = [0, 0];
     for (const s of SHOTS) {
@@ -585,78 +661,59 @@ const MARK = `<svg viewBox="0 0 48 48" fill="none">
 
     coNodes.forEach(n => {
       const c = n.__c;
-      const o = Math.min(S(t, c.a, c.a + 0.45), 1 - S(t, c.b, c.b + 0.4));
-      n.style.opacity = o.toFixed(3);
+      n.style.opacity = Math.min(S(t, c.a, c.a + 0.45), 1 - S(t, c.b, c.b + 0.4)).toFixed(3);
       n.style.transform = `translateY(${((1 - eo(S(t, c.a, c.a + 0.7))) * 20).toFixed(1)}px)`;
     });
 
-    /* گوشی پیامک (مشکل ۴) */
-    const so = Math.min(S(t, 105.9, 106.8), 1 - S(t, 115.8, 116.6));
-    phS.style.opacity = so.toFixed(3);
-    phS.style.display = so <= 0.002 ? "none" : "block";
-    phS.style.transform = `translateY(${((1 - eo(S(t, 105.9, 107.2))) * 70).toFixed(1)}px)`;
-    const bp = eo(S(t, 107.0, 107.8));
-    bub.style.opacity = bp.toFixed(3);
-    bub.style.transform = `translateY(${((1 - bp) * 26).toFixed(1)}px) scale(${lp(0.94, 1, bp).toFixed(3)})`;
-    bub2.style.opacity = (S(t, 107.6, 108.3) * 0.85).toFixed(3);
-    bubNote.style.opacity = S(t, 108.8, 109.5).toFixed(3);
-
-    /* گوشی کارتابل (مشکل ۵) */
-    const uo = Math.min(S(t, 125.1, 126.0), 1 - S(t, 130.2, 130.9));
+    /* بند ۵ — گوشی کارتابل و تقویم */
+    const uo = Math.min(S(t, 135.4, 136.3), 1 - S(t, 143.9, 144.6));
     phU.style.opacity = uo.toFixed(3);
     phU.style.display = uo <= 0.002 ? "none" : "block";
-    phU.style.transform = `translateY(${((1 - eo(S(t, 125.1, 126.4))) * 70).toFixed(1)}px)`;
-    const tp = S(t, 126.9, 127.7);
+    phU.style.transform = `translateY(${((1 - eo(S(t, 135.4, 136.7))) * 70).toFixed(1)}px)`;
+    const tp = S(t, 137.4, 138.2);
     tap.style.opacity = (tp > 0 && tp < 1 ? 1 - tp : 0).toFixed(3);
     tap.style.transform = `scale(${lp(0.3, 1.25, tp).toFixed(3)})`;
+    const ko = Math.min(S(t, 139.6, 140.3), 1 - S(t, 143.9, 144.5));
+    cal2.style.opacity = ko.toFixed(3);
+    strike.style.width = (eo(S(t, 140.6, 141.1)) * 100).toFixed(1) + "%";
+    old3.style.opacity = (1 - 0.45 * S(t, 141.0, 141.4)).toFixed(3);
+    new3.style.opacity = S(t, 141.2, 141.5).toFixed(3);
+    new3.style.transform = `scale(${lp(0.7, 1, ob(S(t, 141.2, 141.8))).toFixed(3)})`;
 
-    /* کانال‌ها */
-    const co = Math.min(S(t, 125.3, 126.0), 1 - S(t, 128.2, 128.8));
+    /* بند ۶ — کانال‌ها */
+    const co = Math.min(S(t, 150.0, 150.7), 1 - S(t, 154.2, 154.8));
     chan.style.opacity = co.toFixed(3);
     chan.style.display = co <= 0.002 ? "none" : "flex";
     chanKids.forEach((k, i) => {
-      const at = 125.5 + i * 0.38;
+      const at = 150.2 + i * 0.4;
       const p = ob(S(t, at, at + 0.55));
       k.style.transform = `scale(${lp(0.75, 1, p).toFixed(3)})`;
       k.style.opacity = S(t, at, at + 0.3).toFixed(3);
       k.classList.toggle("on", t >= at + 0.45);
     });
 
-    /* تقویم ۳ روز ← ۳ دقیقه */
-    const ko = Math.min(S(t, 128.6, 129.3), 1 - S(t, 130.3, 130.9));
-    cal2.style.opacity = ko.toFixed(3);
-    strike.style.width = (eo(S(t, 129.2, 129.7)) * 100).toFixed(1) + "%";
-    old3.style.opacity = (1 - 0.45 * S(t, 129.6, 130.0)).toFixed(3);
-    const np = ob(S(t, 129.7, 130.3));
-    new3.style.opacity = S(t, 129.7, 130.0).toFixed(3);
-    new3.style.transform = `scale(${lp(0.7, 1, np).toFixed(3)})`;
-  };
+    /* بند ۷ — گوشی پیامک */
+    const so = Math.min(S(t, 155.9, 156.8), 1 - S(t, 164.4, 165.1));
+    phS.style.opacity = so.toFixed(3);
+    phS.style.display = so <= 0.002 ? "none" : "block";
+    phS.style.transform = `translateY(${((1 - eo(S(t, 155.9, 157.2))) * 70).toFixed(1)}px)`;
+    const bp = eo(S(t, 157.0, 157.8));
+    bub.style.opacity = bp.toFixed(3);
+    bub.style.transform = `translateY(${((1 - bp) * 26).toFixed(1)}px) scale(${lp(0.94, 1, bp).toFixed(3)})`;
+    bubNote.style.opacity = S(t, 158.8, 159.5).toFixed(3);
 
-  /* --- کارت ثبت وقایع (امنیت) --- */
-  const audit = add(sc, "div");
-  audit.style.cssText = "position:absolute;z-index:705;left:120px;top:470px;width:620px;border-radius:18px;padding:22px 26px;background:rgba(5,16,26,.93);border:1px solid rgba(95,192,224,.3);box-shadow:0 40px 90px rgba(0,0,0,.6);opacity:0";
-  audit.innerHTML = `<div style="font-size:24px;font-weight:800;color:#DCEBF5;margin-bottom:14px">ثبت وقایع</div>` +
-    [["۰۹:۱۲", "رضا احمدی", "نامه ۱۴۰۴/۲۳۱ را ساخت"],
-     ["۰۹:۴۰", "رئیس اداره", "نامه را تأیید کرد"],
-     ["۱۰:۰۳", "معاون", "نامه را تأیید کرد"],
-     ["۱۰:۱۱", "سامانه", "۴۵ پیامک به درگاه تحویل شد"]]
-      .map(r => `<div style="display:flex;gap:18px;font-size:21px;color:#A9C1D1;padding:9px 0;border-top:1px dashed rgba(255,255,255,.12)">
-        <span style="color:#E3C06B;font-variant-numeric:tabular-nums">${r[0]}</span>
-        <span style="font-weight:700;color:#DCEBF5;min-width:140px">${r[1]}</span><span>${r[2]}</span></div>`).join("");
-  const baseR = sc.__r;
-  sc.__r = t => {
-    baseR(t);
-    const o = Math.min(S(t, 98.4, 99.2), 1 - S(t, 103.4, 104.2));
-    audit.style.opacity = o.toFixed(3);
-    audit.style.transform = `translateY(${((1 - eo(S(t, 98.4, 99.6))) * 26).toFixed(1)}px)`;
+    /* بند ۹ — ثبت وقایع */
+    const ao = Math.min(S(t, 183.4, 184.2), 1 - S(t, 185.8, 186.4));
+    audit.style.opacity = ao.toFixed(3);
+    audit.style.transform = `translateY(${((1 - eo(S(t, 183.4, 184.6))) * 26).toFixed(1)}px)`;
   };
 }
 
 /* =========================================================================
-   پرده چهارم — همیشه در دسترس (۱۴۱–۱۵۶)
+   پرده پنجم — همیشه در دسترس (۲۰۷٫۵–۲۲۲)
    ========================================================================= */
 {
-  const sc = scene(141.0, 156.0, 0.7, 0.7);
+  const sc = scene(207.5, 222.5, 0.7, 0.7);
   const ph = add(sc, "div", "ph");
   ph.style.cssText = "left:1190px;top:116px;width:392px;height:848px";
   ph.innerHTML = `<div class="notch"></div><div class="vp"><img src="shots/m-dashboard.png" alt=""></div>`;
@@ -675,7 +732,7 @@ const MARK = `<svg viewBox="0 0 48 48" fill="none">
   const grid = add(sc, "div");
   grid.style.cssText = "position:absolute;left:250px;top:300px;width:690px;border-radius:34px;padding:34px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.13);opacity:0";
   grid.innerHTML = `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:28px">` +
-    Array.from({ length: 8 }, (_, i) => `<div style="height:116px;border-radius:26px;background:rgba(255,255,255,.07)"></div>`).join("") + `</div>`;
+    Array.from({ length: 8 }, () => `<div style="height:116px;border-radius:26px;background:rgba(255,255,255,.07)"></div>`).join("") + `</div>`;
   const slot = grid.querySelectorAll("div > div")[5];
   const fly = add(sc, "div");
   fly.style.cssText = "position:absolute;z-index:720;width:116px;height:116px;border-radius:26px;background:linear-gradient(160deg,#0F5C7A,#0A2233);border:1px solid rgba(255,255,255,.16);display:grid;place-items:center;opacity:0;box-shadow:0 30px 60px rgba(0,0,0,.55)";
@@ -685,33 +742,32 @@ const MARK = `<svg viewBox="0 0 48 48" fill="none">
     <rect x="13" y="39.5" width="22" height="3.6" rx="1.8" fill="#E3C06B"/></svg>`;
   const lbl = add(sc, "div");
   lbl.style.cssText = "position:absolute;z-index:721;font-size:20px;font-weight:700;color:#DCEBF5;opacity:0;text-align:center;width:160px";
+  lbl.textContent = "میلینگ پرس";
 
   sc.__r = t => {
-    ph.style.opacity = Math.min(S(t, 141.2, 142.2), 1 - S(t, 155.2, 156.0)).toFixed(3);
-    ph.style.transform = `translateY(${((1 - eo(S(t, 141.2, 143.0))) * 90).toFixed(1)}px) scale(${lp(0.95, 1, eo(S(t, 141.2, 143.2))).toFixed(3)})`;
-    const sp = eio(S(t, 145.0, 146.0));
+    ph.style.opacity = Math.min(S(t, 207.7, 208.7), 1 - S(t, 221.7, 222.5)).toFixed(3);
+    ph.style.transform = `translateY(${((1 - eo(S(t, 207.7, 209.5))) * 90).toFixed(1)}px) scale(${lp(0.95, 1, eo(S(t, 207.7, 209.7))).toFixed(3)})`;
+    const sp = eio(S(t, 211.5, 212.5));
     sheetUp.style.transform = `translateY(${((1 - sp) * 360).toFixed(1)}px)`;
-    sheetUp.style.opacity = (S(t, 145.0, 145.4) * (1 - S(t, 148.6, 149.2))).toFixed(3);
-    grid.style.opacity = Math.min(S(t, 148.0, 149.0), 1 - S(t, 155.0, 155.8)).toFixed(3);
-    const fp = eio(S(t, 148.8, 150.6));
-    const x0 = 1190 + 24, y0 = 116 + 848 - 180;
+    sheetUp.style.opacity = (S(t, 211.5, 211.9) * (1 - S(t, 215.1, 215.7))).toFixed(3);
+    grid.style.opacity = Math.min(S(t, 214.5, 215.5), 1 - S(t, 221.5, 222.3)).toFixed(3);
+    const fp = eio(S(t, 215.3, 217.1));
     const r = slot.getBoundingClientRect();
-    const x1 = r.left, y1 = r.top;
-    const o = Math.min(S(t, 148.8, 149.1), 1 - S(t, 155.0, 155.8));
+    const x1 = r.left || 600, y1 = r.top || 560;
+    const o = Math.min(S(t, 215.3, 215.6), 1 - S(t, 221.5, 222.3));
     fly.style.opacity = o.toFixed(3);
-    fly.style.left = px(lp(x0, x1 || 600, fp)); fly.style.top = px(lp(y0, y1 || 560, fp));
+    fly.style.left = px(lp(1190 + 24, x1, fp)); fly.style.top = px(lp(116 + 848 - 180, y1, fp));
     fly.style.transform = `scale(${lp(0.5, 1, fp).toFixed(3)}) rotate(${lp(-10, 0, fp).toFixed(2)}deg)`;
-    lbl.style.opacity = Math.min(S(t, 150.8, 151.4), 1 - S(t, 155.0, 155.8)).toFixed(3);
-    lbl.style.left = px((x1 || 600) - 22); lbl.style.top = px((y1 || 560) + 128);
-    lbl.textContent = "میلینگ پرس";
+    lbl.style.opacity = Math.min(S(t, 217.3, 217.9), 1 - S(t, 221.5, 222.3)).toFixed(3);
+    lbl.style.left = px(x1 - 22); lbl.style.top = px(y1 + 128);
   };
 }
 
 /* =========================================================================
-   پرده پنجم — دعوت (۱۵۶–۱۷۰)
+   پرده ششم — دعوت (۲۲۲–۲۳۶)
    ========================================================================= */
 {
-  const sc = scene(155.8, 170.0, 0.8, 1.2);
+  const sc = scene(221.8, 236.0, 0.8, 1.2);
   const lg = add(sc, "div", "logo");
   lg.style.cssText = "position:absolute;left:0;right:0;top:330px";
   lg.innerHTML = `<div class="mark">${MARK}</div><div class="wm"><b>میلینگ پرس</b><i>MAILING PRESS</i></div>`;
@@ -725,10 +781,10 @@ const MARK = `<svg viewBox="0 0 48 48" fill="none">
   const url = add(sc, "div", null, "mailing-system-chi.vercel.app");
   url.style.cssText = "position:absolute;left:0;right:0;top:880px;text-align:center;font-size:30px;font-weight:700;color:#E3C06B;direction:ltr;letter-spacing:.5px";
   sc.__r = t => {
-    const p = eo(S(t, 156.2, 157.6));
+    const p = eo(S(t, 222.2, 223.6));
     lg.style.opacity = p.toFixed(3);
-    lg.querySelector(".mark").style.transform = `scale(${lp(0.8, 1, ob(S(t, 156.2, 157.8))).toFixed(3)})`;
-    [[l1, 158.0], [l2, 158.9], [ch, 159.8], [url, 160.8]].forEach(([n, at]) => {
+    lg.querySelector(".mark").style.transform = `scale(${lp(0.8, 1, ob(S(t, 222.2, 223.8))).toFixed(3)})`;
+    [[l1, 224.0], [l2, 224.9], [ch, 225.8], [url, 226.8]].forEach(([n, at]) => {
       const q = S(t, at, at + 0.8);
       n.style.opacity = q.toFixed(3);
       n.style.transform = `translateY(${((1 - eo(q)) * 20).toFixed(1)}px)`;
@@ -739,7 +795,6 @@ const MARK = `<svg viewBox="0 0 48 48" fill="none">
 /* =========================================================================
    موتور: SEEK(t) همه‌چیز را از نو می‌سازد
    ========================================================================= */
-/* پرده تیره پای قاب تا زیرنویس روی رابط خوانا بماند */
 const scrim = add(layers, "div");
 scrim.style.cssText = "position:absolute;z-index:799;left:0;right:0;bottom:0;height:330px;pointer-events:none;background:linear-gradient(180deg,rgba(4,14,22,0),rgba(4,14,22,.72) 42%,rgba(4,14,22,.93) 100%)";
 
@@ -749,12 +804,11 @@ window.SEEK = function (t) {
   renderSheet(t);
   renderCaps(t);
   renderChip(t);
-  scrim.style.opacity = Math.min(S(t, 67.6, 69.0), 1 - S(t, 155.0, 156.0)).toFixed(3);
-  /* یک ثانیه سیاهی بین پرده اول و معرفی + فید باز/بسته فیلم */
+  scrim.style.opacity = Math.min(S(t, 92.4, 93.6), 1 - S(t, 221.5, 222.5)).toFixed(3);
   const black = Math.max(
     Math.min(S(t, 54.9, 55.5), 1 - S(t, 56.1, 56.8)),
     1 - S(t, 0, 0.7),
-    S(t, 168.6, 170)
+    S(t, 234.6, 236)
   );
   curtain.style.opacity = black.toFixed(4);
 };

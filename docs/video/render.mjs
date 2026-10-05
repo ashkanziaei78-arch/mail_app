@@ -2,7 +2,7 @@ import { chromium } from "playwright";
 import fs from "node:fs";
 import path from "node:path";
 
-const FPS = 30, DUR = 170;
+const FPS = 30, DUR = 236;
 const OUT = path.resolve("frames");
 fs.rmSync(OUT, { recursive: true, force: true });
 fs.mkdirSync(OUT, { recursive: true });
@@ -15,7 +15,7 @@ await p.evaluate(() => document.fonts.ready);
 
 // همه تصویرها را از پیش بار می‌زنیم تا هیچ فریمی خالی ضبط نشود
 await p.evaluate(async () => {
-  for (let t = 0; t <= 170; t += 1) window.SEEK(t);
+  for (let t = 0; t <= 236; t += 1) window.SEEK(t);
   window.SEEK(0);
   await Promise.all([...document.images].map(im => im.complete ? 1 : im.decode().catch(() => 1)));
 });
