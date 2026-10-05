@@ -64,7 +64,7 @@ export default function NewCampaignForm({ letterheads, templates }: {
 
         <Field label="شماره نامه"><input className="input tnum" name="letterNumber" maxLength={60} placeholder="۱۴۰۴/۱۲۳۴" /></Field>
 
-        <Field label="سطح محرمانگی" hint="نامه محرمانه: لینک با کد دسترسی شش‌رقمی که در پیامکی جداگانه ارسال می‌شود.">
+        <Field label="سطح محرمانگی" hint="نامه محرمانه: لینک و کد دسترسی شش‌رقمی در یک پیامک با هم ارسال می‌شوند.">
           <select className="select" name="confidentiality" defaultValue="NORMAL">
             <option value="NORMAL">معمولی</option>
             <option value="CONFIDENTIAL">محرمانه (کدگذاری‌شده)</option>

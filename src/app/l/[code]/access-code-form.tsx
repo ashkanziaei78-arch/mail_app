@@ -28,7 +28,7 @@ export default function AccessCodeForm({ code, verify }: {
       <form onSubmit={submit} className="card w-full max-w-sm space-y-4 p-6">
         <h1 className="text-lg font-bold">نامه محرمانه</h1>
         <p className="text-sm" style={{ color: "var(--muted)" }}>
-          این نامه محرمانه است. کد دسترسی شش‌رقمی که با پیامک جداگانه برای شما ارسال شده را وارد کنید.
+          این نامه محرمانه است. کد دسترسی شش‌رقمی را که در همان پیامکِ حاوی این لینک برایتان فرستاده شده وارد کنید.
         </p>
         <Field label="کد دسترسی" required error={error ?? undefined}>
           <input
