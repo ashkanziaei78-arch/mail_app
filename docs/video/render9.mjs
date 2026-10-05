@@ -1,6 +1,6 @@
 import { chromium } from "playwright";
 import fs from "node:fs"; import path from "node:path";
-const FPS = 30, DUR = 150;
+const FPS = 30, DUR = 132;
 const OUT = path.resolve("frames9");
 fs.rmSync(OUT, { recursive: true, force: true }); fs.mkdirSync(OUT, { recursive: true });
 const b = await chromium.launch({ args: ["--force-color-profile=srgb", "--font-render-hinting=none", "--disable-lcd-text"] });
@@ -9,7 +9,7 @@ const p = await ctx.newPage();
 await p.goto("file://" + path.resolve("film9.html"));
 await p.evaluate(() => document.fonts.ready);
 await p.evaluate(async () => {
-  for (let t = 0; t <= 150; t += 1) window.SEEK(t);
+  for (let t = 0; t <= 132; t += 1) window.SEEK(t);
   window.SEEK(0);
   await Promise.all([...document.images].map(im => im.complete ? 1 : im.decode().catch(() => 1)));
 });

@@ -5,7 +5,7 @@
 import wave
 import numpy as np
 
-SR = 48000; DUR = 150.0; N = int(SR * DUR)
+SR = 48000; DUR = 132.0; N = int(SR * DUR)
 L = np.zeros(N); R = np.zeros(N)
 rng = np.random.default_rng(21)
 
@@ -59,6 +59,21 @@ def shaker(t0, gain, dur=0.13):
     v = y * env * gain
     L[s:e] += v * 1.1; R[s:e] += v * 0.9
 
+def whoosh(t0, dur, gain, up=True):
+    """گذرِ نرم بین صحنه‌ها — نویزِ فیلترشده، بدون غرش."""
+    s_, e_, t = seg(t0, dur)
+    if e_ <= s_: return
+    n = e_ - s_; p = np.arange(n) / n
+    env = np.sin(np.pi * p) ** 1.6
+    noise = rng.uniform(-1, 1, n)
+    cut = (240 + 820 * (p if up else 1 - p)) / SR
+    a = np.minimum(0.9, 2 * np.pi * cut)
+    y = np.zeros(n); acc = 0.0
+    for i in range(n):
+        acc += a[i] * (noise[i] - acc); y[i] = acc
+    v = y * env * gain
+    L[s_:e_] += v * 0.9; R[s_:e_] += v * 1.1
+
 def drone(freq, t0, t1, gain):
     dur = t1 - t0; s, e, t = seg(t0, dur)
     if e <= s: return
@@ -83,56 +98,64 @@ def arp(name, t0, dur, step, gain, order=(0, 1, 2, 3, 2, 1)):
         pluck(ns[order[k % len(order)]], t, gain * (1.0 if k % len(order) == 0 else 0.8))
         k += 1; t += step
 
-# ---- قلاب (۰–۷٫۵): تقریباً سکوت، فقط یک ضربان ----
-drone(NOTE["D2"], 0.4, 7.6, 0.075)
-for t in np.arange(1.0, 7.4, 1.6): pulse(t, 0.14)
-pluck(NOTE["D4"], 1.1, 0.10, 2.6)
+# ---- SCENE 01 قلاب (۰–۹): تقریباً سکوت، سه نتِ تنها ----
+drone(NOTE["D2"], 0.4, 9.2, 0.075)
+for t, n in ((1.1, "D4"), (4.0, "F4"), (6.7, "A4")):
+    pluck(NOTE[n], t, 0.095, 2.8)
+for t in (2.4, 5.3, 8.0): pulse(t, 0.12)
 
-# ---- مشکل‌ها (۷٫۵–۳۵): ر مینور، آرپژ کند، ضربان زیرِ کار ----
-drone(NOTE["D2"], 7.5, 35.0, 0.08)
-for i, (nm, t0) in enumerate([("Dm", 7.6), ("Bb", 13.1), ("Gm", 18.6), ("Dm", 24.1), ("A", 29.6)]):
-    swell([NOTE[x] for x in CH[nm]][:3], t0, 5.8, 0.055 + i * 0.004)
-    arp(nm, t0 + 0.1, 5.3, 0.66, 0.050 + i * 0.004)
-for t in np.arange(7.8, 34.8, 1.6): pulse(t, 0.13)
+# ---- SCENE 02–06 مشکل‌ها (۹–۴۸): ر مینور، آرپژِ کند، ضربانِ زیرِ کار ----
+drone(NOTE["D2"], 9.0, 48.0, 0.082)
+for i, (nm, t0, dur) in enumerate([("Dm", 9.1, 8.0), ("Bb", 17.1, 8.0), ("Gm", 25.1, 9.0),
+                                   ("Dm", 34.1, 7.0), ("A", 41.1, 7.0)]):
+    swell([NOTE[x] for x in CH[nm]][:3], t0, dur - 0.2, 0.052 + i * 0.005)
+    arp(nm, t0 + 0.1, dur - 0.6, 0.62, 0.046 + i * 0.005)
+for t in np.arange(9.3, 47.6, 1.55): pulse(t, 0.125)
+for t in (9.0, 17.0, 25.0, 34.0, 41.0): whoosh(t - 0.5, 1.2, 0.019, up=False)
 
-# ---- سکوت ۳۵–۳۶٫۲ ----
+# ---- SCENE 07 سؤال بزرگ (۴۸–۵۴) و سکوت تا ۵۵٫۵ ----
+swell([NOTE[x] for x in CH["A"]][:3], 48.0, 5.4, 0.07)
+pulse(48.2, 0.16); pulse(50.6, 0.14)
+whoosh(52.4, 1.6, 0.026, up=False)
 
-# ---- معرفی (۳۶٫۲–۴۸): فا ماژور، گرم ----
-swell([NOTE[x] for x in CH["F"]], 36.4, 7.2, 0.105)
-swell([NOTE[x] for x in CH["C"]][:3], 42.4, 6.4, 0.095)
-drone(NOTE["F2"], 36.4, 48.4, 0.07)
-pluck(NOTE["F5"], 40.3, 0.085, 3.0); pluck(NOTE["C5"], 40.7, 0.055, 2.6)
-arp("F", 43.0, 5.0, 0.52, 0.045)
+# ---- SCENE 08 معرفی (۵۵٫۵–۶۵): باز شدن به فا ماژور ----
+whoosh(55.4, 1.9, 0.032, up=True)
+swell([NOTE[x] for x in CH["F"]], 55.8, 6.4, 0.112)
+swell([NOTE[x] for x in CH["C"]][:3], 61.0, 5.4, 0.096)
+drone(NOTE["F2"], 55.8, 65.8, 0.072)
+pluck(NOTE["F5"], 58.4, 0.08, 3.0)           # لحظهٔ جمع‌شدن ذرات
+pluck(NOTE["C5"], 60.0, 0.085, 3.0); pluck(NOTE["A4"], 60.4, 0.05, 2.4)
+arp("F", 62.0, 3.4, 0.5, 0.040)
 
-# ---- تخته قابلیت‌ها (۴۸–۶۴): آرپژ + بافت ریتمیک، یک نت زیر هر کارت ----
-drone(NOTE["F2"], 48.0, 64.4, 0.06)
-for nm, t0 in [("F", 48.2), ("C", 52.2), ("Dm7", 56.2), ("Bb", 60.2)]:
-    swell([NOTE[x] for x in CH[nm]][:3], t0, 4.4, 0.065)
-    arp(nm, t0, 4.0, 0.5, 0.044)
-for t in np.arange(48.4, 64.0, 0.5): shaker(t, 0.030)
-CARD = ["F4", "A4", "C5", "D5", "C5", "A4", "F4", "A4", "C5"]
-for i in range(9): pluck(NOTE[CARD[i]], 49.4 + i * 1.26, 0.052, 1.6)
-
-# ---- نُه بند (۶۴–۱۳۶): پیشروی یکنواخت، حرکت رو به جلو ----
+# ---- SCENE 09–14 قابلیت‌ها (۶۵–۱۱۵): پیشروی یکنواخت و رو به جلو ----
 prog = ["F", "C", "Dm7", "Bb"]
-drone(NOTE["F2"], 64.0, 136.4, 0.055)
-t = 64.0; k = 0
-while t < 136.0:
+drone(NOTE["F2"], 65.0, 115.6, 0.056)
+t = 65.0; k = 0
+while t < 115.0:
     nm = prog[k % 4]
-    swell([NOTE[x] for x in CH[nm]][:3], t, 4.6, 0.062)
-    arp(nm, t, 4.2, 0.52, 0.042)
+    swell([NOTE[x] for x in CH[nm]][:3], t, 4.4, 0.060)
+    arp(nm, t, 4.0, 0.5, 0.042)
     k += 1; t += 4.0
-for t in np.arange(64.2, 135.6, 0.5): shaker(t, 0.026)
-for t in [64.0, 72.0, 80.0, 88.0, 96.0, 104.0, 112.0, 120.0, 128.0]:
-    pluck(NOTE["D5"], t, 0.045, 1.8)
-pluck(NOTE["A5"], 100.1, 0.045, 1.6)      # لحظه «تأیید»
+for t in np.arange(65.2, 114.6, 0.5): shaker(t, 0.027)
+for t in (65.0, 73.0, 81.0, 90.0, 98.0, 107.0):
+    pluck(NOTE["D5"], t, 0.046, 1.8)
+    whoosh(t - 0.5, 1.1, 0.013, up=True)
+pluck(NOTE["A5"], 94.8, 0.045, 1.6)          # لحظهٔ «تأیید»
 
-# ---- دعوت (۱۳۶–۱۵۰): جمع‌بندی ----
-swell([NOTE[x] for x in CH["Bb"]], 136.0, 6.2, 0.085)
-swell([NOTE[x] for x in CH["F"]], 141.5, 8.5, 0.10)
-drone(NOTE["F2"], 136.0, 149.5, 0.065)
-pluck(NOTE["F5"], 136.6, 0.075, 3.2); pluck(NOTE["C5"], 137.0, 0.05, 2.8)
-arp("F", 142.0, 4.5, 0.6, 0.038)
+# ---- SCENE 15 دگرگونی (۱۱۵–۱۲۲): ساخت اوج ----
+swell([NOTE[x] for x in CH["Bb"]], 115.2, 4.2, 0.082)
+swell([NOTE[x] for x in CH["C"]][:3], 118.6, 4.0, 0.090)
+drone(NOTE["F2"], 115.2, 122.4, 0.062)
+for t in np.arange(115.4, 121.8, 0.5): shaker(t, 0.032)
+pluck(NOTE["F5"], 118.3, 0.06, 2.2)
+
+# ---- SCENE 16 دعوت (۱۲۲–۱۳۲) ----
+swell([NOTE[x] for x in CH["F"]], 122.0, 10.0, 0.105)
+drone(NOTE["F2"], 122.0, 131.5, 0.068)
+for t, n in ((122.5, "F4"), (123.1, "A4"), (123.7, "C5")): pluck(NOTE[n], t, 0.05, 1.8)
+pluck(NOTE["F5"], 125.5, 0.075, 3.2)         # «کنترلِ بیشتر»
+pluck(NOTE["C5"], 128.2, 0.07, 3.4); pluck(NOTE["A5"], 128.6, 0.042, 2.8)
+arp("F", 129.4, 2.4, 0.6, 0.034)
 
 # ---- بازتاب، محو، سکوتِ میانی ----
 def reverb(b):
@@ -142,8 +165,8 @@ def reverb(b):
     return out
 L = reverb(L); R = reverb(R)
 fi = int(1.0 * SR); L[:fi] *= np.linspace(0, 1, fi); R[:fi] *= np.linspace(0, 1, fi)
-fo = int(146.5 * SR); g = np.linspace(1, 0, N - fo) ** 1.4; L[fo:] *= g; R[fo:] *= g
-a, b = int(34.9 * SR), int(36.1 * SR)
+fo = int(129.5 * SR); g = np.linspace(1, 0, N - fo) ** 1.4; L[fo:] *= g; R[fo:] *= g
+a, b = int(53.9 * SR), int(55.3 * SR)
 gap = np.clip(np.linspace(1, -0.5, b - a), 0, 1); L[a:b] *= gap; R[a:b] *= gap
 
 peak = max(np.abs(L).max(), np.abs(R).max()) or 1.0
