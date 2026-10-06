@@ -1,0 +1,1 @@
+See ../../SCRIPT.md (full Persian brief from the user, PROMPT 01 + PROMPT 02) and BRIEF.md.

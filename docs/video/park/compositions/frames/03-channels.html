@@ -1,0 +1,88 @@
+<template>
+  <style>
+    @font-face { font-family: "Vazirmatn"; src: url("assets/fonts/vazirmatn-variable.woff2") format("woff2"); font-weight: 100 900; }
+    #root { position: absolute; inset: 0; overflow: hidden; font-family: "Vazirmatn"; direction: rtl; color: #111c2e; }
+    #f03-bg { position: absolute; inset: 0; background: #f5f7fa; }
+    #f03-grid { position: absolute; inset: 0; background-image: radial-gradient(#c9d4e1 1.4px, transparent 1.6px); background-size: 48px 48px; opacity: .55; }
+    #f03-head { position: absolute; right: 160px; top: 100px; font-size: 120px; font-weight: 850; line-height: 1.1; white-space: nowrap; }
+    #f03-stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+    .f03-lab { position: absolute; right: 560px; width: 240px; text-align: right; font-size: 42px; font-weight: 700; color: #4e5d74; }
+    #f03-who { position: absolute; left: 160px; top: 800px; font-size: 64px; font-weight: 850; white-space: nowrap; direction: rtl; }
+  </style>
+  <div id="root" data-composition-id="03-channels" data-width="1920" data-height="1080">
+    <div id="f03-bg" class="clip" data-start="0" data-duration="6.4" data-track-index="0"><div id="f03-grid"></div></div>
+    <div id="f03-head">کدام کانال؟</div>
+
+    <svg id="f03-stage" viewBox="0 0 1920 1080" fill="none" stroke="#0a2233" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+      <!-- lanes: sender (right) to recipient (left) -->
+      <g id="f03-lanes" stroke="#c9d4e1" stroke-width="6" stroke-dasharray="2 16">
+        <path id="f03-lane1" d="M1420 560 C1150 380, 760 380, 470 560"/>
+        <path id="f03-lane2" d="M1420 560 C1150 480, 760 480, 470 560"/>
+        <path id="f03-lane3" d="M1420 560 C1150 640, 760 640, 470 560"/>
+        <path id="f03-lane4" d="M1420 560 C1150 740, 760 740, 470 560"/>
+      </g>
+      <!-- sender: the letter -->
+      <g transform="translate(1440 470)"><g id="f03-send">
+        <rect width="150" height="190" rx="14" fill="#ffffff"/>
+        <path d="M30 60 h90 M30 92 h90 M30 124 h60" stroke="#c9d4e1" stroke-width="9"/>
+      </g></g>
+      <!-- recipient -->
+      <g transform="translate(380 560)"><g id="f03-recv">
+        <circle r="78" fill="#ffffff"/><circle cy="-18" r="24"/><path d="M-42 42 a42 32 0 0 1 84 0"/>
+      </g></g>
+      <!-- read ticks that turn into question marks -->
+      <g id="f03-ticks" transform="translate(300 700)">
+        <path id="f03-tick" d="M0 20 l16 16 l30 -34 M26 20 l16 16 l30 -34" stroke-width="6"/>
+        <text id="f03-qm" x="36" y="44" font-family="Vazirmatn" font-size="80" font-weight="800" fill="#0a2233" stroke="none" text-anchor="middle">؟</text>
+      </g>
+      <!-- packets -->
+      <circle id="f03-out" cx="1420" cy="560" r="18" fill="#0a2233" stroke="none"/>
+      <circle id="f03-back" cx="470" cy="560" r="18" fill="#ffffff" stroke="#0a2233" stroke-width="6"/>
+    </svg>
+
+    <div class="f03-lab" id="f03-la1" style="top:376px">واتساپ</div>
+    <div class="f03-lab" id="f03-la2" style="top:458px">تلگرام</div>
+    <div class="f03-lab" id="f03-la3" style="top:604px">ایمیل</div>
+    <div class="f03-lab" id="f03-la4" style="top:690px">حضوری</div>
+
+    <div id="f03-who">چه کسی؟ کِی؟</div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      const wipe = (el, t, d) => tl.fromTo(el, { clipPath: "inset(-30px 0 -40px 100%)" }, { clipPath: "inset(-30px 0 -40px 0%)", duration: d || 0.42, ease: "power3.out" }, t);
+      // point on a cubic bezier, so the packets ride the exact lanes (pure function of progress)
+      const bez = (p0, p1, p2, p3, u) => { const v = 1 - u; return v*v*v*p0 + 3*v*v*u*p1 + 3*v*u*u*p2 + u*u*u*p3; };
+      const L = { 1: [1420,560,1150,380,760,380,470,560], 3: [1420,560,1150,640,760,640,470,560] };
+      // sampled keyframes along the lane: seek-safe, no callbacks
+      const ride = (id, lane, t, dur, reverse) => {
+        const c = L[lane], N = 24, pts = [];
+        for (let i = 0; i <= N; i++) { const k = i / N, e = k < .5 ? 2*k*k : 1 - Math.pow(-2*k + 2, 2) / 2, u = reverse ? 1 - e : e;
+          pts.push({ cx: bez(c[0], c[2], c[4], c[6], u), cy: bez(c[1], c[3], c[5], c[7], u) }); }
+        tl.fromTo(id, { attr: pts[0] }, { keyframes: pts.slice(1).map(p => ({ attr: p, duration: dur / N, ease: "none" })) }, t);
+      };
+      wipe("#f03-head", 0.1, 0.5);
+      tl.fromTo("#f03-send", { opacity: 0, x: 40 }, { opacity: 1, x: 0, duration: 0.4, ease: "power3.out" }, 0.1);
+      tl.fromTo("#f03-recv", { opacity: 0, scale: 0.6, svgOrigin: "0 0" }, { opacity: 1, scale: 1, duration: 0.45, ease: "back.out(2)" }, 0.3);
+      tl.fromTo("#f03-lanes path", { opacity: 0 }, { opacity: 1, duration: 0.25, stagger: 0.12 }, 0.4);
+      tl.fromTo(".f03-lab", { opacity: 0, x: 30 }, { opacity: 1, x: 0, duration: 0.3, stagger: 0.12, ease: "power2.out" }, 0.5);
+      // out on one lane…
+      tl.fromTo("#f03-out", { opacity: 0 }, { opacity: 1, duration: 0.1 }, 1.0);
+      ride("#f03-out", 1, 1.0, 1.1, false);
+      tl.to("#f03-lane1", { stroke: "#0a2233", duration: 0.2 }, 1.0);
+      tl.to("#f03-out", { opacity: 0, duration: 0.15 }, 2.15);
+      // …back on another
+      tl.fromTo("#f03-back", { opacity: 0 }, { opacity: 1, duration: 0.1 }, 2.3);
+      ride("#f03-back", 3, 2.3, 1.1, true);
+      tl.to("#f03-lane3", { stroke: "#0a2233", duration: 0.2 }, 2.3);
+      tl.to("#f03-back", { opacity: 0, duration: 0.15 }, 3.45);
+      // seen? the ticks resolve into a question mark
+      tl.fromTo("#f03-tick", { opacity: 0 }, { opacity: 1, duration: 0.2 }, 3.6);
+      tl.to("#f03-tick", { opacity: 0, duration: 0.2 }, 4.2);
+      tl.fromTo("#f03-qm", { opacity: 0, scale: 0.4, transformOrigin: "36px 20px" }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(2.5)" }, 4.25);
+      wipe("#f03-who", 4.4, 0.5);
+      tl.to("#f03-lanes path", { opacity: 0.35, duration: 0.6 }, 4.6);
+      window.__timelines["03-channels"] = tl;
+    })();
+  </script>
+</template>

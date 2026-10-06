@@ -1,0 +1,61 @@
+<template>
+  <style>
+    @font-face { font-family: "Vazirmatn"; src: url("assets/fonts/vazirmatn-variable.woff2") format("woff2"); font-weight: 100 900; }
+    #root { position: absolute; inset: 0; overflow: hidden; font-family: "Vazirmatn"; direction: rtl; color: #111c2e; }
+    #f06-bg { position: absolute; inset: 0; background: #f5f7fa; }
+    #f06-grid { position: absolute; inset: 0; background-image: radial-gradient(#c9d4e1 1.4px, transparent 1.6px); background-size: 48px 48px; opacity: .55; }
+    .f06-q { position: absolute; right: 160px; font-size: 100px; font-weight: 850; line-height: 1.1; white-space: nowrap; }
+    #f06-q1 { top: 120px; } #f06-q2 { top: 270px; } #f06-q3 { top: 420px; }
+    #f06-line { position: absolute; right: 160px; top: 690px; width: 860px; text-align: right; font-size: 58px; font-weight: 700; line-height: 1.45; color: #4e5d74; }
+    #f06-line b { color: #111c2e; font-weight: 850; }
+    #f06-chart { position: absolute; left: 100px; top: 120px; width: 900px; height: 760px; }
+    .f06-name { font-family: "Vazirmatn"; font-size: 30px; font-weight: 700; fill: #4e5d74; }
+  </style>
+  <div id="root" data-composition-id="06-tracking" data-width="1920" data-height="1080">
+    <div id="f06-bg" class="clip" data-start="0" data-duration="7.2" data-track-index="0"><div id="f06-grid"></div></div>
+
+    <svg id="f06-chart" viewBox="0 0 900 760" fill="none" stroke="#0a2233" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+      <g id="f06-links" stroke="#c9d4e1" stroke-width="5">
+        <path d="M450 150 V230 M230 230 H670 M230 230 V330 M670 230 V330 M230 430 V510 M90 510 H370 M90 510 V600 M370 510 V600 M670 430 V600"/>
+      </g>
+      <g transform="translate(450 100)"><g id="f06-n1"><rect x="-110" y="-50" width="220" height="100" rx="16" fill="#ffffff"/><text class="f06-name" y="12" text-anchor="middle" stroke="none">مدیرکل</text></g></g>
+      <g transform="translate(230 380)"><g id="f06-n2"><rect x="-110" y="-50" width="220" height="100" rx="16" fill="#ffffff"/><text class="f06-name" y="12" text-anchor="middle" stroke="none">معاون</text></g></g>
+      <g transform="translate(670 380)"><g id="f06-n3"><rect x="-110" y="-50" width="220" height="100" rx="16" fill="#ffffff"/><text class="f06-name" y="12" text-anchor="middle" stroke="none">رئیس اداره</text></g></g>
+      <g transform="translate(90 650)"><g id="f06-n4"><rect x="-85" y="-50" width="170" height="100" rx="16" fill="#ffffff"/><text class="f06-name" y="12" text-anchor="middle" stroke="none">کارشناس</text></g></g>
+      <g transform="translate(370 650)"><g id="f06-n5"><rect x="-110" y="-50" width="220" height="100" rx="16" fill="#ffffff"/><text class="f06-name" y="12" text-anchor="middle" stroke="none">دبیرخانه</text></g></g>
+      <g transform="translate(670 650)"><g id="f06-n6"><rect x="-110" y="-50" width="220" height="100" rx="16" fill="#ffffff"/><text class="f06-name" y="12" text-anchor="middle" stroke="none">بایگانی</text></g></g>
+      <!-- the search marker hunting for the letter -->
+      <g id="f06-seek" transform="translate(370 560)">
+        <g id="f06-seek-in"><circle r="40" fill="#ffffff" stroke-width="6"/><path d="M28 28 L58 58" stroke-width="10"/>
+          <text y="16" font-family="Vazirmatn" font-size="48" font-weight="850" fill="#0a2233" stroke="none" text-anchor="middle">؟</text></g>
+      </g>
+    </svg>
+
+    <div id="f06-q1" class="f06-q">کجاست؟</div>
+    <div id="f06-q2" class="f06-q">دستِ کیست؟</div>
+    <div id="f06-q3" class="f06-q">چه کسی اقدام نکرده؟</div>
+    <div id="f06-line"><b>پیگیری،</b> سخت‌تر از چیزی است که باید باشد.</div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      const wipe = (el, t, d) => tl.fromTo(el, { clipPath: "inset(-30px 0 -40px 100%)" }, { clipPath: "inset(-30px 0 -40px 0%)", duration: d || 0.42, ease: "power3.out" }, t);
+      tl.fromTo("#f06-links path", { opacity: 0 }, { opacity: 1, duration: 0.4 }, 0);
+      tl.fromTo(["#f06-n1", "#f06-n2", "#f06-n3", "#f06-n4", "#f06-n5", "#f06-n6"], { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.3, stagger: 0.07, ease: "power2.out" }, 0.05);
+      tl.fromTo("#f06-seek-in", { scale: 0, svgOrigin: "0 0" }, { scale: 1, duration: 0.35, ease: "back.out(2.4)" }, 0.3);
+      // the marker hops desk to desk — never finding it
+      const hops = [[230, 290, 1.2], [670, 560, 2.2], [670, 290, 3.0], [90, 560, 3.8], [660, 100, 4.7]];
+      hops.forEach(([x, y, t]) => tl.to("#f06-seek", { attr: { transform: `translate(${x} ${y})` }, duration: 0.45, ease: "power3.inOut" }, t));
+      tl.fromTo("#f06-seek-in", { rotation: -12, svgOrigin: "0 0" }, { rotation: 12, duration: 0.25, yoyo: true, repeat: 11, ease: "sine.inOut", immediateRender: false }, 1.0);
+      wipe("#f06-q1", 0.2);
+      tl.to("#f06-q1", { opacity: 0.25, duration: 0.3 }, 1.35);
+      wipe("#f06-q2", 1.4);
+      tl.to("#f06-q2", { opacity: 0.25, duration: 0.3 }, 2.65);
+      wipe("#f06-q3", 2.7);
+      tl.to("#f06-q3", { opacity: 0.25, duration: 0.4 }, 4.4);
+      wipe("#f06-line", 4.5, 0.8);
+      tl.to("#f06-chart", { opacity: 0.5, duration: 0.6 }, 4.8);
+      window.__timelines["06-tracking"] = tl;
+    })();
+  </script>
+</template>

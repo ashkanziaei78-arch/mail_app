@@ -1,0 +1,65 @@
+<template>
+  <style>
+    @font-face { font-family: "Vazirmatn"; src: url("assets/fonts/vazirmatn-variable.woff2") format("woff2"); font-weight: 100 900; }
+    #root { position: absolute; inset: 0; overflow: hidden; font-family: "Vazirmatn"; direction: rtl; color: #111c2e; }
+    #f11-bg { position: absolute; inset: 0; background: #f5f7fa; }
+    .f11-head { position: absolute; right: 160px; top: 64px; padding-left: 40px; font-size: 76px; font-weight: 850; line-height: 1.2; white-space: nowrap; }
+    #f11-win { position: absolute; left: 240px; top: 196px; width: 1440px; height: 810px; border-radius: 16px; overflow: hidden; border: 2px solid #c9d4e1; background: #ffffff; transform-origin: 0 0; }
+    #f11-cam { position: absolute; left: 0; top: 0; width: 3200px; height: 1800px; transform-origin: 0 0; }
+    #f11-cam img { display: block; width: 3200px; height: 1800px; }
+    #f11-step { position: absolute; left: 2380px; top: 330px; width: 250px; height: 80px; border: 7px solid #0f5c7a; border-radius: 44px; }
+    .f11-card { position: absolute; left: 0; top: 0; width: 400px; height: 236px; border-radius: 16px; background: #ffffff; border: 2px solid #c9d4e1; padding: 22px 26px; }
+    .f11-card .org { display: block; font-size: 22px; font-weight: 800; color: #111c2e; padding-bottom: 8px; border-bottom: 3px solid #0a2233; }
+    .f11-card .to { display: block; margin-top: 18px; font-size: 30px; font-weight: 800; color: #0f5c7a; white-space: nowrap; }
+    .f11-card .pos { display: block; margin-top: 6px; font-size: 24px; font-weight: 600; color: #4e5d74; white-space: nowrap; }
+    .f11-card .ln { display: block; margin-top: 16px; height: 10px; width: 300px; border-radius: 5px; background: #e3e9f0; }
+    .f11-card .ln2 { width: 220px; margin-top: 10px; }
+  </style>
+  <div id="root" data-composition-id="11-builder" data-width="1920" data-height="1080">
+    <div id="f11-bg" class="clip" data-start="0" data-duration="6.7" data-track-index="0"></div>
+    <div id="f11-h1" class="f11-head">یک بار بنویسید.</div>
+    <div id="f11-h2" class="f11-head">برای هر نفر، نسخهٔ خودش.</div>
+    <div id="f11-win">
+      <div id="f11-cam">
+        <img src="capture/assets/compose.png" alt="">
+        <div id="f11-step"></div>
+      </div>
+    </div>
+    <div id="f11-cards"></div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      const W = 1440, H = 810, IW = 3200, IH = 1800, base = W / IW;
+      const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+      const focus = (t, cx, cy, z, d) => { const s = base * z;
+        tl.to("#f11-cam", { scale: s, x: clamp(W / 2 - cx * s, W - IW * s, 0), y: clamp(H / 2 - cy * s, H - IH * s, 0), duration: d, ease: "power3.inOut" }, t); };
+      // real recipients of the demo letter (seed data) — the personalised salutation the system generates
+      const people = ["عضو ۱۳ اتاق بازرگانی", "عضو ۵ اتاق بازرگانی", "عضو ۱۱ اتاق بازرگانی", "عضو ۴ اتاق بازرگانی", "عضو ۲۰ اتاق بازرگانی", "عضو ۸ اتاق بازرگانی"];
+      const host = document.getElementById("f11-cards");
+      const cards = people.map((p, i) => { const c = document.createElement("div"); c.className = "f11-card"; c.id = "f11-c" + i;
+        c.innerHTML = `<span class="org">پارک علم و فناوری یزد</span><span class="to">جناب آقای ${p}</span><span class="pos">عضو هیئت نمایندگان</span><span class="ln"></span><span class="ln ln2"></span>`;
+        host.appendChild(c); return c; });
+      // 1 — the real 6-step compose wizard; the active step travels the rail
+      tl.fromTo("#f11-cam", { scale: base, x: 0, y: 0 }, { scale: base * 1.02, duration: 0.3 }, 0);
+      tl.fromTo("#f11-win", { clipPath: "inset(0 0 0 100%)" }, { clipPath: "inset(0 0 0 0%)", duration: 0.6, ease: "power3.inOut" }, 0.0);
+      tl.fromTo("#f11-h1", { clipPath: "inset(-30px 0 -40px 100%)" }, { clipPath: "inset(-30px 0 -40px 0%)", duration: 0.5, ease: "power3.out" }, 0.2);
+      focus(0.4, 1800, 560, 1.55, 0.8);
+      const stepX = [2380, 2060, 1810, 1535, 1275, 975], stepW = [240, 275, 205, 195, 215, 255];
+      tl.fromTo("#f11-step", { opacity: 0 }, { opacity: 1, duration: 0.2 }, 0.9);
+      stepX.forEach((x, i) => { if (i) tl.to("#f11-step", { x: x + stepW[i] / 2 - 2505, duration: 0.16, ease: "power2.inOut" }, 0.9 + i * 0.2); });
+      // 2 — the window steps back; one letter becomes six
+      tl.to("#f11-h1", { opacity: 0, duration: 0.2 }, 2.0);
+      tl.fromTo("#f11-h2", { clipPath: "inset(-30px 0 -40px 100%)" }, { clipPath: "inset(-30px 0 -40px 0%)", duration: 0.5, ease: "power3.out" }, 2.15);
+      tl.to("#f11-win", { scale: 0.42, x: -120, y: 140, opacity: 0.9, duration: 0.8, ease: "power3.inOut" }, 2.0);
+      const cols = [1360, 920], rows = [210, 480, 750];
+      cards.forEach((c, i) => {
+        const x = cols[i % 2], y = rows[Math.floor(i / 2)];
+        tl.fromTo(c, { x: 620, y: 480, opacity: 0, scale: 0.6, rotation: -6 + i * 2 },
+          { x, y, opacity: 1, scale: 1, rotation: 0, duration: 0.6, ease: "power3.out" }, 2.6 + i * 0.32);
+        tl.fromTo(c.querySelector(".to"), { backgroundColor: "rgba(15,92,122,0.18)" }, { backgroundColor: "rgba(15,92,122,0)", duration: 0.8, ease: "power1.out" }, 3.0 + i * 0.32);
+      });
+      window.__timelines["11-builder"] = tl;
+    })();
+  </script>
+</template>

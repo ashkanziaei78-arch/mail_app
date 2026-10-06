@@ -1,0 +1,6 @@
+# heavy, reproducible outputs (music.py · mix.mjs · tts-fish.mjs · hyperframes render)
+renders/
+snapshots/
+assets/audio/
+vo/*.wav
+node_modules

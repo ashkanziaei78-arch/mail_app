@@ -1,0 +1,41 @@
+<template>
+  <style>
+    @font-face { font-family: "Vazirmatn"; src: url("assets/fonts/vazirmatn-variable.woff2") format("woff2"); font-weight: 100 900; }
+    #root { position: absolute; inset: 0; overflow: hidden; font-family: "Vazirmatn"; direction: rtl; color: #111c2e; }
+    #f14-bg { position: absolute; inset: 0; background: #f5f7fa; }
+    .f14-head { position: absolute; right: 160px; top: 64px; padding-left: 40px; font-size: 76px; font-weight: 850; line-height: 1.2; white-space: nowrap; }
+    #f14-chip { position: absolute; left: 240px; top: 84px; padding: 12px 30px; border-radius: 100px; border: 3px solid #0f5c7a; color: #0f5c7a; font-size: 44px; font-weight: 800; white-space: nowrap; }
+    #f14-win { position: absolute; left: 240px; top: 196px; width: 1440px; height: 810px; border-radius: 16px; overflow: hidden; border: 2px solid #c9d4e1; background: #ffffff; }
+    #f14-cam { position: absolute; left: 0; top: 0; width: 3200px; height: 1800px; transform-origin: 0 0; }
+    #f14-cam img { display: block; width: 3200px; height: 1800px; }
+    .f14-hl { position: absolute; border: 8px solid #0f5c7a; border-radius: 24px; }
+  </style>
+  <div id="root" data-composition-id="14-reports" data-width="1920" data-height="1080">
+    <div id="f14-bg" class="clip" data-start="0" data-duration="5.6" data-track-index="0"></div>
+    <div id="f14-h1" class="f14-head">همهٔ نامه‌ها، یک‌جا.</div>
+    <div id="f14-chip">بدون حتی یک تماس.</div>
+    <div id="f14-win"><div id="f14-cam">
+      <img src="capture/assets/reports.png" alt="">
+      <div id="f14-hl1" class="f14-hl" style="left:2010px;top:560px;width:690px;height:210px"></div>
+      <div id="f14-hl2" class="f14-hl" style="left:1365px;top:1100px;width:595px;height:205px"></div>
+    </div></div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      const W = 1440, H = 810, IW = 3200, IH = 1800, base = W / IW;
+      const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+      const pos = (cx, cy, z) => { const s = base * z; return { scale: s, x: clamp(W / 2 - cx * s, W - IW * s, 0), y: clamp(H / 2 - cy * s, H - IH * s, 0) }; };
+      tl.fromTo("#f14-cam", pos(1600, 900, 1.0), { ...pos(1900, 760, 1.55), duration: 1.4, ease: "power3.inOut" }, 0.2);
+      tl.fromTo("#f14-win", { clipPath: "inset(0 0 0 100%)" }, { clipPath: "inset(0 0 0 0%)", duration: 0.6, ease: "power3.inOut" }, 0);
+      tl.fromTo("#f14-h1", { clipPath: "inset(-30px 0 -40px 100%)" }, { clipPath: "inset(-30px 0 -40px 0%)", duration: 0.5, ease: "power3.out" }, 0.2);
+      tl.fromTo("#f14-hl1", { opacity: 0 }, { opacity: 1, duration: 0.25 }, 1.5);
+      tl.to("#f14-hl1", { opacity: 0, duration: 0.2 }, 2.3);
+      tl.to("#f14-cam", { ...pos(1660, 1200, 1.55), duration: 0.9, ease: "power3.inOut" }, 2.2);
+      tl.fromTo("#f14-hl2", { opacity: 0, scale: 1.15, transformOrigin: "50% 50%" }, { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(2)" }, 3.0);
+      tl.fromTo("#f14-chip", { opacity: 0, x: -30 }, { opacity: 1, x: 0, duration: 0.4, ease: "power3.out" }, 3.4);
+      tl.to("#f14-cam", { ...pos(1500, 1300, 1.2), duration: 1.6, ease: "power2.inOut" }, 3.9);
+      window.__timelines["14-reports"] = tl;
+    })();
+  </script>
+</template>

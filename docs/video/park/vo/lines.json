@@ -1,0 +1,37 @@
+{
+  "voice": {
+    "provider": "fish-audio",
+    "model": "s1",
+    "language": "fa",
+    "direction": "Male, 25–35, standard Persian. Professional, calm, intelligent, confident. Medium pace. No exaggerated advertising tone.",
+    "format": "wav",
+    "sample_rate": 44100
+  },
+  "note": "text = only the speakable text (sent to TTS as-is). direction = voice instruction, never spoken. at/dur = start and budget in seconds on the film timeline.",
+  "lines": [
+    { "id": "L01", "scene": 1,  "at": 0.6,   "dur": 1.7, "direction": "[serious] [slightly lower]", "text": "شُمارهٔ مُخاطَب کجاست؟" },
+    { "id": "L02", "scene": 1,  "at": 2.6,   "dur": 1.4, "direction": "[serious] [short pause after]", "text": "نامه دیده شد؟" },
+    { "id": "L03", "scene": 1,  "at": 4.3,   "dur": 1.5, "direction": "[serious] [emphasis on «امضایش»]", "text": "امضایَش چه شد؟" },
+    { "id": "L04", "scene": 1,  "at": 6.1,   "dur": 3.6, "direction": "[direct address] [calm]", "text": "اگر جوابِ این سه سؤال، هر بار یک تماسِ تلفنی است؛ این ویدیو برای شماست." },
+    { "id": "L05", "scene": 2,  "at": 10.0,  "dur": 5.4, "direction": "[concerned but controlled] [short pause at each semicolon]", "text": "اطّلاعاتِ مُخاطَبان، گاهی در گوشیِ چند نفر است؛ گاهی در یک فایلِ اکسل؛ و گاهی فقط روی کاغذ." },
+    { "id": "L06", "scene": 3,  "at": 16.0,  "dur": 5.8, "direction": "[concerned] [slightly faster on the second half]", "text": "نامه از یک کانال می‌رَوَد و پاسخش از کانالی دیگر می‌آید؛ و همیشه معلوم نیست چه کسی، کِی، آن را دیده است." },
+    { "id": "L07", "scene": 4,  "at": 22.4,  "dur": 6.6, "direction": "[rhythmic: one beat per word] [short pause] [lower on «برای برگشت»]", "text": "چاپ. امضا. مُهر. دبیرخانه. ارسال… و همین مسیر، یک بارِ دیگر، برای برگشت." },
+    { "id": "L08", "scene": 5,  "at": 29.9,  "dur": 3.5, "direction": "[quieter] [1-second pause before «انتظار»]", "text": "و در این میان، تنها کاری که می‌شود کرد، انتظار است." },
+    { "id": "L09", "scene": 6,  "at": 34.0,  "dur": 4.0, "direction": "[frustrated but controlled] [equal gap between the three questions]", "text": "نامه کجاست؟ دستِ چه کسی است؟ چه کسی هنوز اقدامی نکرده؟" },
+    { "id": "L10", "scene": 6,  "at": 38.3,  "dur": 2.6, "direction": "[lower] [calm]", "text": "پیگیری، سخت‌تر از آن است که باید باشد." },
+    { "id": "L11", "scene": 7,  "at": 41.3,  "dur": 3.4, "direction": "[emphasis] [slower]", "text": "چرا هنوز برای این فرآیند، کاغذ مصرف می‌کنیم؟" },
+    { "id": "L12", "scene": 8,  "at": 46.0,  "dur": 4.8, "direction": "[confident] [rising]", "text": "اَمّا اگر تمامِ این فرآیند، از اوّلین کلیک تا آخرین امضا، دیجیتال شود چه؟" },
+    { "id": "L13", "scene": 8,  "at": 51.6,  "dur": 2.6, "direction": "[1-second pause before] [confident] [slower on the name]", "text": "اینجاست که میلینگ پِرِس وارد می‌شود." },
+    { "id": "L14", "scene": 9,  "at": 55.3,  "dur": 5.3, "direction": "[professional] [precise]", "text": "یک دفترچهٔ مُخاطَبانِ واحد برای کُلِّ سازمان؛ ورودِ گروهی از اکسل، و انتخابِ یک‌جا با برچسب." },
+    { "id": "L15", "scene": 10, "at": 61.6,  "dur": 4.2, "direction": "[professional]", "text": "سربرگِ رسمیِ خودِ سازمان؛ و شمارهٔ نامه‌ای که سامانه خودش می‌دهد." },
+    { "id": "L16", "scene": 11, "at": 67.1,  "dur": 5.8, "direction": "[professional] [short pause at the semicolon]", "text": "نامه را یک بار می‌نویسید؛ سامانه برای هر مُخاطَب، نسخه‌ای جداگانه با نام و سِمَتِ خودِ او می‌سازد." },
+    { "id": "L17", "scene": 12, "at": 73.8,  "dur": 7.0, "direction": "[professional] [even pace across the four channel names]", "text": "مسیرِ تأیید را بر اساسِ سِمَت‌ها می‌چینید. تأییدکننده با پیامک، بَله، تلگرام یا ایتا خبردار می‌شود و از روی گوشی تأیید می‌کند." },
+    { "id": "L18", "scene": 12, "at": 81.3,  "dur": 4.3, "direction": "[precise] [emphasis on «آشکار»]", "text": "و نامه با امضا و مُهرِ کیوآر می‌رود؛ هر تغییری در متن، آشکار می‌شود." },
+    { "id": "L19", "scene": 13, "at": 86.4,  "dur": 7.6, "direction": "[confident] [equal beat on the three stages]", "text": "گیرنده، نامه را با پیامک و لینکِ شخصیِ خودش باز می‌کند. و از این لحظه، همه‌چیز قابلِ پیگیری است: تحویل، بازشدن، و پاسخِ گیرنده." },
+    { "id": "L20", "scene": 14, "at": 94.9,  "dur": 4.6, "direction": "[professional] [calm]", "text": "گزارش‌ها، وضعیّتِ همهٔ نامه‌ها را یک‌جا نشان می‌دهند؛ بی‌آنکه کسی تلفن بزند." },
+    { "id": "L21", "scene": 15, "at": 100.6, "dur": 7.0, "direction": "[warm] [confident]", "text": "برای پارک، یعنی مکاتبه با شرکت‌های مستقر، بی‌کاغذ و با سابقهٔ کامل. آنچه روزها طول می‌کشید، می‌تواند در همان روز تمام شود." },
+    { "id": "L22", "scene": 16, "at": 108.5, "dur": 4.2, "direction": "[peak] [rhythmic] [short pause between the four parts]", "text": "کمتر کاغذ. کمتر انتظار. کمتر پیگیری. کنترلِ بیشتر." },
+    { "id": "L23", "scene": 16, "at": 113.6, "dur": 3.9, "direction": "[1-second pause before] [confident] [slower]", "text": "میلینگ پِرِس. مکاتباتِ سازمانی، دیجیتال و قابلِ پیگیری." },
+    { "id": "L24", "scene": 16, "at": 118.2, "dur": 7.2, "direction": "[calm invitation] [confident]", "text": "این سامانه همین حالا کار می‌کند. بیست دقیقه وقت بدهید؛ یک نامهٔ واقعی با سربرگِ خودتان می‌فرستیم و مسیرش را زنده می‌بینید." }
+  ]
+}

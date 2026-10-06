@@ -1,0 +1,77 @@
+<template>
+  <style>
+    @font-face { font-family: "Vazirmatn"; src: url("assets/fonts/vazirmatn-variable.woff2") format("woff2"); font-weight: 100 900; }
+    #root { position: absolute; inset: 0; overflow: hidden; font-family: "Vazirmatn"; direction: rtl; color: #111c2e; }
+    #f08-ink { position: absolute; inset: 0; background: #0a2233; }
+    #f08-light { position: absolute; inset: 0; background: #f5f7fa; }
+    #f08-sheet { position: absolute; left: 380px; top: 360px; width: 260px; height: 340px; }
+    #f08-tiles { position: absolute; inset: 0; }
+    .f08-t { position: absolute; left: 0; top: 0; width: 88px; height: 64px; border-radius: 6px; background: #f5f7fa; }
+    #f08-win { position: absolute; left: 120px; top: 200px; width: 1040px; height: 585px; border-radius: 16px; overflow: hidden; border: 2px solid #c9d4e1; background: #ffffff; }
+    #f08-win img { display: block; width: 1040px; height: 585px; }
+    #f08-lock { position: absolute; right: 140px; top: 300px; width: 620px; text-align: right; }
+    #f08-mark { display: block; width: 190px; height: 190px; margin-right: 0; margin-left: auto; border-radius: 44px; background: #0f5c7a; color: #ffffff; font-size: 130px; font-weight: 850; line-height: 190px; text-align: center; }
+    #f08-ring { position: absolute; right: -30px; top: -30px; width: 250px; height: 250px; border-radius: 60px; border: 6px solid #0f5c7a; }
+    #f08-name { display: block; margin-top: 40px; font-size: 108px; font-weight: 850; line-height: 1.1; white-space: nowrap; color: #111c2e; }
+    #f08-en { display: block; margin-top: 26px; font-size: 40px; font-weight: 600; color: #4e5d74; direction: ltr; text-align: right; letter-spacing: 0.02em; }
+  </style>
+  <div id="root" data-composition-id="08-reveal" data-width="1920" data-height="1080">
+    <div id="f08-ink" class="clip" data-start="0" data-duration="9.4" data-track-index="0"></div>
+    <div id="f08-light"></div>
+
+    <svg id="f08-sheet" viewBox="0 0 260 340" fill="none" stroke="#f5f7fa" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+      <rect x="10" y="10" width="240" height="320" rx="10"/>
+      <path d="M50 90 h160 M50 140 h160 M50 190 h110" stroke="#4e6a86" stroke-width="10"/>
+    </svg>
+    <div id="f08-tiles"></div>
+
+    <div id="f08-win"><img src="capture/assets/dashboard.png" alt=""></div>
+
+    <div id="f08-lock">
+      <div style="position:relative;width:190px;margin-left:auto">
+        <div id="f08-ring"></div>
+        <div id="f08-mark">م</div>
+      </div>
+      <div id="f08-name">میلینگ پرس</div>
+      <div id="f08-en">Mailing Press</div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      // seeded PRNG — the scatter is identical on every render
+      function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+      const rnd = mulberry32(1404);
+      const COLS = 12, ROWS = 9, W = 1040 / COLS, H = 585 / ROWS, host = document.getElementById("f08-tiles");
+      const tiles = [];
+      for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+        const d = document.createElement("div"); d.className = "f08-t"; host.appendChild(d);
+        tiles.push({ el: d, sx: 400 + rnd() * 200, sy: 380 + rnd() * 280, tx: 120 + c * W + 2, ty: 200 + r * H + 2, delay: rnd() * 0.9, mid: rnd() });
+      }
+      // 0 — the sheet from the previous scene, still turning
+      tl.fromTo("#f08-sheet", { rotation: 4, opacity: 1 }, { rotation: 8, duration: 0.6, ease: "none" }, 0);
+      tl.to("#f08-sheet", { opacity: 0, scale: 0.9, duration: 0.3 }, 0.6);
+      // 1 — the sheet breaks into a grid of digital tiles that flow into a window
+      tiles.forEach(t => {
+        tl.fromTo(t.el, { x: t.sx, y: t.sy, width: 18, height: 18, opacity: 0, rotation: (t.mid - 0.5) * 90 },
+          { keyframes: [
+              { opacity: 1, duration: 0.12 },
+              { x: (t.sx + t.tx) / 2 + (t.mid - 0.5) * 160, y: Math.min(t.sy, t.ty) - 80 - t.mid * 120, rotation: (t.mid - 0.5) * 40, duration: 0.55, ease: "power2.out" },
+              { x: t.tx, y: t.ty, width: W - 4, height: H - 4, rotation: 0, duration: 0.6, ease: "power3.inOut" } ] }, 0.6 + t.delay);
+      });
+      // 2 — the ground turns to paper-light; the real dashboard wipes across the tiles
+      tl.fromTo("#f08-light", { clipPath: "inset(0 0 0 100%)" }, { clipPath: "inset(0 0 0 0%)", duration: 0.9, ease: "power2.inOut" }, 2.3);
+      tl.fromTo(".f08-t", { backgroundColor: "#f5f7fa" }, { backgroundColor: "#dfe7ef", duration: 0.6, immediateRender: false }, 2.4);
+      tl.fromTo("#f08-win", { clipPath: "inset(0 0 0 100%)", opacity: 1 }, { clipPath: "inset(0 0 0 0%)", duration: 1.0, ease: "power3.inOut" }, 3.0);
+      tl.to(".f08-t", { opacity: 0, duration: 0.3 }, 3.9);
+      tl.fromTo("#f08-win img", { scale: 1.06, transformOrigin: "80% 30%" }, { scale: 1, duration: 4.0, ease: "power2.out" }, 3.0);
+      // 3 — the mark presses like a stamp on «اینجاست»; the name lands with the voice
+      tl.fromTo("#f08-mark", { scale: 3.4, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.42, ease: "power4.in" }, 5.9);
+      tl.fromTo("#f08-ring", { scale: 0.8, opacity: 0 }, { keyframes: [{ opacity: 0.9, duration: 0.01 }, { scale: 1.35, opacity: 0, duration: 0.7, ease: "power2.out" }] }, 6.32);
+      tl.fromTo("#f08-win", { y: 0 }, { y: 6, duration: 0.08, yoyo: true, repeat: 1, ease: "power1.out", immediateRender: false }, 6.32);
+      tl.fromTo("#f08-name", { clipPath: "inset(-30px 0 -40px 100%)" }, { clipPath: "inset(-30px 0 -40px 0%)", duration: 0.6, ease: "power3.out" }, 7.0);
+      tl.fromTo("#f08-en", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.4 }, 7.6);
+      window.__timelines["08-reveal"] = tl;
+    })();
+  </script>
+</template>

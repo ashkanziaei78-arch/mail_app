@@ -1,0 +1,84 @@
+<template>
+  <style>
+    @font-face { font-family: "Vazirmatn"; src: url("assets/fonts/vazirmatn-variable.woff2") format("woff2"); font-weight: 100 900; }
+    #root { position: absolute; inset: 0; overflow: hidden; font-family: "Vazirmatn"; direction: rtl; color: #111c2e; }
+    #f15-bg { position: absolute; inset: 0; background: #f5f7fa; }
+    .f15-head { position: absolute; right: 160px; padding-left: 40px; top: 64px; font-size: 80px; font-weight: 850; line-height: 1.2; white-space: nowrap; }
+    #f15-hub { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+    #f15-cmp { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+    .f15-lab { font-family: "Vazirmatn"; font-weight: 800; }
+    .f15-tag { opacity: 0; position: absolute; right: 160px; width: 300px; text-align: right; font-size: 52px; font-weight: 850; }
+    .f15-time { opacity: 0; position: absolute; left: 160px; width: 300px; text-align: left; font-size: 52px; font-weight: 850; }
+  </style>
+  <div id="root" data-composition-id="15-transform" data-width="1920" data-height="1080">
+    <div id="f15-bg" class="clip" data-start="0" data-duration="8" data-track-index="0"></div>
+    <div id="f15-h1" class="f15-head">پارک و شرکت‌های مستقر: بی‌کاغذ.</div>
+    <div id="f15-h2" class="f15-head">از کاغذ… به دیجیتال.</div>
+
+    <!-- A: the park as a hub — every letter out, every answer back, all on record -->
+    <svg id="f15-hub" viewBox="0 0 1920 1080" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <g id="f15-spokes" stroke="#c9d4e1" stroke-width="5"></g>
+      <g id="f15-nodes"></g>
+      <g id="f15-dots"></g>
+      <g id="f15-core" transform="translate(960 560)">
+        <g id="f15-core-in"><rect x="-120" y="-80" width="240" height="160" rx="36" fill="#0f5c7a"/>
+          <text class="f15-lab" y="22" font-size="64" fill="#ffffff" text-anchor="middle">پارک</text></g>
+      </g>
+    </svg>
+
+    <!-- B: the same correspondence, paper vs digital -->
+    <svg id="f15-cmp" viewBox="0 0 1920 1080" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M1380 400 H560" stroke="#0f5c7a" stroke-width="6" opacity=".35"/>
+      <path d="M1380 700 H560" stroke="#9aa6b6" stroke-width="6" stroke-dasharray="2 18"/>
+      <g id="f15-dd"></g><g id="f15-pd"></g>
+      <circle id="f15-dtok" cx="1380" cy="400" r="26" fill="#0f5c7a"/>
+      <circle id="f15-ptok" cx="1380" cy="700" r="26" fill="#ffffff" stroke="#4e5d74" stroke-width="6"/>
+      <path id="f15-ok" d="M440 400 l22 22 l44 -50" stroke="#0f5c7a" stroke-width="12"/>
+    </svg>
+    <div id="f15-t1" class="f15-tag" style="top:362px;color:#0f5c7a">دیجیتال</div>
+    <div id="f15-t2" class="f15-tag" style="top:662px;color:#4e5d74">کاغذی</div>
+    <div id="f15-m1" class="f15-time" style="top:470px;color:#0f5c7a">همان روز</div>
+    <div id="f15-m2" class="f15-time" style="top:770px;color:#4e5d74">روزها…</div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      const NS = "http://www.w3.org/2000/svg";
+      const mk = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); document.getElementById(parent).appendChild(e); return e; };
+      const wipe = (el, t) => tl.fromTo(el, { clipPath: "inset(-30px 0 -40px 100%)" }, { clipPath: "inset(-30px 0 -40px 0%)", duration: 0.5, ease: "power3.out" }, t);
+      // eight resident companies around the park (generic marks — no invented names)
+      const N = 8, R = [430, 270], C = [960, 560], nodes = [];
+      for (let i = 0; i < N; i++) {
+        const a = -Math.PI / 2 + i * 2 * Math.PI / N, x = C[0] + Math.cos(a) * R[0], y = C[1] + Math.sin(a) * R[1];
+        mk("path", { d: `M${C[0]} ${C[1]} L${x} ${y}` }, "f15-spokes");
+        const g = mk("g", { transform: `translate(${x} ${y})` }, "f15-nodes");
+        const inner = document.createElementNS(NS, "g"); g.appendChild(inner);
+        inner.innerHTML = `<rect x="-58" y="-46" width="116" height="92" rx="16" fill="#ffffff" stroke="#0a2233" stroke-width="4"/><path d="M-26 22 V-14 H26 V22 M-10 -2 h20 M-10 10 h20" stroke="#0a2233" stroke-width="4"/><path class="ck" d="M18 -40 l12 12 l24 -26" stroke="#0f5c7a" stroke-width="8"/>`;
+        const dot = mk("circle", { cx: C[0], cy: C[1], r: 12, fill: "#0f5c7a" }, "f15-dots");
+        nodes.push({ inner, dot, x, y });
+      }
+      tl.fromTo("#f15-core-in", { scale: 0, svgOrigin: "0 0" }, { scale: 1, duration: 0.45, ease: "back.out(2)" }, 0.1);
+      wipe("#f15-h1", 0.3);
+      tl.fromTo("#f15-spokes path", { opacity: 0 }, { opacity: 1, duration: 0.3, stagger: 0.05 }, 0.3);
+      nodes.forEach((n, i) => {
+        tl.fromTo(n.inner, { scale: 0, svgOrigin: "0 0" }, { scale: 1, duration: 0.35, ease: "back.out(2)" }, 0.4 + i * 0.06);
+        tl.fromTo(n.dot, { attr: { cx: C[0], cy: C[1] }, opacity: 0 }, { keyframes: [{ opacity: 1, duration: 0.05 }, { attr: { cx: n.x, cy: n.y }, duration: 0.6, ease: "power2.inOut" }, { opacity: 0, duration: 0.1 }] }, 1.2 + i * 0.18);
+        tl.fromTo(n.inner.querySelector(".ck"), { opacity: 0 }, { opacity: 1, duration: 0.2 }, 1.9 + i * 0.18);
+      });
+      // switch to the comparison
+      tl.to(["#f15-hub", "#f15-h1"], { opacity: 0, duration: 0.35 }, 3.9);
+      wipe("#f15-h2", 4.1);
+      tl.fromTo("#f15-cmp", { opacity: 0 }, { opacity: 1, duration: 0.3 }, 4.1);
+      tl.to(["#f15-t1", "#f15-t2"], { opacity: 1, duration: 0.3, stagger: 0.1 }, 4.2);
+      const xs = [1380, 1175, 970, 765, 560];
+      xs.forEach(x => { mk("circle", { cx: x, cy: 400, r: 14, fill: "#0f5c7a" }, "f15-dd"); mk("circle", { cx: x, cy: 700, r: 14, fill: "#ffffff", stroke: "#9aa6b6", "stroke-width": 5 }, "f15-pd"); });
+      // digital token runs the whole path; the paper token barely leaves the first stations
+      tl.fromTo("#f15-dtok", { attr: { cx: 1380 } }, { attr: { cx: 560 }, duration: 1.6, ease: "power2.inOut" }, 4.6);
+      tl.fromTo("#f15-ptok", { attr: { cx: 1380 } }, { attr: { cx: 1100 }, duration: 3.2, ease: "power1.inOut" }, 4.6);
+      tl.fromTo("#f15-ok", { strokeDasharray: 120, strokeDashoffset: 120 }, { strokeDashoffset: 0, duration: 0.35 }, 6.2);
+      tl.to("#f15-m1", { opacity: 1, duration: 0.3 }, 6.3);
+      tl.to("#f15-m2", { opacity: 1, duration: 0.3 }, 6.6);
+      window.__timelines["15-transform"] = tl;
+    })();
+  </script>
+</template>

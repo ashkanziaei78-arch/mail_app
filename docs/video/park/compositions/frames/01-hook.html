@@ -1,0 +1,91 @@
+<template>
+  <style>
+    @font-face { font-family: "Vazirmatn"; src: url("assets/fonts/vazirmatn-variable.woff2") format("woff2"); font-weight: 100 900; }
+    #root { position: absolute; inset: 0; overflow: hidden; font-family: "Vazirmatn"; direction: rtl; color: #111c2e; }
+    #f01-bg { position: absolute; inset: 0; background: #f5f7fa; }
+    #f01-grid { position: absolute; inset: 0; background-image: radial-gradient(#c9d4e1 1.4px, transparent 1.6px); background-size: 48px 48px; opacity: .55; }
+    .f01-q { position: absolute; right: 160px; width: 1400px; text-align: right; font-weight: 850; font-size: 148px; line-height: 1.1; letter-spacing: 0; white-space: nowrap; }
+    #f01-q1 { top: 170px; } #f01-q2 { top: 360px; } #f01-q3 { top: 550px; }
+    #f01-q3 .f01-acc { color: #0a2233; border-bottom: 10px solid #111c2e; }
+    #f01-call { position: absolute; right: 160px; top: 790px; display: flex; align-items: center; gap: 22px; font-size: 54px; font-weight: 600; color: #4e5d74; }
+    #f01-call-txt { display: block; }
+    #f01-art { position: absolute; left: 130px; top: 110px; width: 640px; height: 800px; }
+  </style>
+  <div id="root" data-composition-id="01-hook" data-width="1920" data-height="1080">
+    <div id="f01-bg" class="clip" data-start="0" data-duration="9.8" data-track-index="0"><div id="f01-grid"></div></div>
+
+    <!-- the letter: recipient field, seen-marker, signature line -->
+    <svg id="f01-art" viewBox="0 0 560 700" fill="none" stroke="#0a2233" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+      <rect id="f01-page" x="40" y="20" width="440" height="600" rx="18" fill="#ffffff"/>
+      <g id="f01-lines" stroke="#c9d4e1" stroke-width="10">
+        <path d="M110 250 H410"/><path d="M110 300 H410"/><path d="M110 350 H360"/><path d="M110 400 H400"/>
+      </g>
+      <!-- recipient field -->
+      <g id="f01-to">
+        <rect x="90" y="80" width="340" height="96" rx="12" fill="#eff3f8" stroke="#0a2233" stroke-dasharray="12 10"/>
+        <path d="M330 128 h70" stroke="#c9d4e1" stroke-width="10"/>
+        <text x="200" y="146" font-family="Vazirmatn" font-size="64" font-weight="800" fill="#0a2233" stroke="none" text-anchor="middle">؟</text>
+      </g>
+      <!-- seen marker -->
+      <g transform="translate(370 470)"><g id="f01-eye">
+        <circle r="62" fill="#ffffff"/>
+        <path d="M-38 0 C-20 -26 20 -26 38 0 C20 26 -20 26 -38 0 Z"/>
+        <circle r="10" fill="#0a2233"/>
+        <text x="44" y="-30" font-family="Vazirmatn" font-size="52" font-weight="800" fill="#0a2233" stroke="none">؟</text>
+      </g></g>
+      <!-- signature line + hovering pen -->
+      <g id="f01-sign">
+        <path d="M110 560 H300" stroke-dasharray="8 12"/>
+        <g transform="translate(270 500) rotate(-35)"><g id="f01-pen">
+          <rect x="-14" y="-110" width="28" height="110" rx="6" fill="#ffffff"/>
+          <path d="M-14 0 L0 30 L14 0 Z" fill="#0a2233"/>
+        </g></g>
+      </g>
+    </svg>
+
+    <div id="f01-q1" class="f01-q">مُخاطَب کجاست؟</div>
+    <div id="f01-q2" class="f01-q">نامه دیده شد؟</div>
+    <div id="f01-q3" class="f01-q"><span class="f01-acc">امضا</span> شد؟</div>
+
+    <div id="f01-call">
+      <svg id="f01-phone" width="74" height="74" viewBox="0 0 74 74" fill="none" stroke="#0a2233" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 10 l12 0 l6 16 l-8 6 a40 40 0 0 0 18 18 l6 -8 l16 6 l0 12 a8 8 0 0 1 -8 8 A56 56 0 0 1 10 18 a8 8 0 0 1 8 -8 Z" fill="#ffffff"/>
+        <path id="f01-ring1" d="M46 10 a18 18 0 0 1 18 18"/>
+        <path id="f01-ring2" d="M46 0 a28 28 0 0 1 28 28"/>
+      </svg>
+      <span id="f01-call-txt">هر بار، یک تماسِ تلفنی.</span>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      const wipe = (el, t, d) => tl.fromTo(el, { clipPath: "inset(-30px 0 -40px 100%)" }, { clipPath: "inset(-30px 0 -40px 0%)", duration: d || 0.42, ease: "power3.out" }, t);
+      // page draws in under the first question
+      tl.fromTo("#f01-art", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, 0.05);
+      tl.fromTo("#f01-lines path", { scaleX: 0, transformOrigin: "100% 50%" }, { scaleX: 1, duration: 0.5, stagger: 0.08, ease: "power2.out" }, 0.25);
+      // Q1 — recipient field pulses
+      wipe("#f01-q1", 0.25);
+      tl.fromTo("#f01-to", { scale: 0.8, transformOrigin: "260px 128px", opacity: 0 }, { scale: 1, opacity: 1, duration: 0.5, ease: "back.out(2)" }, 0.45);
+      // Q2 — Q1 steps back, eye marker pops
+      tl.to("#f01-q1", { opacity: 0.28, duration: 0.3 }, 2.5);
+      wipe("#f01-q2", 2.55);
+      tl.fromTo("#f01-eye", { scale: 0, svgOrigin: "0 0" }, { scale: 1, duration: 0.5, ease: "back.out(2.2)" }, 2.6);
+      // Q3 — signature line, pen hovers without signing
+      tl.to("#f01-q2", { opacity: 0.28, duration: 0.3 }, 4.2);
+      wipe("#f01-q3", 4.25);
+      tl.fromTo("#f01-sign", { opacity: 0 }, { opacity: 1, duration: 0.3 }, 4.3);
+      tl.fromTo("#f01-pen", { y: -40 }, { y: 0, duration: 0.7, ease: "power2.out" }, 4.3);
+      tl.to("#f01-pen", { y: -12, duration: 0.8, ease: "sine.inOut", repeat: 4, yoyo: true }, 5.0);
+      tl.fromTo("#f01-q3 .f01-acc", { borderBottomColor: "rgba(17,28,46,0)" }, { borderBottomColor: "rgba(17,28,46,1)", duration: 0.4 }, 4.9);
+      // L04 — the phone call: each answer costs a call
+      tl.to(["#f01-q1", "#f01-q2"], { opacity: 0.16, duration: 0.4 }, 6.0);
+      tl.fromTo("#f01-call", { opacity: 0, x: 40 }, { opacity: 1, x: 0, duration: 0.5, ease: "power3.out" }, 6.2);
+      tl.fromTo("#f01-phone", { rotation: 0 }, { rotation: 9, duration: 0.07, repeat: 9, yoyo: true, ease: "none", transformOrigin: "50% 50%" }, 6.4);
+      tl.fromTo(["#f01-ring1", "#f01-ring2"], { opacity: 0 }, { opacity: 1, duration: 0.18, stagger: 0.12, repeat: 5, yoyo: true }, 6.4);
+      tl.fromTo("#f01-phone", { rotation: 0 }, { rotation: 9, duration: 0.07, repeat: 9, yoyo: true, ease: "none", immediateRender: false }, 8.0);
+      // slow camera drift on the whole stage
+      tl.to("#f01-art", { scale: 1.05, duration: 9.6, ease: "none", transformOrigin: "50% 50%" }, 0.2);
+      window.__timelines["01-hook"] = tl;
+    })();
+  </script>
+</template>

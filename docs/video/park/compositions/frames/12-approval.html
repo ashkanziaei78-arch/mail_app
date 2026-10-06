@@ -1,0 +1,94 @@
+<template>
+  <style>
+    @font-face { font-family: "Vazirmatn"; src: url("assets/fonts/vazirmatn-variable.woff2") format("woff2"); font-weight: 100 900; }
+    #root { position: absolute; inset: 0; overflow: hidden; font-family: "Vazirmatn"; direction: rtl; color: #111c2e; }
+    #f12-bg { position: absolute; inset: 0; background: #f5f7fa; }
+    .f12-head { position: absolute; right: 160px; top: 64px; padding-left: 40px; font-size: 76px; font-weight: 850; line-height: 1.2; white-space: nowrap; }
+    #f12-win { position: absolute; left: 120px; top: 230px; width: 1100px; height: 619px; border-radius: 16px; overflow: hidden; border: 2px solid #c9d4e1; background: #ffffff; }
+    #f12-cam { position: absolute; left: 0; top: 0; width: 3200px; height: 1800px; transform-origin: 0 0; }
+    #f12-cam img { position: absolute; left: 0; top: 0; display: block; width: 3200px; height: 1800px; }
+    #f12-i2, #f12-i3 { opacity: 0; }
+    #f12-seal { position: absolute; left: 1992px; top: 880px; width: 320px; height: 320px; }
+    #f12-phone { position: absolute; left: 1430px; top: 196px; width: 368px; height: 764px; border-radius: 56px; background: #0a2233; padding: 14px; }
+    #f12-screen { position: relative; width: 340px; height: 736px; border-radius: 44px; overflow: hidden; background: #ffffff url("capture/assets/m-approvals.png") no-repeat; background-size: 340px 736px; }
+    #f12-tap { position: absolute; left: 257px; top: 298px; width: 60px; height: 60px; border-radius: 50%; background: rgba(15,92,122,0.35); border: 4px solid #0f5c7a; }
+    .f12-chip { position: absolute; left: 1250px; width: 160px; padding: 12px 0; text-align: center; border-radius: 100px; background: #ffffff; border: 3px solid #0f5c7a; color: #0f5c7a; font-size: 38px; font-weight: 800; }
+    #f12-sig { position: absolute; left: 1290px; top: 300px; width: 500px; padding: 30px 34px; border-radius: 18px; background: #ffffff; border: 2px solid #c9d4e1; }
+    #f12-sig .lab { display: block; font-size: 30px; font-weight: 700; color: #4e5d74; }
+    #f12-sig .txt { display: block; margin-top: 14px; font-size: 34px; font-weight: 700; color: #111c2e; white-space: nowrap; }
+    #f12-caret { display: inline-block; width: 4px; height: 38px; background: #0f5c7a; vertical-align: middle; }
+    #f12-ins { display: inline-block; color: #b91c1c; font-weight: 850; }
+    #f12-hash { display: block; margin-top: 22px; padding: 12px 18px; border-radius: 12px; background: #eff3f8; font-size: 38px; font-weight: 800; direction: ltr; text-align: left; letter-spacing: 0.04em; white-space: nowrap; }
+    #f12-hash2 { display: block; margin-top: -61px; padding: 12px 18px; border-radius: 12px; background: #fee2e2; color: #b91c1c; font-size: 38px; font-weight: 800; direction: ltr; text-align: left; letter-spacing: 0.04em; white-space: nowrap; }
+    #f12-bad { display: block; margin-top: 18px; font-size: 34px; font-weight: 850; color: #b91c1c; }
+  </style>
+  <div id="root" data-composition-id="12-approval" data-width="1920" data-height="1080">
+    <div id="f12-bg" class="clip" data-start="0" data-duration="12.5" data-track-index="0"></div>
+    <div id="f12-h1" class="f12-head">مسیرِ تأیید، بر اساسِ سِمَت.</div>
+    <div id="f12-h2" class="f12-head">تأیید، از روی گوشی.</div>
+    <div id="f12-h3" class="f12-head">امضا + مُهرِ کیوآر.</div>
+
+    <div id="f12-win">
+      <div id="f12-cam">
+        <img id="f12-i1" src="capture/assets/campaign-approval.png" alt="">
+        <img id="f12-i2" src="capture/assets/campaign.png" alt="">
+        <img id="f12-i3" src="capture/assets/letter.png" alt="">
+        <svg id="f12-seal" viewBox="0 0 320 320" fill="none"><circle id="f12-ring" cx="160" cy="160" r="140" stroke="#8a6412" stroke-width="12"/></svg>
+      </div>
+    </div>
+
+    <div class="f12-chip" id="f12-k1" style="top:300px">پیامک</div>
+    <div class="f12-chip" id="f12-k2" style="top:390px">بله</div>
+    <div class="f12-chip" id="f12-k3" style="top:480px">تلگرام</div>
+    <div class="f12-chip" id="f12-k4" style="top:570px">ایتا</div>
+
+    <div id="f12-phone"><div id="f12-screen"><div id="f12-tap"></div></div></div>
+
+    <div id="f12-sig">
+      <span class="lab">امضای محتوای نامه</span>
+      <span class="txt">با سلام و احترام<span id="f12-ins">۰</span><span id="f12-caret"></span></span>
+      <span id="f12-hash">VHPtNkGVW53ShPII</span>
+      <span id="f12-hash2">k7Qz2Rm9XwLp4TcE</span>
+      <span id="f12-bad">تغییر، آشکار شد.</span>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      const W = 1100, H = 619, IW = 3200, IH = 1800, base = W / IW;
+      const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+      const pos = (cx, cy, z) => { const s = base * z; return { scale: s, x: clamp(W / 2 - cx * s, W - IW * s, 0), y: clamp(H / 2 - cy * s, H - IH * s, 0) }; };
+      const wipe = (el, t) => tl.fromTo(el, { clipPath: "inset(-30px 0 -40px 100%)" }, { clipPath: "inset(-30px 0 -40px 0%)", duration: 0.5, ease: "power3.out" }, t);
+      // 1 — the real approval chain, mid-way (✓ ✓ ⏱ …)
+      tl.fromTo("#f12-cam", pos(2040, 520, 1.6), { ...pos(2040, 420, 2.4), duration: 1.6, ease: "power3.inOut" }, 0);
+      tl.fromTo("#f12-win", { clipPath: "inset(0 0 0 100%)" }, { clipPath: "inset(0 0 0 0%)", duration: 0.6, ease: "power3.inOut" }, 0);
+      wipe("#f12-h1", 0.2);
+      // 2 — the approver is notified (SMS · Bale · Telegram · Eitaa) on the phone
+      tl.fromTo("#f12-phone", { x: 480, opacity: 0 }, { x: 0, opacity: 1, duration: 0.7, ease: "power3.out" }, 2.3);
+      tl.to("#f12-h1", { opacity: 0, duration: 0.2 }, 2.4);
+      wipe("#f12-h2", 2.55);
+      ["#f12-k1", "#f12-k2", "#f12-k3", "#f12-k4"].forEach((k, i) => tl.fromTo(k, { opacity: 0, x: 40 }, { opacity: 1, x: 0, duration: 0.3, ease: "back.out(2)" }, 2.9 + i * 0.6));
+      // 3 — tap «تأیید»; the chain completes (real screen of the same letter, fully approved)
+      tl.fromTo("#f12-tap", { scale: 0.2, opacity: 0, transformOrigin: "50% 50%" }, { keyframes: [{ scale: 1, opacity: 1, duration: 0.18 }, { scale: 1.8, opacity: 0, duration: 0.45 }] }, 5.9);
+      tl.to("#f12-screen", { scale: 0.97, duration: 0.09, yoyo: true, repeat: 1, transformOrigin: "50% 45%" }, 5.95);
+      tl.to("#f12-i2", { opacity: 1, duration: 0.4 }, 6.3);
+      tl.to("#f12-cam", { ...pos(2010, 400, 2.4), duration: 0.6, ease: "power2.inOut" }, 6.3);
+      // 4 — the letter goes out with a content signature and a QR seal
+      tl.to(["#f12-phone", ".f12-chip"], { x: 520, opacity: 0, duration: 0.6, ease: "power3.in" }, 7.4);
+      tl.to("#f12-h2", { opacity: 0, duration: 0.2 }, 7.6);
+      wipe("#f12-h3", 7.75);
+      tl.to("#f12-i3", { opacity: 1, duration: 0.4 }, 7.7);
+      tl.to("#f12-cam", { ...pos(2120, 1000, 2.2), duration: 1.0, ease: "power3.inOut" }, 7.7);
+      tl.fromTo("#f12-ring", { strokeDasharray: 880, strokeDashoffset: 880 }, { strokeDashoffset: 0, duration: 0.8, ease: "power2.inOut" }, 8.6);
+      tl.fromTo("#f12-seal", { scale: 1.2, transformOrigin: "50% 50%" }, { scale: 1, duration: 0.5, ease: "back.out(2)", immediateRender: false }, 9.3);
+      // 5 — «هر تغییری در متن، آشکار می‌شود»: one inserted character changes the signature
+      tl.fromTo("#f12-sig", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" }, 9.6);
+      tl.fromTo("#f12-ins", { opacity: 0 }, { opacity: 1, duration: 0.05 }, 10.6);
+      tl.fromTo("#f12-caret", { opacity: 1 }, { opacity: 0, duration: 0.25, repeat: 3, yoyo: true }, 9.9);
+      tl.fromTo("#f12-hash2", { opacity: 0, clipPath: "inset(0 100% 0 0)" }, { opacity: 1, clipPath: "inset(0 0% 0 0)", duration: 0.45, ease: "power2.out" }, 10.75);
+      tl.to("#f12-hash", { opacity: 0, duration: 0.2 }, 10.75);
+      tl.fromTo("#f12-bad", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.35 }, 11.2);
+      window.__timelines["12-approval"] = tl;
+    })();
+  </script>
+</template>

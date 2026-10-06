@@ -1,0 +1,73 @@
+<template>
+  <style>
+    @font-face { font-family: "Vazirmatn"; src: url("assets/fonts/vazirmatn-variable.woff2") format("woff2"); font-weight: 100 900; }
+    #root { position: absolute; inset: 0; overflow: hidden; font-family: "Vazirmatn"; direction: rtl; color: #111c2e; }
+    #f13-bg { position: absolute; inset: 0; background: #f5f7fa; }
+    .f13-head { position: absolute; right: 160px; top: 64px; padding-left: 40px; font-size: 76px; font-weight: 850; line-height: 1.2; white-space: nowrap; }
+    #f13-phone { position: absolute; left: 160px; top: 190px; width: 368px; height: 764px; border-radius: 56px; background: #0a2233; padding: 14px; }
+    #f13-screen { position: relative; width: 340px; height: 736px; border-radius: 44px; overflow: hidden; background: #12324a; }
+    #f13-letter { position: absolute; left: 0; top: 0; width: 340px; height: 736px; background: url("capture/assets/m-letter.png") no-repeat 0 0 / 340px 736px; opacity: 0; }
+    #f13-sms { position: absolute; left: 14px; top: 120px; width: 312px; padding: 16px 18px; border-radius: 22px; background: #ffffff; border: 2px solid #c9d4e1; font-size: 19px; line-height: 1.6; font-weight: 600; color: #111c2e; }
+    #f13-sms b { display: block; font-size: 17px; color: #4e5d74; font-weight: 800; margin-bottom: 4px; }
+    #f13-sms i { font-style: normal; color: #0d5a86; direction: ltr; unicode-bidi: embed; }
+    #f13-tap { position: absolute; left: 140px; top: 262px; width: 56px; height: 56px; border-radius: 50%; background: rgba(15,92,122,0.35); border: 4px solid #0f5c7a; }
+    #f13-win { position: absolute; left: 640px; top: 200px; width: 1120px; height: 600px; border-radius: 16px; overflow: hidden; border: 2px solid #c9d4e1; background: #ffffff; }
+    #f13-cam { position: absolute; left: 0; top: 0; width: 3200px; height: 3348px; transform-origin: 0 0; }
+    #f13-cam img { display: block; width: 3200px; height: 3348px; }
+    .f13-col { position: absolute; top: 2370px; height: 940px; border: 8px solid #0f5c7a; border-radius: 22px; }
+    .f13-k { position: absolute; top: 836px; width: 340px; padding: 18px 0; border-radius: 18px; background: #ffffff; border: 2px solid #c9d4e1; text-align: center; }
+    .f13-k b { display: block; font-size: 72px; font-weight: 850; line-height: 1; color: #0f5c7a; }
+    .f13-k i { display: block; margin-top: 8px; font-style: normal; font-size: 34px; font-weight: 700; color: #4e5d74; }
+  </style>
+  <div id="root" data-composition-id="13-tracking" data-width="1920" data-height="1080">
+    <div id="f13-bg" class="clip" data-start="0" data-duration="8.6" data-track-index="0"></div>
+    <div id="f13-h1" class="f13-head">لینکِ شخصی، برای هر گیرنده.</div>
+    <div id="f13-h2" class="f13-head">همه‌چیز، قابلِ پیگیری.</div>
+
+    <div id="f13-phone"><div id="f13-screen">
+      <div id="f13-letter"></div>
+      <div id="f13-sms"><b>پیامک</b>جناب آقای عضو ۷ اتاق بازرگانی گرامی، با سلام و احترام، نامه‌ای از سوی پارک علم و فناوری یزد برای شما صادر شده است. مشاهده نامه: <i>…/l/BtkraU9WLt</i></div>
+      <div id="f13-tap"></div>
+    </div></div>
+
+    <div id="f13-win"><div id="f13-cam">
+      <img src="capture/assets/campaign-full.png" alt="">
+      <div id="f13-c1" class="f13-col" style="left:1610px;width:300px"></div>
+      <div id="f13-c2" class="f13-col" style="left:860px;width:420px"></div>
+      <div id="f13-c3" class="f13-col" style="left:380px;width:330px"></div>
+    </div></div>
+
+    <div class="f13-k" id="f13-k1" style="left:1420px"><b>۱۸</b><i>تحویل</i></div>
+    <div class="f13-k" id="f13-k2" style="left:1040px"><b>۱۴</b><i>بازشده</i></div>
+    <div class="f13-k" id="f13-k3" style="left:660px"><b>۹</b><i>پاسخ</i></div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      const W = 1120, H = 600, IW = 3200, IH = 3348, base = W / IW;
+      const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+      const pos = (cx, cy, z) => { const s = base * z; return { scale: s, x: clamp(W / 2 - cx * s, W - IW * s, 0), y: clamp(H / 2 - cy * s, H - IH * s, 0) }; };
+      const wipe = (el, t) => tl.fromTo(el, { clipPath: "inset(-30px 0 -40px 100%)" }, { clipPath: "inset(-30px 0 -40px 0%)", duration: 0.5, ease: "power3.out" }, t);
+      // 1 — the recipient's phone: the real SMS with the personal link, tap, the real letter opens
+      tl.fromTo("#f13-phone", { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 0);
+      wipe("#f13-h1", 0.2);
+      tl.fromTo("#f13-sms", { opacity: 0, y: -30 }, { opacity: 1, y: 0, duration: 0.45, ease: "back.out(1.8)" }, 0.5);
+      tl.fromTo("#f13-tap", { scale: 0.2, opacity: 0, transformOrigin: "50% 50%" }, { keyframes: [{ scale: 1, opacity: 1, duration: 0.18 }, { scale: 1.8, opacity: 0, duration: 0.45 }] }, 2.0);
+      tl.to("#f13-sms", { opacity: 0, y: -20, duration: 0.3 }, 2.3);
+      tl.to("#f13-letter", { opacity: 1, duration: 0.35 }, 2.35);
+      tl.fromTo("#f13-letter", { scale: 1 }, { scale: 1.06, duration: 3.0, ease: "power1.inOut", transformOrigin: "50% 35%", immediateRender: false }, 2.5);
+      // 2 — the sender's side: the real recipient table of the same letter
+      tl.fromTo("#f13-win", { clipPath: "inset(0 0 0 100%)" }, { clipPath: "inset(0 0 0 0%)", duration: 0.7, ease: "power3.inOut" }, 3.7);
+      tl.fromTo("#f13-cam", pos(1500, 2600, 1.0), { ...pos(1300, 2780, 1.25), duration: 4.6, ease: "power1.inOut" }, 3.7);
+      tl.to("#f13-h1", { opacity: 0, duration: 0.2 }, 3.8);
+      wipe("#f13-h2", 3.95);
+      // 3 — delivered · opened · responded, one beat each
+      [["#f13-c1", "#f13-k1", 5.9], ["#f13-c2", "#f13-k2", 6.6], ["#f13-c3", "#f13-k3", 7.3]].forEach(([c, k, t], i) => {
+        tl.fromTo(c, { opacity: 0 }, { opacity: 1, duration: 0.2 }, t);
+        if (i < 2) tl.to(c, { opacity: 0, duration: 0.2 }, t + 0.65);
+        tl.fromTo(k, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.35, ease: "back.out(2)" }, t);
+      });
+      window.__timelines["13-tracking"] = tl;
+    })();
+  </script>
+</template>

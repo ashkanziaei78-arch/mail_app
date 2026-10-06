@@ -1,0 +1,8 @@
+{
+  "bgm": {
+    "path": "assets/audio/mix.wav",
+    "volume": 1
+  },
+  "voices": [],
+  "sfx": []
+}

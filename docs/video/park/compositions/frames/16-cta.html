@@ -1,0 +1,100 @@
+<template>
+  <style>
+    @font-face { font-family: "Vazirmatn"; src: url("assets/fonts/vazirmatn-variable.woff2") format("woff2"); font-weight: 100 900; }
+    #root { position: absolute; inset: 0; overflow: hidden; font-family: "Vazirmatn"; direction: rtl; color: #111c2e; }
+    #f16-bg { position: absolute; inset: 0; background: #f5f7fa; }
+    .f16-l { position: absolute; right: 160px; padding-left: 60px; font-size: 118px; font-weight: 850; line-height: 1.1; white-space: nowrap; }
+    #f16-l1 { top: 140px; } #f16-l2 { top: 300px; } #f16-l3 { top: 460px; }
+    #f16-l4 { top: 640px; font-size: 150px; color: #0f5c7a; }
+    #f16-stack { position: absolute; left: 220px; top: 220px; width: 520px; height: 600px; }
+    .f16-sheet { position: absolute; left: 120px; top: 120px; width: 280px; height: 360px; border-radius: 12px; background: #ffffff; border: 4px solid #0a2233; }
+    #f16-tick { position: absolute; left: 160px; top: 200px; width: 300px; height: 300px; }
+    #f16-lock { position: absolute; right: 160px; top: 230px; width: 820px; text-align: right; }
+    #f16-markw { position: relative; width: 170px; height: 170px; margin-left: auto; }
+    #f16-mark { width: 170px; height: 170px; border-radius: 40px; background: #0f5c7a; color: #ffffff; font-size: 116px; font-weight: 850; line-height: 170px; text-align: center; }
+    #f16-ring { position: absolute; right: -28px; top: -28px; width: 226px; height: 226px; border-radius: 54px; border: 6px solid #0f5c7a; opacity: 0; }
+    #f16-name { display: block; margin-top: 34px; padding-left: 40px; font-size: 128px; font-weight: 850; line-height: 1.1; white-space: nowrap; }
+    #f16-tag { display: block; margin-top: 18px; font-size: 46px; font-weight: 700; color: #4e5d74; white-space: nowrap; }
+    #f16-proof { position: absolute; left: 120px; top: 260px; width: 900px; height: 560px; }
+    #f16-p1 { position: absolute; left: 0; top: 40px; width: 640px; height: 360px; border-radius: 14px; overflow: hidden; border: 2px solid #c9d4e1; background: #fff url("capture/assets/dashboard.png") no-repeat 0 0 / 640px 360px; }
+    #f16-p2 { position: absolute; left: 600px; top: 0; width: 210px; height: 440px; border-radius: 34px; background: #0a2233; padding: 9px; }
+    #f16-p2 i { display: block; width: 192px; height: 422px; border-radius: 26px; background: #fff url("capture/assets/m-letter.png") no-repeat 0 0 / 192px 416px; }
+    #f16-real { position: absolute; left: 0; top: 470px; padding: 14px 32px; border-radius: 100px; border: 3px solid #0f5c7a; color: #0f5c7a; font-size: 42px; font-weight: 800; white-space: nowrap; }
+    #f16-cta { position: absolute; left: 120px; top: 240px; width: 860px; padding: 50px 50px; border-radius: 26px; background: #ffffff; border: 2px solid #c9d4e1; }
+    #f16-min { display: block; font-size: 150px; font-weight: 850; line-height: 1; color: #0f5c7a; white-space: nowrap; }
+    #f16-c1 { display: block; margin-top: 30px; font-size: 54px; font-weight: 800; line-height: 1.35; }
+    #f16-c2 { display: block; margin-top: 10px; font-size: 46px; font-weight: 600; color: #4e5d74; }
+    #f16-btn { display: inline-block; margin-top: 38px; padding: 20px 46px; border-radius: 100px; background: #0f5c7a; color: #ffffff; font-size: 46px; font-weight: 800; }
+  </style>
+  <div id="root" data-composition-id="16-cta" data-width="1920" data-height="1080">
+    <div id="f16-bg" class="clip" data-start="0" data-duration="18.8" data-track-index="0"></div>
+
+    <!-- A: four lines; paper leaves, control arrives -->
+    <div id="f16-stack">
+      <div class="f16-sheet" id="f16-s1" style="left:90px;top:140px"></div>
+      <div class="f16-sheet" id="f16-s2" style="left:150px;top:100px"></div>
+      <div class="f16-sheet" id="f16-s3"></div>
+      <svg id="f16-tick" viewBox="0 0 300 300" fill="none"><circle cx="150" cy="150" r="130" fill="#0f5c7a"/><path d="M90 155 l40 40 l80 -90" stroke="#ffffff" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div id="f16-l1" class="f16-l">کمتر کاغذ.</div>
+    <div id="f16-l2" class="f16-l">کمتر انتظار.</div>
+    <div id="f16-l3" class="f16-l">کمتر پیگیری.</div>
+    <div id="f16-l4" class="f16-l">کنترلِ بیشتر.</div>
+
+    <!-- B: lockup -->
+    <div id="f16-lock">
+      <div id="f16-markw"><div id="f16-ring"></div><div id="f16-mark">م</div></div>
+      <span id="f16-name">میلینگ پرس</span>
+      <span id="f16-tag">مکاتباتِ سازمانی، دیجیتال و قابلِ پیگیری.</span>
+    </div>
+
+    <!-- C: proof — the real product -->
+    <div id="f16-proof">
+      <div id="f16-p1"></div>
+      <div id="f16-p2"><i></i></div>
+      <div id="f16-real">سامانهٔ واقعی؛ همین حالا کار می‌کند.</div>
+    </div>
+
+    <!-- D: the offer -->
+    <div id="f16-cta">
+      <span id="f16-min">۲۰ دقیقه</span>
+      <span id="f16-c1">یک نامهٔ واقعی، با سربرگِ خودتان.</span>
+      <span id="f16-c2">مسیرش را زنده ببینید.</span>
+      <span id="f16-btn">درخواستِ نمایشِ زنده</span>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      const wipe = (el, t, d) => tl.fromTo(el, { clipPath: "inset(-30px 0 -50px 100%)" }, { clipPath: "inset(-30px 0 -50px 0%)", duration: d || 0.4, ease: "power3.out" }, t);
+      // A — one line per beat; one sheet leaves per «کمتر»
+      tl.fromTo("#f16-stack", { opacity: 0 }, { opacity: 1, duration: 0.3 }, 0);
+      [[1, 0.3], [2, 1.3], [3, 2.3]].forEach(([i, t]) => {
+        wipe(`#f16-l${i}`, t);
+        tl.to(`#f16-s${4 - i}`, { x: -260, y: -120, rotation: -30, opacity: 0, duration: 0.6, ease: "power2.in" }, t + 0.05);
+      });
+      wipe("#f16-l4", 3.3, 0.55);
+      tl.fromTo("#f16-tick", { scale: 0, transformOrigin: "50% 50%" }, { scale: 1, duration: 0.5, ease: "back.out(2.2)" }, 3.35);
+      tl.to(["#f16-l1", "#f16-l2", "#f16-l3"], { opacity: 0.3, duration: 0.4 }, 3.4);
+      // B — clear, then the stamp-press lockup with the name and the tagline
+      tl.to(["#f16-l1", "#f16-l2", "#f16-l3", "#f16-l4", "#f16-stack"], { opacity: 0, y: -20, duration: 0.35, ease: "power2.in" }, 4.75);
+      tl.fromTo("#f16-mark", { scale: 3.4, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.4, ease: "power4.in" }, 5.05);
+      tl.fromTo("#f16-ring", { scale: 0.8, opacity: 0 }, { keyframes: [{ opacity: 0.9, duration: 0.01 }, { scale: 1.35, opacity: 0, duration: 0.7, ease: "power2.out" }] }, 5.45);
+      wipe("#f16-name", 5.45, 0.6);
+      wipe("#f16-tag", 6.6, 0.7);
+      // C — proof: real screens of the running product; the lockup steps back to make room
+      tl.to("#f16-lock", { scale: 0.74, y: -40, transformOrigin: "100% 0%", duration: 0.6, ease: "power3.inOut" }, 9.5);
+      tl.fromTo("#f16-p1", { opacity: 0, x: -60 }, { opacity: 1, x: 0, duration: 0.5, ease: "power3.out" }, 9.7);
+      tl.fromTo("#f16-p2", { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 10.0);
+      wipe("#f16-real", 10.3, 0.6);
+      // D — the low-risk offer replaces the proof
+      tl.to("#f16-proof", { opacity: 0, x: -40, duration: 0.3, ease: "power2.in" }, 11.85);
+      tl.fromTo("#f16-cta", { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 12.2);
+      tl.fromTo("#f16-min", { scale: 0.7, transformOrigin: "100% 50%" }, { scale: 1, duration: 0.45, ease: "back.out(2)" }, 12.3);
+      wipe("#f16-c1", 13.7, 0.6);
+      wipe("#f16-c2", 15.4, 0.6);
+      tl.fromTo("#f16-btn", { opacity: 0, scale: 0.8, transformOrigin: "100% 50%" }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(2)" }, 16.4);
+      window.__timelines["16-cta"] = tl;
+    })();
+  </script>
+</template>

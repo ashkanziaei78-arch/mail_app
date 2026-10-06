@@ -1,0 +1,56 @@
+<template>
+  <style>
+    @font-face { font-family: "Vazirmatn"; src: url("assets/fonts/vazirmatn-variable.woff2") format("woff2"); font-weight: 100 900; }
+    #root { position: absolute; inset: 0; overflow: hidden; font-family: "Vazirmatn"; direction: rtl; color: #111c2e; }
+    #f05-bg { position: absolute; inset: 0; background: #eef1f5; }
+    #f05-head { position: absolute; right: 160px; top: 330px; font-size: 220px; font-weight: 850; line-height: 1.1; white-space: nowrap; color: #111c2e; }
+    #f05-art { position: absolute; left: 120px; top: 120px; width: 960px; height: 796px; }
+    .f05-day { position: absolute; left: 760px; top: 250px; width: 230px; height: 250px; border-radius: 18px; background: #ffffff; border: 4px solid #0a2233; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 850; }
+    .f05-day b { display: block; font-size: 110px; line-height: 1; }
+    .f05-day i { display: block; font-style: normal; font-size: 36px; color: #4e5d74; margin-top: 10px; font-weight: 700; }
+  </style>
+  <div id="root" data-composition-id="05-waiting" data-width="1920" data-height="1080">
+    <div id="f05-bg" class="clip" data-start="0" data-duration="4.2" data-track-index="0"></div>
+
+    <svg id="f05-art" viewBox="0 0 820 680" fill="none" stroke="#0a2233" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+      <!-- wall clock -->
+      <g transform="translate(200 200)">
+        <circle r="150" fill="#ffffff"/>
+        <g stroke="#9aa6b6" stroke-width="6"><path d="M0 -130 v20 M0 110 v20 M-130 0 h20 M110 0 h20"/></g>
+        <g id="f05-hour"><path d="M0 0 V-70" stroke-width="10"/></g>
+        <g id="f05-min"><path d="M0 0 V-115" stroke-width="6"/></g>
+        <circle r="10" fill="#0a2233"/>
+      </g>
+      <!-- tray with the waiting sheet -->
+      <g transform="translate(240 560)">
+        <path d="M-180 0 L-150 90 H150 L180 0" fill="#ffffff"/><path d="M-180 0 H-70 l16 26 h108 l16 -26 H180"/>
+        <g id="f05-sheet"><rect x="-90" y="-80" width="180" height="70" fill="#ffffff"/><path d="M-60 -50 h120" stroke="#c9d4e1" stroke-width="8"/></g>
+      </g>
+    </svg>
+    <div class="f05-day" id="f05-d1"><b>۱</b><i>روز</i></div>
+    <div class="f05-day" id="f05-d2"><b>۲</b><i>روز</i></div>
+    <div class="f05-day" id="f05-d3"><b>۳</b><i>روز</i></div>
+    <div class="f05-day" id="f05-d4"><b>۴</b><i>روز</i></div>
+
+    <div id="f05-head">انتظار…</div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      tl.fromTo("#f05-art", { opacity: 0 }, { opacity: 1, duration: 0.35 }, 0);
+      // clock runs: hours pass in seconds
+      tl.fromTo("#f05-min", { rotation: 0, svgOrigin: "0 0" }, { rotation: 1440, duration: 4.2, ease: "none" }, 0);
+      tl.fromTo("#f05-hour", { rotation: 30, svgOrigin: "0 0" }, { rotation: 150, duration: 4.2, ease: "none" }, 0);
+      // calendar days peel up, one on top of the other
+      ["#f05-d1", "#f05-d2", "#f05-d3", "#f05-d4"].forEach((d, i) => {
+        tl.fromTo(d, { opacity: 0, y: 40, rotation: 0 }, { opacity: 1, y: 0, rotation: [-4, 3, -2, 0][i], duration: 0.3, ease: "back.out(2)" }, 0.3 + i * 0.75);
+        if (i < 3) tl.to(d, { opacity: 0, y: -50, rotation: -12, duration: 0.25, ease: "power2.in" }, 0.3 + (i + 1) * 0.75);
+      });
+      // the sheet does not move — only a faint breath
+      tl.fromTo("#f05-sheet", { y: 0 }, { y: -4, duration: 1.0, yoyo: true, repeat: 3, ease: "sine.inOut" }, 0);
+      // the word lands on «انتظار است»
+      tl.fromTo("#f05-head", { clipPath: "inset(-30px 0 -60px 100%)" }, { clipPath: "inset(-30px 0 -60px 0%)", duration: 0.9, ease: "power2.out" }, 2.4);
+      window.__timelines["05-waiting"] = tl;
+    })();
+  </script>
+</template>
